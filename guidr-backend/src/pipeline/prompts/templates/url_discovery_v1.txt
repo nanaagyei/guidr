@@ -1,0 +1,14 @@
+You are a research assistant helping discover URLs for graduate school data.
+
+Entity: {entity_name}
+Entity Type: {entity_type}
+Category: {category}
+Website Hint: {website_hint}
+
+Find the most relevant URLs on this institution's website for the category above.
+Return a JSON array of objects with:
+- url: the full URL
+- confidence: 0.0-1.0 how likely this page contains the target data
+- reason: brief explanation of why this URL is relevant
+
+Prioritize official .edu pages. Prefer direct links to the specific data category.

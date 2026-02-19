@@ -1,0 +1,73 @@
+[
+  {
+    "institution_name": "Oregon State University",
+    "name": "MSc in Computer Science",
+    "degree_level": "masters",
+    "field_of_study": "Computer Science",
+    "delivery_mode": "in_person",
+    "research_or_coursework": "both",
+    "description": "Master of Science in Computer Science with focus on research and coursework.",
+    "application_deadline_primary": "2024-12-01",
+    "tuition_estimate_per_year": 35000,
+    "application_fee": 85,
+    "website_url": "https://eecs.oregonstate.edu/graduate/ms-computer-science",
+    "program_features": ["Strong research in ML", "Industry connections", "Teaching assistantships"]
+  },
+  {
+    "institution_name": "Stanford University",
+    "name": "MS in Computer Science",
+    "degree_level": "masters",
+    "field_of_study": "Computer Science",
+    "delivery_mode": "in_person",
+    "research_or_coursework": "research",
+    "description": "Master of Science in Computer Science with emphasis on research.",
+    "application_deadline_primary": "2024-12-05",
+    "tuition_estimate_per_year": 55000,
+    "application_fee": 125,
+    "website_url": "https://cs.stanford.edu/degrees/ms",
+    "program_features": ["World-class faculty", "Cutting-edge research", "Silicon Valley location"]
+  },
+  {
+    "institution_name": "Massachusetts Institute of Technology",
+    "name": "PhD in Computer Science",
+    "degree_level": "phd",
+    "field_of_study": "Computer Science",
+    "delivery_mode": "in_person",
+    "research_or_coursework": "research",
+    "description": "Doctor of Philosophy in Computer Science with focus on advanced research.",
+    "application_deadline_primary": "2024-12-15",
+    "tuition_estimate_per_year": 55000,
+    "application_fee": 75,
+    "website_url": "https://www.csail.mit.edu/",
+    "program_features": ["Fully funded", "Top-tier research", "Interdisciplinary opportunities"]
+  },
+  {
+    "institution_name": "University of Toronto",
+    "name": "MSc in Computer Science",
+    "degree_level": "masters",
+    "field_of_study": "Computer Science",
+    "delivery_mode": "in_person",
+    "research_or_coursework": "both",
+    "description": "Master of Science in Computer Science with research and coursework options.",
+    "application_deadline_primary": "2024-12-01",
+    "tuition_estimate_per_year": 45000,
+    "application_fee": 120,
+    "website_url": "https://web.cs.toronto.edu/",
+    "program_features": ["Strong AI research", "Diverse community", "Toronto tech hub"]
+  },
+  {
+    "institution_name": "University of British Columbia",
+    "name": "PhD in Computer Science",
+    "degree_level": "phd",
+    "field_of_study": "Computer Science",
+    "delivery_mode": "in_person",
+    "research_or_coursework": "research",
+    "description": "Doctor of Philosophy in Computer Science with emphasis on research excellence.",
+    "application_deadline_primary": "2024-12-15",
+    "tuition_estimate_per_year": 5000,
+    "application_fee": 168,
+    "website_url": "https://www.cs.ubc.ca/",
+    "program_features": ["Fully funded", "Beautiful campus", "Strong industry partnerships"]
+  }
+]
+

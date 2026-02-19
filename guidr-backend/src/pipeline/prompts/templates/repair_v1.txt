@@ -1,0 +1,9 @@
+The previous extraction attempt for {entity_name} ({category}) failed or produced low-confidence results.
+
+Previous URL: {previous_url}
+Error: {error_message}
+
+Find alternative URLs on this institution's website that might contain {category} data.
+The previous URL may have been incorrect, blocked, or contained insufficient data.
+
+Return a JSON array of alternative URLs with confidence scores.

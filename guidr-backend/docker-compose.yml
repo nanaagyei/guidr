@@ -1,0 +1,100 @@
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: guidr-postgres
+    environment:
+      POSTGRES_USER: guidr_user
+      POSTGRES_PASSWORD: guidr_password
+      POSTGRES_DB: guidr_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guidr_user -d guidr_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: guidr-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: guidr-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY:-dev_master_key}
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+
+  minio:
+    image: minio/minio:latest
+    container_name: guidr-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build:
+      context: .
+    container_name: guidr-celery-worker
+    command: celery -A src.workers.celery_app worker -l info -Q default,scraping,processing,pipeline
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
+  celery-worker-pipeline:
+    build:
+      context: .
+    container_name: guidr-celery-worker-pipeline
+    command: celery -A src.workers.celery_app worker -l info -Q pipeline -n pipeline@%h
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    profiles:
+      - production
+
+  celery-beat:
+    build:
+      context: .
+    container_name: guidr-celery-beat
+    command: celery -A src.workers.celery_app beat -l info
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+  meilisearch_data:
+  minio_data:
+

@@ -1,0 +1,53 @@
+[
+  {
+    "name": "Oregon State University",
+    "short_name": "OSU",
+    "country": "USA",
+    "state_or_province": "Oregon",
+    "city": "Corvallis",
+    "website_url": "https://oregonstate.edu",
+    "institution_type": "university",
+    "public_private": "public"
+  },
+  {
+    "name": "Stanford University",
+    "short_name": "Stanford",
+    "country": "USA",
+    "state_or_province": "California",
+    "city": "Stanford",
+    "website_url": "https://stanford.edu",
+    "institution_type": "university",
+    "public_private": "private"
+  },
+  {
+    "name": "Massachusetts Institute of Technology",
+    "short_name": "MIT",
+    "country": "USA",
+    "state_or_province": "Massachusetts",
+    "city": "Cambridge",
+    "website_url": "https://mit.edu",
+    "institution_type": "university",
+    "public_private": "private"
+  },
+  {
+    "name": "University of Toronto",
+    "short_name": "U of T",
+    "country": "Canada",
+    "state_or_province": "Ontario",
+    "city": "Toronto",
+    "website_url": "https://utoronto.ca",
+    "institution_type": "university",
+    "public_private": "public"
+  },
+  {
+    "name": "University of British Columbia",
+    "short_name": "UBC",
+    "country": "Canada",
+    "state_or_province": "British Columbia",
+    "city": "Vancouver",
+    "website_url": "https://ubc.ca",
+    "institution_type": "university",
+    "public_private": "public"
+  }
+]
+

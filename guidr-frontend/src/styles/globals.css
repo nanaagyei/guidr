@@ -1,0 +1,454 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts - Using Outfit (similar to Söhne) and Fraunces for display */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Additional font for uppercase nav text - DM Sans works well for all-caps */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  
+  body {
+    @apply bg-background text-text antialiased;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border hover:bg-borderHover rounded-full transition-colors;
+  }
+  
+  /* Selection */
+  ::selection {
+    @apply bg-primary/20 text-text;
+  }
+}
+
+@layer components {
+  /* Card styles */
+  .card {
+    @apply bg-card rounded-2xl shadow-soft border border-border/50 transition-all duration-300;
+  }
+  
+  .card-hover {
+    @apply hover:shadow-soft-lg hover:border-border hover:-translate-y-0.5;
+  }
+  
+  .card-interactive {
+    @apply card card-hover cursor-pointer;
+  }
+  
+  /* Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primaryHover focus:ring-primary shadow-soft hover:shadow-soft-lg;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-card text-text border border-border hover:bg-muted hover:border-borderHover focus:ring-primary;
+  }
+  
+  .btn-accent {
+    @apply btn bg-accent text-white hover:bg-accentHover focus:ring-accent shadow-soft hover:shadow-glow-accent;
+  }
+  
+  .btn-ghost {
+    @apply btn bg-transparent text-textSecondary hover:text-text hover:bg-muted focus:ring-primary;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs rounded-lg;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-base rounded-xl;
+  }
+  
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 bg-card border border-border rounded-xl text-text placeholder:text-textMuted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200;
+  }
+  
+  .input-error {
+    @apply border-error focus:border-error focus:ring-error/10;
+  }
+  
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-colors;
+  }
+  
+  .badge-primary {
+    @apply bg-primaryLight text-primary;
+  }
+  
+  .badge-accent {
+    @apply bg-accentLight text-accent;
+  }
+  
+  .badge-success {
+    @apply bg-successLight text-success;
+  }
+  
+  .badge-warning {
+    @apply bg-warningLight text-warning;
+  }
+  
+  .badge-error {
+    @apply bg-errorLight text-error;
+  }
+  
+  .badge-info {
+    @apply bg-infoLight text-info;
+  }
+  
+  /* Tier badges */
+  .badge-dream {
+    @apply bg-dreamLight text-dream;
+  }
+  
+  .badge-reach {
+    @apply bg-reachLight text-reach;
+  }
+  
+  .badge-target {
+    @apply bg-targetLight text-target;
+  }
+  
+  .badge-safety {
+    @apply bg-safetyLight text-safety;
+  }
+  
+  /* Section styles */
+  .section-title {
+    @apply text-lg font-semibold text-text;
+  }
+  
+  .section-subtitle {
+    @apply text-sm text-textSecondary;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-6 text-center;
+  }
+  
+  .empty-state-title {
+    @apply text-lg font-medium text-text mt-4;
+  }
+  
+  .empty-state-description {
+    @apply text-sm text-textSecondary mt-2 max-w-sm;
+  }
+  
+  /* Data completeness indicator */
+  .completeness-bar {
+    @apply h-1.5 rounded-full bg-muted overflow-hidden;
+  }
+  
+  .completeness-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+  
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-gradient-to-r from-muted via-mutedAlt to-muted bg-[length:200%_100%] animate-shimmer rounded;
+  }
+  
+  /* Divider */
+  .divider {
+    @apply h-px bg-border my-4;
+  }
+  
+  /* Tooltip trigger */
+  .tooltip-trigger {
+    @apply relative cursor-help;
+  }
+}
+
+@layer utilities {
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Focus ring utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2;
+  }
+  
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+  
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Truncate multiline */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Backdrop blur support */
+  .backdrop-blur-safe {
+    @apply backdrop-blur-sm bg-card/95;
+  }
+  
+  @supports (backdrop-filter: blur(4px)) {
+    .backdrop-blur-safe {
+      background-color: transparent;
+    }
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideRightIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0px);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation utility classes */
+.animate-element {
+  animation: fadeSlideIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-scale {
+  animation: scaleIn 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-delay-50 { animation-delay: 50ms; }
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-150 { animation-delay: 150ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-250 { animation-delay: 250ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-800 { animation-delay: 800ms; }
+
+.animate-slide-right {
+  animation: slideRightIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Data Quality Dot Indicator */
+.quality-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.quality-dot-high {
+  @apply bg-success;
+}
+
+.quality-dot-medium {
+  @apply bg-warning;
+}
+
+.quality-dot-low {
+  @apply bg-error;
+}
+
+/* Page transition */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Custom checkbox styles */
+.custom-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid theme('colors.border');
+  border-radius: 6px;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.custom-checkbox:checked {
+  background-color: theme('colors.primary');
+  border-color: theme('colors.primary');
+}
+
+.custom-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid #FFFFFF;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox:hover:not(:checked) {
+  border-color: theme('colors.borderHover');
+}
+
+/* Radio button styles */
+.custom-radio {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid theme('colors.border');
+  border-radius: 50%;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.custom-radio:checked {
+  border-color: theme('colors.primary');
+}
+
+.custom-radio:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  background-color: theme('colors.primary');
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Landing page specific styles */
+.landing-gradient-hero {
+  background: linear-gradient(180deg, #FFD4C4 0%, #FFE8DC 40%, #FFF0E8 70%, #FFFFFF 100%);
+}
+
+.landing-gradient-cta {
+  background: linear-gradient(180deg, #FFE4EC 0%, #EDE4FF 50%, #E4F5F0 100%);
+}
+
+/* Smooth hover transitions for cards */
+.landing-card-hover {
+  @apply transition-all duration-300 ease-out;
+}
+
+.landing-card-hover:hover {
+  @apply shadow-soft-lg -translate-y-1;
+}
+
+/* Text balance for headings */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Feature tab active state animation */
+@keyframes tabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-in {
+  animation: tabSlideIn 0.3s ease-out forwards;
+}
+
+/* Stagger animation for lists */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeSlideIn 0.5s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }

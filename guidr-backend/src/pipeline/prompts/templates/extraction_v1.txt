@@ -1,0 +1,19 @@
+Extract structured {entity_type} data from the following web page content.
+
+Entity: {entity_name}
+Category: {category}
+Source URL: {source_url}
+
+Content:
+{content}
+
+Extract all relevant fields as a JSON object. Include only fields where data is clearly present.
+Do not fabricate or guess values. If a field is ambiguous, omit it.
+
+Required fields vary by category:
+- SCHOOL_OVERVIEW: description, acceptance_rate, enrollment_total, grad_enrollment, campus_setting
+- PROGRAM_REQUIREMENTS: name, degree_level, duration_months, gre_required, minimum_gpa
+- PROGRAM_FUNDING: name, funding_type, amount_min, amount_max, deadline, eligibility_criteria
+- FACULTY_DIRECTORY: full_name, title, email, research_summary, interests_tags
+
+Return valid JSON only.
