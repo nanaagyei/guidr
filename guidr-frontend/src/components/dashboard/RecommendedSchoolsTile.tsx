@@ -47,9 +47,9 @@ export default function RecommendedSchoolsTile() {
           icon={<Sparkles className="h-5 w-5" />}
         />
       </CardHeader>
-      <CardContent className="flex-1 pt-0">
+      <CardContent className="flex-1 pt-0 flex flex-col">
         {loading ? (
-          <div className="space-y-3 flex-1">
+          <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="p-4 border border-border rounded-xl">
                 <div className="flex items-start gap-3">
@@ -64,7 +64,7 @@ export default function RecommendedSchoolsTile() {
             ))}
           </div>
         ) : recCount === 0 ? (
-          <div className="flex-1 flex items-center">
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[220px]">
             <EmptyState
               title="No recommendations yet"
               description="Complete your profile to get personalized program recommendations"

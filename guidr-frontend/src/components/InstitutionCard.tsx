@@ -17,8 +17,19 @@ interface InstitutionCardProps {
   out_of_state_tuition?: number;
   graduation_rate?: number;
   program_count?: number;
+  last_enriched_at?: string | null;
   index?: number;
   onClick?: () => void;
+}
+
+function formatEnrichedAge(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86_400_000);
+  if (days === 0) return 'Updated today';
+  if (days === 1) return 'Updated yesterday';
+  if (days < 30) return `Updated ${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `Updated ${months}mo ago`;
 }
 
 export default function InstitutionCard({
@@ -35,6 +46,7 @@ export default function InstitutionCard({
   out_of_state_tuition,
   graduation_rate,
   program_count,
+  last_enriched_at,
   index = 0,
   onClick,
 }: InstitutionCardProps) {
@@ -98,6 +110,15 @@ export default function InstitutionCard({
         {program_count !== undefined && program_count > 0 && (
           <span className="badge bg-successLight text-success text-2xs">
             {program_count} programs
+          </span>
+        )}
+        {last_enriched_at ? (
+          <span className="badge bg-muted text-textSecondary text-2xs" title={new Date(last_enriched_at).toLocaleString()}>
+            {formatEnrichedAge(last_enriched_at)}
+          </span>
+        ) : (
+          <span className="badge bg-muted text-textMuted text-2xs">
+            Not enriched
           </span>
         )}
       </div>

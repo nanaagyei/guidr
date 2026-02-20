@@ -5,6 +5,18 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-02-20] feat(institutions): Enrichment freshness badge on InstitutionCard
+  - Added `last_enriched_at` prop to `InstitutionCardProps`
+  - Shows "Updated Xd ago" / "Updated today" / "Not enriched" badge in the card tag row using `bg-muted text-textSecondary` tokens
+  - `formatEnrichedAge()` helper converts ISO timestamp to human-readable age
+  - Hover tooltip shows full enrichment datetime
+  - Files: `src/components/InstitutionCard.tsx`
+
+- [2026-02-20] feat(programs): Enrichment freshness on ProgramCard
+  - Added `last_enriched_at` prop to `ProgramCardProps`
+  - Shows enrichment age in the card footer alongside DataQualityDot; falls back to "View details" when not enriched
+  - Files: `src/components/ProgramCard.tsx`
+
 - [2025-02-03] feat(landing): Visual and scroll enhancements
   - Hero section: light green gradient (gradient-hero-green) replacing peach
   - College logos: Clearbit API for Harvard, Stanford, MIT, Yale, Princeton, Columbia, Berkeley, UChicago with fallback to initials

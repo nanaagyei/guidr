@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { searchPrograms } from '@/utils/api';
 import ProgramCard from '@/components/ProgramCard';
-import { ProgramCardSkeleton, FilterSidebarSkeleton } from '@/components/ui/loading-skeleton';
-import { NoResultsState, ErrorState } from '@/components/ui/empty-state';
+import { ProgramCardSkeleton } from '@/components/ui/loading-skeleton';
+import { NoResultsState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 
 const DEGREE_OPTIONS = [
@@ -42,8 +42,13 @@ const FIELD_OPTIONS = [
 export default function SchoolsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
-  
+
+  // institution_id from URL (e.g. /schools?institution_id=<uuid>&institution_name=MIT)
+  const institutionId = searchParams.get('institution_id') || '';
+  const institutionName = searchParams.get('institution_name') || '';
+
   const [loading, setLoading] = useState(true);
   const [programs, setPrograms] = useState<any[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -66,7 +71,6 @@ export default function SchoolsPage() {
   useEffect(() => {
     if (!user) {
       router.push('/auth/login');
-      return;
     }
   }, [user, router]);
 
@@ -86,11 +90,12 @@ export default function SchoolsPage() {
     setLoading(true);
 
     try {
-      const params: any = {
+      const params: Record<string, string | number> = {
         page: currentPage,
         page_size: 12,
       };
 
+      if (institutionId) params.institution_id = institutionId;
       if (debouncedKeyword) params.keyword = debouncedKeyword;
       if (filters.degree_level) params.degree_level = filters.degree_level;
       if (filters.field_of_study) params.field_of_study = filters.field_of_study;
@@ -104,13 +109,12 @@ export default function SchoolsPage() {
       setTotalResults(data.total_results || 0);
       setHasSearched(true);
     } catch (err: any) {
-      // Only show error once, don't retry
       toastRef.current.error(err.message || 'Unable to load programs. Please try again.');
       setPrograms([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedKeyword, filters.degree_level, filters.field_of_study, filters.country, filters.min_tuition, filters.max_tuition]);
+  }, [currentPage, institutionId, debouncedKeyword, filters.degree_level, filters.field_of_study, filters.country, filters.min_tuition, filters.max_tuition]);
 
   useEffect(() => {
     if (user) {
@@ -136,6 +140,10 @@ export default function SchoolsPage() {
     toast.info('Filters cleared');
   }
 
+  function clearInstitutionFilter() {
+    router.push('/schools');
+  }
+
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v !== '');
   }, [filters]);
@@ -143,6 +151,13 @@ export default function SchoolsPage() {
   if (!user) {
     return null;
   }
+
+  const pageTitle = institutionName
+    ? `Programs at ${institutionName}`
+    : 'Explore Programs';
+  const pageSubtitle = institutionName
+    ? `Graduate programs offered at ${institutionName}.`
+    : 'Discover graduate programs that match your academic goals and preferences.';
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -153,12 +168,32 @@ export default function SchoolsPage() {
         className="mb-8"
       >
         <h1 className="text-2xl font-semibold text-text mb-2 font-display">
-          Explore Programs
+          {pageTitle}
         </h1>
-        <p className="text-textSecondary">
-          Discover graduate programs that match your academic goals and preferences.
-        </p>
+        <p className="text-textSecondary">{pageSubtitle}</p>
       </motion.div>
+
+      {/* Institution filter banner */}
+      {institutionId && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 bg-primaryLight border border-primary/20 rounded-xl px-4 py-3 mb-6"
+        >
+          <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582" />
+          </svg>
+          <span className="text-sm text-primary font-medium flex-1">
+            Showing programs at {institutionName || 'selected institution'}
+          </span>
+          <button
+            onClick={clearInstitutionFilter}
+            className="text-xs text-primary/70 hover:text-primary font-medium underline"
+          >
+            Show all institutions
+          </button>
+        </motion.div>
+      )}
 
       <div className="flex gap-6">
         {/* Filter Sidebar */}
@@ -182,7 +217,7 @@ export default function SchoolsPage() {
                     </button>
                   )}
                 </div>
-                
+
                 <div className="space-y-5">
                   {/* Degree Level */}
                   <div>
@@ -216,21 +251,23 @@ export default function SchoolsPage() {
                     </select>
                   </div>
 
-                  {/* Country */}
-                  <div>
-                    <label className="block text-sm font-medium text-textSecondary mb-2">
-                      Country
-                    </label>
-                    <select
-                      value={filters.country}
-                      onChange={(e) => handleFilterChange('country', e.target.value)}
-                      className="input text-sm py-2.5"
-                    >
-                      {COUNTRY_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Country — hidden when filtered to a specific institution */}
+                  {!institutionId && (
+                    <div>
+                      <label className="block text-sm font-medium text-textSecondary mb-2">
+                        Country
+                      </label>
+                      <select
+                        value={filters.country}
+                        onChange={(e) => handleFilterChange('country', e.target.value)}
+                        className="input text-sm py-2.5"
+                      >
+                        {COUNTRY_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Tuition Range */}
                   <div>
@@ -257,18 +294,15 @@ export default function SchoolsPage() {
                   </div>
                 </div>
 
-                {/* Quick Stats - Placeholder for future Lottie animation */}
+                {/* Quick Stats */}
                 <div className="mt-6 pt-5 border-t border-border">
                   <div className="bg-primaryLight/50 rounded-xl p-4 text-center">
-                    {/* LOTTIE PLACEHOLDER: Add animated search/filter illustration here */}
                     <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
                       <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
                       </svg>
                     </div>
-                    <p className="text-xs text-primary font-medium">
-                      Refine your search
-                    </p>
+                    <p className="text-xs text-primary font-medium">Refine your search</p>
                     <p className="text-2xs text-textSecondary mt-1">
                       Use filters to narrow down programs
                     </p>
@@ -290,11 +324,11 @@ export default function SchoolsPage() {
           >
             <div className="flex gap-3">
               <div className="relative flex-1">
-                <svg 
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor" 
+                <svg
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                   strokeWidth={1.5}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -317,7 +351,7 @@ export default function SchoolsPage() {
                   </button>
                 )}
               </div>
-              
+
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
@@ -329,19 +363,19 @@ export default function SchoolsPage() {
                 <span className="hidden sm:inline">Filters</span>
               </Button>
             </div>
-            
+
             {/* Results count */}
             {hasSearched && !loading && (
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-sm text-textSecondary mt-3"
               >
-                {totalResults > 0 
+                {totalResults > 0
                   ? `Found ${totalResults.toLocaleString()} program${totalResults !== 1 ? 's' : ''}`
                   : 'No programs found'
                 }
-                {hasActiveFilters && ' matching your criteria'}
+                {(hasActiveFilters || institutionId) && ' matching your criteria'}
               </motion.p>
             )}
           </motion.div>
@@ -377,7 +411,7 @@ export default function SchoolsPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="flex items-center justify-center gap-2 mt-8"
@@ -393,10 +427,10 @@ export default function SchoolsPage() {
                     </svg>
                     Previous
                   </Button>
-                  
+
                   <div className="flex items-center gap-1 px-2">
                     {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                      let pageNum;
+                      let pageNum: number;
                       if (totalPages <= 5) {
                         pageNum = i + 1;
                       } else if (currentPage <= 3) {
@@ -406,7 +440,7 @@ export default function SchoolsPage() {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <button
                           key={pageNum}
@@ -422,7 +456,7 @@ export default function SchoolsPage() {
                       );
                     })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"

@@ -174,8 +174,7 @@ export default function InstitutionsPage() {
 
   function handleViewPrograms(institutionId: string, institutionName: string) {
     handleCloseModal();
-    router.push(`/schools?country=${encodeURIComponent(selectedInstitution?.country || '')}`);
-    toast.info(`Showing programs in ${selectedInstitution?.country || 'selected region'}`);
+    router.push(`/schools?institution_id=${encodeURIComponent(institutionId)}&institution_name=${encodeURIComponent(institutionName)}`);
   }
 
   if (!user) {

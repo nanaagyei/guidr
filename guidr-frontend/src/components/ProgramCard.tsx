@@ -15,7 +15,17 @@ interface ProgramCardProps {
   tuition: number | null;
   deadline: string | null;
   data_completeness_score?: number;
+  last_enriched_at?: string | null;
   index?: number;
+}
+
+function formatEnrichedAge(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86_400_000);
+  if (days === 0) return 'Updated today';
+  if (days === 1) return 'Updated yesterday';
+  if (days < 30) return `Updated ${days}d ago`;
+  return `Updated ${Math.floor(days / 30)}mo ago`;
 }
 
 export default function ProgramCard({
@@ -29,6 +39,7 @@ export default function ProgramCard({
   tuition,
   deadline,
   data_completeness_score = 50,
+  last_enriched_at,
   index = 0,
 }: ProgramCardProps) {
   const isDeadlineSoon = deadline && new Date(deadline) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -109,7 +120,17 @@ export default function ProgramCard({
             
             <div className="flex items-center gap-1.5">
               <DataQualityDot score={data_completeness_score} showTooltip />
-              <span className="text-xs text-textMuted">View details</span>
+              {last_enriched_at && (
+                <span
+                  className="text-xs text-textMuted"
+                  title={new Date(last_enriched_at).toLocaleString()}
+                >
+                  {formatEnrichedAge(last_enriched_at)}
+                </span>
+              )}
+              {!last_enriched_at && (
+                <span className="text-xs text-textMuted">View details</span>
+              )}
               <svg className="w-3.5 h-3.5 text-textMuted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
