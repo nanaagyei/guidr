@@ -5,6 +5,40 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-03-26] feat(ui): TagInput chip component (`src/components/ui/tag-input.tsx`)
+  - Renders existing values as removable pill/chip tags
+  - Creates new tag on comma or Enter keydown; trims whitespace, ignores empty input
+  - Backspace on empty input removes last tag
+  - Click X on tag to remove it
+  - Props: `value: string[]`, `onChange`, `label`, `placeholder`, `helperText`
+  - Files: `src/components/ui/tag-input.tsx`
+
+- [2026-03-26] feat(onboarding): TagInput for array fields in OnboardingWizard
+  - Replaced controlled comma-string inputs with TagInput for `preferred_countries`, `preferred_cities`, `research_areas`, `secondary_fields`
+  - Fixes bug where trailing comma/space was stripped on every keystroke, preventing multi-word tag entry
+  - Files: `src/components/OnboardingWizard.tsx`
+
+- [2026-03-26] feat(settings): Research areas + career goals in ApplicationSettings
+  - Added `research_areas` TagInput section (pre-loaded from `GET /profile`, saved to `PUT /profile`)
+  - Added `career_goals` textarea section with matching save flow
+  - Sections match profile fields now consumed by the agentic research pipeline
+  - Files: `src/components/settings/ApplicationSettings.tsx`
+
+- [2026-03-26] feat(api): New API helpers for dashboard real-data tiles
+  - `getSavedSchools()` → `GET /schools/saved`
+  - `getRecommendedProfessors()` → `GET /dossiers/professors/recommended`
+  - `getUpcomingDeadlines()` → `GET /dossiers/deadlines`
+  - Files: `src/utils/api.ts`
+
+### Changed
+- [2026-03-26] feat(dashboard): Wire all tiles to real API data with lazy loading
+  - **ProfessorsTile**: replaced `getMockProfessors` with `getRecommendedProfessors()`; empty state CTA to save a school
+  - **SavedSchoolsTile**: replaced `getMockSavedSchools` with `getSavedSchools()`; guards `program_count` for null
+  - **CalendarTile**: replaced `getMockDeadlines` with `getUpcomingDeadlines()`; computes urgency client-side from `deadline_date` ISO string; shows "Data may be incomplete" warning when `is_verified === false`
+  - **AppliedSchoolsTile**: replaced mock data with `getLatestRecommendations()`; flattens dream/reach_target/safety tiers into a single list with tier-mapped status labels; handles `school_name || name` field name variants
+  - All tiles load independently in parallel; each shows a spinner during load and an appropriate empty state when no data
+  - Files: `src/components/dashboard/ProfessorsTile.tsx`, `SavedSchoolsTile.tsx`, `CalendarTile.tsx`, `AppliedSchoolsTile.tsx`
+
 - [2026-02-20] feat(institutions): Enrichment freshness badge on InstitutionCard
   - Added `last_enriched_at` prop to `InstitutionCardProps`
   - Shows "Updated Xd ago" / "Updated today" / "Not enriched" badge in the card tag row using `bg-muted text-textSecondary` tokens
