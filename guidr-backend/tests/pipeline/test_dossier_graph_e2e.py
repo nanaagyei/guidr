@@ -66,7 +66,10 @@ class TestDossierGraphE2E:
             "progress": [],
         }
 
-        result = graph.invoke(initial_state)
+        result = graph.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": "dossier-e2e-full"}},
+        )
 
         # Verify flow completed
         assert "load_dossier_context" in result.get("progress", [])
@@ -111,7 +114,10 @@ class TestDossierGraphE2E:
                 "progress": [],
             }
 
-            result = graph.invoke(initial_state)
+            result = graph.invoke(
+                initial_state,
+                config={"configurable": {"thread_id": "dossier-e2e-fallback"}},
+            )
 
         # Should still stage even with low confidence
         assert "score_dossier_confidence" in result.get("progress", [])

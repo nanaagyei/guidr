@@ -133,19 +133,17 @@ class TestEndpointRateLimitDependency:
     async def test_bypasses_when_flag_disabled(self, mock_redis):
         """When endpoint_rate_limit_enabled=False, no Redis call is made."""
         user = _make_user()
-        settings_disabled = MagicMock()
-        settings_disabled.endpoint_rate_limit_enabled = False
+        from src.config import settings
 
         with (
             patch("src.dependencies.rate_limit._get_redis", return_value=mock_redis),
             patch("src.dependencies.rate_limit.get_current_user", return_value=user),
+            patch.object(settings, "endpoint_rate_limit_enabled", False),
         ):
             from src.dependencies.rate_limit import endpoint_rate_limit
 
-            with patch("src.dependencies.rate_limit.settings", settings_disabled):
-                # Need to re-import or patch settings inside the dep
-                dep_fn = endpoint_rate_limit("heavy")
-                result = await dep_fn(current_user=user)
+            dep_fn = endpoint_rate_limit("heavy")
+            result = await dep_fn(current_user=user)
 
         # Redis eval should NOT have been called
         mock_redis.eval.assert_not_called()

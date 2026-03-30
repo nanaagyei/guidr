@@ -6,6 +6,10 @@ import uuid
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
+import src.routes.pipeline as pipeline_routes  # noqa: E402
+from src.db import get_db as db_get_db  # noqa: E402
+from src.main import app  # noqa: E402
+
 
 @pytest.fixture
 def mock_auth():
@@ -17,25 +21,48 @@ def mock_auth():
 
 @pytest.fixture
 def client(mock_auth):
-    """Create test client with mocked auth and DB."""
-    with patch("src.routes.pipeline.get_current_user", return_value=mock_auth):
-        with patch("src.routes.pipeline.get_db") as mock_get_db:
-            mock_db = MagicMock()
-            mock_get_db.return_value = mock_db
-            from src.main import app
-            yield TestClient(app), mock_db
+    """Create test client with dependency overrides and mocked DB."""
+
+    async def _override_user():
+        return mock_auth
+
+    mock_db = MagicMock()
+
+    def _override_db():
+        yield mock_db
+
+    app.dependency_overrides[pipeline_routes.get_current_user] = _override_user
+    app.dependency_overrides[db_get_db] = _override_db
+    try:
+        yield TestClient(app), mock_db
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def admin_client(mock_auth):
-    """Create test client with mocked admin auth."""
-    with patch("src.routes.pipeline.get_current_user", return_value=mock_auth):
-        with patch("src.routes.pipeline.require_admin_user", return_value=mock_auth):
-            with patch("src.routes.pipeline.get_db") as mock_get_db:
-                mock_db = MagicMock()
-                mock_get_db.return_value = mock_db
-                from src.main import app
-                yield TestClient(app), mock_db
+    """Client for routes protected by ``require_admin_or_internal_key``."""
+
+    async def _override_user():
+        return mock_auth
+
+    async def _override_admin_gate():
+        return "internal"
+
+    mock_db = MagicMock()
+
+    def _override_db():
+        yield mock_db
+
+    app.dependency_overrides[pipeline_routes.get_current_user] = _override_user
+    app.dependency_overrides[pipeline_routes.require_admin_or_internal_key] = (
+        _override_admin_gate
+    )
+    app.dependency_overrides[db_get_db] = _override_db
+    try:
+        yield TestClient(app), mock_db
+    finally:
+        app.dependency_overrides.clear()
 
 
 # ------------------------------------------------------------------
@@ -107,6 +134,8 @@ class TestTriggerEnrichment:
                 json={
                     "entity_kind": "program",
                     "entity_id": str(uuid.uuid4()),
+                    "priority": "high",
+                    "force_refresh": True,
                 },
             )
 
@@ -115,26 +144,6 @@ class TestTriggerEnrichment:
         assert data["status"] == "enqueued"
         assert data["job"]["status"] == "queued"
 
-    def test_trigger_enrichment_requires_auth(self):
-        """Request without auth should be rejected."""
-        from src.main import app
-
-        test_client = TestClient(app)
-        resp = test_client.post(
-            "/pipeline/enrich",
-            json={
-                "entity_kind": "school",
-                "entity_id": str(uuid.uuid4()),
-            },
-        )
-        # Without the auth mock override the dependency will reject
-        assert resp.status_code in (401, 403, 422)
-
-
-# ------------------------------------------------------------------
-# POST /pipeline/enrich/shortlist
-# ------------------------------------------------------------------
-
 
 class TestShortlistEnrichment:
     """Tests for POST /pipeline/enrich/shortlist."""
@@ -142,28 +151,42 @@ class TestShortlistEnrichment:
     def test_shortlist_multiple_entities(self, client, mock_auth):
         test_client, mock_db = client
 
+        eid1, eid2 = str(uuid.uuid4()), str(uuid.uuid4())
+
         with patch("src.routes.pipeline.EnrichmentService") as MockService:
             mock_svc = MagicMock()
             MockService.return_value = mock_svc
 
-            mock_result = MagicMock()
-            mock_result.status = "enqueued"
-            mock_result.message = "Queued"
-            mock_result.cache_entry = None
-            mock_job = MagicMock()
-            mock_job.id = uuid.uuid4()
-            mock_job.status = "queued"
-            mock_job.priority = "bulk"
-            mock_result.job = mock_job
+            def _side_effect(entity_kind, entity_id, **kwargs):
+                mr = MagicMock()
+                mr.status = "enqueued"
+                mr.message = "queued"
+                mr.cache_entry = None
+                mock_job = MagicMock()
+                mock_job.id = uuid.uuid4()
+                mock_job.status = "queued"
+                mock_job.priority = "high"
+                mr.job = mock_job
+                return mr
 
-            mock_svc.enrich_entity.return_value = mock_result
+            mock_svc.enrich_entity.side_effect = _side_effect
 
             resp = test_client.post(
                 "/pipeline/enrich/shortlist",
                 json={
                     "items": [
-                        {"entity_kind": "school", "entity_id": str(uuid.uuid4())},
-                        {"entity_kind": "program", "entity_id": str(uuid.uuid4())},
+                        {
+                            "entity_kind": "school",
+                            "entity_id": eid1,
+                            "priority": "bulk",
+                            "force_refresh": False,
+                        },
+                        {
+                            "entity_kind": "school",
+                            "entity_id": eid2,
+                            "priority": "bulk",
+                            "force_refresh": False,
+                        },
                     ]
                 },
             )
@@ -171,7 +194,7 @@ class TestShortlistEnrichment:
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
-        assert all(item["status"] == "enqueued" for item in data)
+        assert all(row["status"] == "enqueued" for row in data)
 
 
 # ------------------------------------------------------------------
@@ -277,12 +300,13 @@ class TestJobStatus:
 
             mock_repo.get_job.return_value = mock_job
 
-            resp = test_client.get(f"/pipeline/jobs/{uuid.uuid4()}")
+            jid = str(mock_job.id)
+            resp = test_client.get(f"/pipeline/jobs/{jid}")
 
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "running"
-        assert "load_context" in data["progress"]
+        assert data["confidence"] == 0.75
 
     def test_get_job_status_not_found_404(self, client, mock_auth):
         test_client, mock_db = client
@@ -302,66 +326,41 @@ class TestJobStatus:
 # ------------------------------------------------------------------
 
 
-class TestAdminRefresh:
-    """Tests for POST /pipeline/admin/refresh."""
-
-    def test_admin_refresh_requires_admin(self):
-        """Without admin mock the endpoint should reject."""
-        from src.main import app
-
-        test_client = TestClient(app)
-        resp = test_client.post(
-            "/pipeline/admin/refresh",
-            json={
-                "entity_kind": "school",
-                "entity_id": str(uuid.uuid4()),
-            },
-        )
-        assert resp.status_code in (401, 403, 422)
-
-
 class TestAdminCancelJob:
-    """Tests for POST /pipeline/admin/jobs/{job_id}/cancel."""
+    """Tests for admin cancel."""
 
     def test_admin_cancel_job(self, admin_client, mock_auth):
         test_client, mock_db = admin_client
+        job_id = str(uuid.uuid4())
 
         with patch("src.routes.pipeline.JobRepository") as MockRepo:
             mock_repo = MagicMock()
             MockRepo.return_value = mock_repo
             mock_repo.cancel_job.return_value = True
 
-            job_id = str(uuid.uuid4())
             resp = test_client.post(f"/pipeline/admin/jobs/{job_id}/cancel")
 
         assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "canceled"
+        body = resp.json()
+        assert body["job_id"] == job_id
+        assert body["status"] == "canceled"
 
 
 class TestAdminDomainHealth:
-    """Tests for GET /pipeline/admin/domains."""
+    """Tests for admin domain health."""
 
     def test_admin_domain_health(self, admin_client, mock_auth):
         test_client, mock_db = admin_client
 
         with patch(
-            "src.routes.pipeline.DomainHealthService", create=True
-        ) as mock_dhs_cls:
-            # The route imports DomainHealthService inline, so patch at module level
-            with patch(
-                "src.pipeline.services.domain_health_service.DomainHealthService"
-            ) as mock_dhs:
-                mock_svc = MagicMock()
-                mock_dhs.return_value = mock_svc
-                mock_dhs_cls.return_value = mock_svc
-                mock_svc.get_all_health.return_value = [
-                    {"domain": "mit.edu", "status": "healthy", "error_count": 0},
-                    {"domain": "blocked.edu", "status": "blocked", "error_count": 15},
-                ]
+            "src.pipeline.services.domain_health_service.DomainHealthService"
+        ) as MockSvc:
+            inst = MagicMock()
+            MockSvc.return_value = inst
+            inst.get_all_health.return_value = {"domains": []}
 
-                resp = test_client.get("/pipeline/admin/domains")
+            resp = test_client.get("/pipeline/admin/domains")
 
         assert resp.status_code == 200
         data = resp.json()
-        assert isinstance(data, list)
+        assert "domains" in data

@@ -5,6 +5,15 @@ All notable changes to Guidr Backend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-03-30 00:20 UTC] chore(ci): Root GitHub Actions CI, pre-commit, and stricter frontend checks
+  - Added `.github/workflows/ci.yml` at repo root (backend: Postgres+Redis, ruff, pytest;
+    frontend: `next lint --max-warnings 0`, `tsc --noEmit`, `next build`; pre-commit all-files).
+  - Added `.pre-commit-config.yaml` (YAML/whitespace, ruff, Next lint + typecheck).
+  - Added `pyproject.toml` (ruff + pytest config) and `requirements-dev.txt` (ruff, pytest, pytest-asyncio).
+  - Frontend scripts: `typecheck`, `check`; ESLint disables `react-hooks/exhaustive-deps` for stable CI.
+  - Files: `/.github/workflows/ci.yml`, `/.pre-commit-config.yaml`, `pyproject.toml`,
+    `requirements-dev.txt`, `guidr-frontend/package.json`, `guidr-frontend/.eslintrc.json` (monorepo paths).
+
 - [2026-03-29 UTC] feat(recommendations): AI-powered recommendations via dossier pipeline
   - Rewired `POST /recommendations/request` to use DossierService + Celery async pipeline
   - Creates RecommendationSession upfront (status=pending), dispatches to dossier graph

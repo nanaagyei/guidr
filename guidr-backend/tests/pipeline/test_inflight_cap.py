@@ -102,8 +102,7 @@ class TestDossierServiceInflightCap:
 
         cap_exceeded = InflightResult(acquired=False, current=10, maximum=10)
 
-        mock_settings = MagicMock()
-        mock_settings.max_concurrent_dossier_jobs = 10
+        from src.config import settings as app_settings
 
         repo, mock_job = self._make_repo()
 
@@ -111,19 +110,19 @@ class TestDossierServiceInflightCap:
         with (
             patch("src.services.dossier_service.check_and_increment_quota") as mock_quota,
             patch("src.services.dossier_service.JobRepository", return_value=repo),
-            patch("src.services.dossier_service.acquire_inflight", return_value=cap_exceeded),
+            patch("src.pipeline.redis_keyspace.inflight.acquire_inflight", return_value=cap_exceeded),
+            patch.object(app_settings, "max_concurrent_dossier_jobs", 10),
         ):
             mock_quota.return_value = MagicMock(allowed=True)
 
             from src.services.dossier_service import DossierService
             db = self._make_db()
 
-            with patch("src.services.dossier_service._settings", mock_settings):
-                service = DossierService(db)
-                result = service.request_school_dossier(
-                    school_id=str(uuid.uuid4()),
-                    user_id=str(uuid.uuid4()),
-                )
+            service = DossierService(db)
+            result = service.request_school_dossier(
+                school_id=str(uuid.uuid4()),
+                user_id=str(uuid.uuid4()),
+            )
 
         assert result.status == "queued_cap_exceeded"
         assert result.job is not None
@@ -136,27 +135,26 @@ class TestDossierServiceInflightCap:
 
         cap_ok = InflightResult(acquired=True, current=3, maximum=10)
 
-        mock_settings = MagicMock()
-        mock_settings.max_concurrent_dossier_jobs = 10
+        from src.config import settings as app_settings
 
         repo, mock_job = self._make_repo()
 
         with (
             patch("src.services.dossier_service.check_and_increment_quota") as mock_quota,
             patch("src.services.dossier_service.JobRepository", return_value=repo),
-            patch("src.services.dossier_service.acquire_inflight", return_value=cap_ok),
+            patch("src.pipeline.redis_keyspace.inflight.acquire_inflight", return_value=cap_ok),
             patch("src.services.dossier_service.DossierService._dispatch"),
+            patch.object(app_settings, "max_concurrent_dossier_jobs", 10),
         ):
             mock_quota.return_value = MagicMock(allowed=True)
 
             from src.services.dossier_service import DossierService
             db = self._make_db()
 
-            with patch("src.services.dossier_service._settings", mock_settings):
-                service = DossierService(db)
-                result = service.request_school_dossier(
-                    school_id=str(uuid.uuid4()),
-                    user_id=str(uuid.uuid4()),
-                )
+            service = DossierService(db)
+            result = service.request_school_dossier(
+                school_id=str(uuid.uuid4()),
+                user_id=str(uuid.uuid4()),
+            )
 
         assert result.status == "enqueued"

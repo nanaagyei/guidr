@@ -5,7 +5,8 @@ import { send2FACode } from '@/utils/api';
 
 interface TwoFactorVerificationProps {
   email: string;
-  purpose: 'register' | 'login' | 'password_reset';
+  /** Server accepts registration and password-reset flows only (no email code for login). */
+  purpose: 'register' | 'password_reset';
   onVerified: (code: string) => void;
   onCancel?: () => void;
   error?: string;

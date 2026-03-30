@@ -9,6 +9,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.pipeline.research_gateway.schemas import (
+    DossierCitation,
+    DossierResponse,
+    Metrics,
+)
+
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -25,19 +31,21 @@ def fake_user_id():
 
 
 def _make_dossier_response(final_json: dict, citations=None, coverage=0.8):
-    """Create a mock DossierResponse returned by ResearchGatewayService."""
-    resp = MagicMock()
-    resp.final_json = final_json
-    resp.citations = citations or [
-        {"url": "https://example.edu/grad", "title": "Graduate School"},
-        {"url": "https://example.edu/funding", "title": "Funding"},
+    """Build a real DossierResponse (research_extract requires isinstance check)."""
+    cites = citations or [
+        DossierCitation(id="c1", url="https://example.edu/grad", title="Graduate School"),
+        DossierCitation(id="c2", url="https://example.edu/funding", title="Funding"),
     ]
-    evidence_map = {k: [{"url": "https://example.edu"}] for k in final_json.keys()}
-    resp.evidence_map = evidence_map
-    resp.report_markdown = "# School Dossier\nTest report."
-    resp.metrics = {}
-    resp.errors = []
-    return resp
+    evidence_map = {k: ["c1"] for k in final_json.keys()}
+    return DossierResponse(
+        status="SUCCESS",
+        final_json=final_json,
+        report_markdown="# School Dossier\nTest report.",
+        citations=cites,
+        evidence_map=evidence_map,
+        metrics=Metrics(latency_ms=500, cache_hit=False),
+        errors=[],
+    )
 
 
 def _make_institution(school_id, name="Test University", website="https://test.edu"):
@@ -79,12 +87,12 @@ class TestSchoolDossierFlow:
     def test_school_dossier_succeeds_with_high_confidence(self, fake_school_id):
         """Full school dossier graph with good citations → confidence ≥ 0.70, promote=True."""
         dossier_json = {
-            "overview": {"description": "Great university", "acceptance_rate": 0.15},
-            "graduate_school": {
-                "general_requirements": ["GRE required"],
-                "general_deadlines": {"fall": "December 15"},
-            },
-            "funding_overview": {"has_ta_positions": True, "typical_stipend_range": "$25k-$35k"},
+            "description": "Great university",
+            "acceptance_rate": 0.15,
+            "enrollment_total": 12000,
+            "grad_enrollment": 6000,
+            "campus_setting": "urban",
+            "academic_calendar": "semester",
         }
         mock_response = _make_dossier_response(dossier_json)
 

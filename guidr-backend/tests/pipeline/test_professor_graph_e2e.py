@@ -7,8 +7,8 @@ class TestProfessorMatchGraphE2E:
     """End-to-end tests for ProfessorMatchGraph."""
 
     @patch("src.pipeline.orchestrator.professor_nodes._get_db")
-    @patch("src.pipeline.orchestrator.professor_nodes.OpenAlexClient")
-    @patch("src.pipeline.orchestrator.professor_nodes.SemanticScholarClient")
+    @patch("src.pipeline.clients.openalex.OpenAlexClient")
+    @patch("src.pipeline.clients.semantic_scholar.SemanticScholarClient")
     @patch("src.pipeline.research_gateway.service._select_provider")
     @patch("src.pipeline.research_gateway.service._get_redis")
     def test_full_professor_match_flow(
@@ -101,7 +101,10 @@ class TestProfessorMatchGraphE2E:
             "progress": [],
         }
 
-        result = graph.invoke(initial_state)
+        result = graph.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": "professor-e2e"}},
+        )
 
         # Verify all steps completed
         progress = result.get("progress", [])

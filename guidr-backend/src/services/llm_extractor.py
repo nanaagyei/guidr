@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field
@@ -61,11 +64,13 @@ class LLMExtractor:
     async def extract_program_data(self, html_content: str, url: str) -> Dict[str, Any]:
         if self._llm_enabled:
             try:
-                return await self._call_llm(
+                out = await self._call_llm(
                     prompt="Extract graduate program details.",
                     html=html_content,
                     schema=ProgramExtraction,
                 )
+                if out:
+                    return out
             except Exception:
                 pass
         return self._fallback_program(html_content)
@@ -73,11 +78,13 @@ class LLMExtractor:
     async def extract_institution_data(self, html_content: str) -> Dict[str, Any]:
         if self._llm_enabled:
             try:
-                return await self._call_llm(
+                out = await self._call_llm(
                     prompt="Extract university or institution information.",
                     html=html_content,
                     schema=InstitutionExtraction,
                 )
+                if out:
+                    return out
             except Exception:
                 pass
         return self._fallback_institution(html_content)
@@ -85,11 +92,13 @@ class LLMExtractor:
     async def extract_professor_data(self, html_content: str) -> Dict[str, Any]:
         if self._llm_enabled:
             try:
-                return await self._call_llm(
+                out = await self._call_llm(
                     prompt="Extract professor or research mentor information.",
                     html=html_content,
                     schema=ProfessorExtraction,
                 )
+                if out:
+                    return out
             except Exception:
                 pass
         return self._fallback_professor(html_content)

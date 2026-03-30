@@ -90,7 +90,7 @@ export default function ResearchJobsTile() {
           </div>
         ) : jobs.length === 0 ? (
           <EmptyState
-            icon={<Activity className="h-8 w-8" />}
+            illustration={<Activity className="h-8 w-8 text-textMuted" />}
             title="No active jobs"
             description="Generate recommendations or run enrichment to see jobs here."
           />

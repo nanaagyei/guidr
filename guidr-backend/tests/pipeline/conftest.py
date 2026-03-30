@@ -1,41 +1,48 @@
-"""Conftest for pipeline tests: mock heavy dependencies to avoid import failures.
+"""Conftest for pipeline tests: optional mocks for heavy or missing dependencies.
 
-Mocks src.db (psycopg2), pgvector, and celery before any test imports trigger them.
+If optional native deps (e.g. pgvector) are not installed, provide minimal stubs so
+imports succeed. Celery is only mocked when it cannot be imported (legacy lightweight
+CI); otherwise the real library is used so @task-decorated functions behave normally.
 """
 import sys
 import types
 from unittest.mock import MagicMock
 from sqlalchemy.orm import declarative_base
 
-# ── Mock pgvector (not installed in test env) ────────────────────────
+# ── Mock pgvector (not installed in some dev envs) ───────────────────
 if "pgvector" not in sys.modules:
-    pgvector_mod = types.ModuleType("pgvector")
-    pgvector_sa = types.ModuleType("pgvector.sqlalchemy")
-    pgvector_sa.Vector = MagicMock()
-    pgvector_mod.sqlalchemy = pgvector_sa
-    sys.modules["pgvector"] = pgvector_mod
-    sys.modules["pgvector.sqlalchemy"] = pgvector_sa
+    try:
+        import pgvector  # noqa: F401
+    except ImportError:
+        pgvector_mod = types.ModuleType("pgvector")
+        pgvector_sa = types.ModuleType("pgvector.sqlalchemy")
+        pgvector_sa.Vector = MagicMock()
+        pgvector_mod.sqlalchemy = pgvector_sa
+        sys.modules["pgvector"] = pgvector_mod
+        sys.modules["pgvector.sqlalchemy"] = pgvector_sa
 
-# ── Mock celery (not installed in test env) ──────────────────────────
+# ── Mock celery only when not installed ─────────────────────────────
 if "celery" not in sys.modules:
-    celery_mod = types.ModuleType("celery")
-    celery_mod.Celery = MagicMock()
+    try:
+        import celery  # noqa: F401
+    except ImportError:
+        celery_mod = types.ModuleType("celery")
+        celery_mod.Celery = MagicMock()
 
-    # shared_task: return the function unchanged (acts as no-op decorator)
-    def _shared_task(*args, **kwargs):
-        if args and callable(args[0]):
-            return args[0]
-        return lambda f: f
+        def _shared_task(*args, **kwargs):
+            if args and callable(args[0]):
+                return args[0]
+            return lambda f: f
 
-    celery_mod.shared_task = _shared_task
-    celery_mod.chain = MagicMock()
-    celery_mod.group = MagicMock()
+        celery_mod.shared_task = _shared_task
+        celery_mod.chain = MagicMock()
+        celery_mod.group = MagicMock()
 
-    celery_schedules = types.ModuleType("celery.schedules")
-    celery_schedules.crontab = MagicMock()
+        celery_schedules = types.ModuleType("celery.schedules")
+        celery_schedules.crontab = MagicMock()
 
-    sys.modules["celery"] = celery_mod
-    sys.modules["celery.schedules"] = celery_schedules
+        sys.modules["celery"] = celery_mod
+        sys.modules["celery.schedules"] = celery_schedules
 
 # ── Mock src.db (avoids psycopg2 create_engine at import time) ───────
 if "src.db" not in sys.modules:

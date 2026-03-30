@@ -59,7 +59,7 @@ class TestLoadProfessorContext:
 class TestQueryOpenAlex:
     """Tests for query_openalex node."""
 
-    @patch("src.pipeline.orchestrator.professor_nodes.OpenAlexClient")
+    @patch("src.pipeline.clients.openalex.OpenAlexClient")
     def test_returns_candidates(self, MockClient):
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance
@@ -96,7 +96,7 @@ class TestQueryOpenAlex:
         assert result["openalex_candidates"][0]["name"] == "Jane Smith"
         assert result["openalex_candidates"][0]["openalex_id"] == "A123"
 
-    @patch("src.pipeline.orchestrator.professor_nodes.OpenAlexClient")
+    @patch("src.pipeline.clients.openalex.OpenAlexClient")
     def test_handles_empty_results(self, MockClient):
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance
@@ -117,7 +117,7 @@ class TestQueryOpenAlex:
 class TestEnrichSemanticScholar:
     """Tests for enrich_semantic_scholar node."""
 
-    @patch("src.pipeline.orchestrator.professor_nodes.SemanticScholarClient")
+    @patch("src.pipeline.clients.semantic_scholar.SemanticScholarClient")
     def test_enriches_candidates(self, MockClient):
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance
@@ -151,7 +151,7 @@ class TestEnrichSemanticScholar:
         assert enriched["h_index"] == 35
         assert len(enriched["recent_papers"]) == 1
 
-    @patch("src.pipeline.orchestrator.professor_nodes.SemanticScholarClient")
+    @patch("src.pipeline.clients.semantic_scholar.SemanticScholarClient")
     def test_handles_no_match(self, MockClient):
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance

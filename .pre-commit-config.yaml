@@ -1,0 +1,39 @@
+# Install: pip install pre-commit && pre-commit install
+# Run all hooks once: pre-commit run --all-files
+
+default_language_version:
+  python: python3.11
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      - id: ruff
+        name: ruff (backend)
+        args: [--config, guidr-backend/pyproject.toml]
+        files: ^guidr-backend/.*\.py$
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend eslint (next lint)
+        entry: bash -c 'cd guidr-frontend && npm run lint'
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: frontend-typecheck
+        name: frontend typecheck (tsc)
+        entry: bash -c 'cd guidr-frontend && npm run typecheck'
+        language: system
+        pass_filenames: false
+        always_run: true

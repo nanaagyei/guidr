@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Extend gradually; ignored rules reflect current debt to keep CI actionable.
+select = ["E", "F"]
+ignore = [
+  "E402",
+  "E501",
+  "E712",
+  "E722",
+  "E741",
+  "F401",
+  "F541",
+  "F841",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/**" = ["E402", "F401"]
+"scripts/**" = ["E402", "F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-ra"
