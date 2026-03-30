@@ -1,286 +1,516 @@
 # Guidr Data Pipeline Guide
 
-This guide explains how the Guidr data pipeline works, how to set it up, and how to pull and work with data.
+Architecture, components, API reference, and agentic research workflows.
 
-## Architecture Overview
+---
 
-The pipeline follows a three-zone architecture:
+## Architecture
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
-│   RAW ZONE      │     │  STAGING ZONE    │     │  PRODUCTION ZONE    │
-│   (MinIO/S3)    │────▶│  (PostgreSQL     │────▶│  (PostgreSQL        │
-│                 │     │   staging schema)│     │   public schema)    │
-│ • Scraped HTML  │     │                  │     │                     │
-│ • Raw JSON      │     │ • Validated data │     │ • institutions      │
-│ • Audit trail   │     │ • Pending review │     │ • programs          │
-└─────────────────┘     └──────────────────┘     │ • professors        │
-                                                  │ • funding_opps     │
-                                                  └─────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      AGENTIC RESEARCH CORE                      │
+│                                                                 │
+│  User Profile (research_areas, career_goals, citizenship)       │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌─────────────┐   ┌──────────────────┐   ┌─────────────────┐  │
+│  │Recomm-      │   │ School / Funding  │   │ Professor Match │  │
+│  │endations    │   │ DossierGraph      │   │ Graph           │  │
+│  │(Perplexity) │   │ (Perplexity +     │   │ (OpenAlex +     │  │
+│  │             │   │  citation check)  │   │  S2 + synthesis)│  │
+│  └──────┬──────┘   └────────┬─────────┘   └───────┬─────────┘  │
+│         │                  │                      │            │
+│         ▼                  ▼                      ▼            │
+│    enrichment_cache (per-user, TTL-keyed, citations_json)       │
+│         │                                                       │
+│         ▼  confidence >= 0.78                                   │
+│    production tables: institutions / programs / professors      │
+└─────────────────────────────────────────────────────────────────┘
+         ▲
+         │ foundation data only
+┌────────┴────────┐
+│ College         │
+│ Scorecard API   │
+│ (bootstrap)     │
+└─────────────────┘
 ```
 
-### Data Flow
+### Data Flow — Agentic (Primary)
 
-1. **Ingestion**: College Scorecard API and Firecrawl web scraping fetch data.
-2. **Raw Storage**: All scraped content is stored in MinIO (`guidr-data-lake` bucket).
-3. **Processing**: Extractors parse content; Validator, Transformer, and Enricher process it.
-4. **Staging** (optional): Data can be held in `staging.staging_records` for review.
-5. **Production**: Approved data is written to `institutions`, `programs`, `professors`, `funding_opportunities`.
+1. **User onboarding** captures: degree target, field, research areas, career goals, funding preference, location preferences, citizenship
+2. **Profile hash** computed from user preferences
+3. **Research Gateway** (Perplexity Sonar) called with structured prompts per job type
+4. **Citations extracted** and quality-scored against the entity's official domain
+5. **Confidence computed** and data staged in `enrichment_cache` with user_id
+6. **Auto-promoted** if confidence ≥ 0.78; shown with badge if 0.55–0.77; shown with warning if <0.55
+7. **User pins/saves** a school → canonical record created or updated
+
+### Data Flow — Legacy Scraping (Fallback Only)
+
+Scraping via Firecrawl is **disabled by default** (`ENABLE_SCRAPE_FALLBACK=false`).
+It can be enabled per-request only for specific cases (e.g., "verify from official pages" feature).
 
 ---
 
 ## Prerequisites
 
-- **Python 3.11+**
-- **Docker** (for PostgreSQL, Redis, MinIO, Meilisearch)
-- **API Keys**:
-  - College Scorecard: [api.data.gov/signup](https://api.data.gov/signup/)
-  - Firecrawl: [firecrawl.dev](https://firecrawl.dev)
+- Python 3.11+
+- Docker (PostgreSQL, Redis, MinIO, Meilisearch)
+- `PERPLEXITY_API_KEY` — required for agentic research (falls back to stub provider for dev)
+- `COLLEGE_SCORECARD_API_KEY` — required for foundation data load
+- Optional: `SEMANTIC_SCHOLAR_API_KEY`, `OPENALEX_API_KEY` — for professor matching
+- Optional: `FIRECRAWL_API_KEY` — only if scraping fallback is explicitly enabled
 
 ---
 
-## Quick Setup
+## Setup
 
-### 1. Start Services
+### 1. Start services and server
 
 ```bash
 docker-compose up -d
+cp .env.example .env   # Edit with your keys
+python run.py           # Auto-runs migrations, starts on :8000
 ```
 
-This starts:
-- PostgreSQL (port 5433)
-- Redis (6379)
-- Meilisearch (7700)
-- MinIO (9000 API, 9001 console)
-- Celery worker
-- Celery Beat
-
-### 2. Configure Environment
-
-Copy `.env.example` to `.env` and set:
+### 2. Generate an internal API key
 
 ```bash
-# Required
-DATABASE_URL=postgresql://guidr_user:guidr_password@localhost:5433/guidr_db
-JWT_SECRET=your-secret-here
-
-# Pipeline (required for scraping)
-COLLEGE_SCORECARD_API_KEY=your-scorecard-key
-FIRECRAWL_API_KEY=your-firecrawl-key
-
-# MinIO (defaults work with docker-compose)
-MINIO_ENDPOINT=localhost
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=guidr-data-lake
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### 3. Run Migrations
+Add the output to `.env` as `INTERNAL_API_KEY=<value>`.
+
+All pipeline and ingestion endpoints accept this key via `X-Internal-Key`, alongside admin session cookie auth.
+
+---
+
+## Loading Foundation Data
+
+### College Scorecard (required first step)
 
 ```bash
-alembic upgrade head
-```
-
-### 3b. Verify Setup
-
-```bash
-python scripts/verify_pipeline_setup.py
-```
-
-This creates:
-- Production tables (`institutions`, `programs`, `professors`, etc.)
-- `staging` schema with `staging_records`
-- `scrape_jobs`, `funding_opportunities`
-- `professor_programs` association table
-
-### 4. Reset Pipeline Data (Optional)
-
-To wipe previously scraped data and start fresh:
-
-```bash
-python scripts/reset_pipeline_data.py --dry-run   # Preview
-python scripts/reset_pipeline_data.py --yes       # Execute (requires confirmation without --yes)
-```
-
-### 5. Load Foundation Data
-
-```bash
-# CLI (no auth): Load graduate schools from College Scorecard
-python scripts/load_scorecard_schools.py --limit 100
-python scripts/load_scorecard_schools.py --state CA
-
-# Or via API (requires admin token)
+# All US graduate schools (async, recommended)
 curl -X POST http://localhost:8000/ingestion/schools/scorecard/load \
-  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Internal-Key: $INTERNAL_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"limit": 100}'
+  -d '{"async_run": true}'
 
-# Or run synchronously (small batch)
+# Small batch for dev/testing
 curl -X POST http://localhost:8000/ingestion/schools/scorecard/load \
-  -H "Authorization: Bearer <admin-token>" \
-  -d '{"state": "CA", "limit": 50, "async_run": false}'
+  -H "X-Internal-Key: $INTERNAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"state": "CA", "limit": 20}'
 ```
 
-### 6. Run the Scraping Pipeline
+Foundation data populates `institutions` with IPEDS/Scorecard fields (name, city, state, type).
+Enrichment (descriptions, requirements, deadlines) comes from the agentic pipeline.
+
+---
+
+## Agentic Research Workflows
+
+### Flow A: Onboarding → Recommendations
+
+The user completes onboarding, which stores their profile. The frontend then requests recommendations.
+
+**Step 1 — User profile (set via onboarding or Settings > Application)**
+```json
+{
+  "intended_degree": "phd",
+  "primary_field_of_study": "Computer Science",
+  "research_areas": ["Machine Learning", "NLP", "Computer Vision"],
+  "career_goals": "Academic researcher focused on language models",
+  "preferred_countries": ["USA", "Canada"],
+  "funding_priority": "must_have",
+  "country_of_citizenship": "US"
+}
+```
+
+**Step 2 — Request recommendations**
+```bash
+curl -X POST http://localhost:8000/recommendations/request \
+  -H "Cookie: session=<user-jwt>"
+
+# Poll for result
+curl http://localhost:8000/recommendations/latest \
+  -H "Cookie: session=<user-jwt>"
+```
+
+**Step 3 — Read the result**
+
+The response contains three tiers:
+```json
+{
+  "status": "promoted",
+  "confidence": 0.82,
+  "dream": [
+    {
+      "school_name": "MIT",
+      "location": "Cambridge, MA",
+      "program_guess": "PhD in Computer Science",
+      "rationale": "Strong NLP and ML labs, match with research interests",
+      "confidence": 0.88,
+      "citations": ["[c1] https://www.csail.mit.edu/"]
+    }
+  ],
+  "reach_target": [...],
+  "safety": [...]
+}
+```
+
+**Frontend display**: The `RecommendedSchoolsTile` and `AppliedSchoolsTile` read from `GET /recommendations/latest`.
+
+---
+
+### Flow B: School Dossier
+
+After a school appears in recommendations (or user finds it via search), request a detailed dossier.
+
+**Step 1 — Find the school ID**
+```bash
+curl "http://localhost:8000/schools?name=MIT" \
+  -H "Cookie: session=<user-jwt>"
+# Note the `id` field from the response
+```
+
+**Step 2 — Request school dossier**
+```bash
+curl -X POST "http://localhost:8000/dossiers/schools/<school_id>/research" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+Response (job dispatched):
+```json
+{
+  "job_id": "...",
+  "status": "queued",
+  "message": "Dossier research queued"
+}
+```
+
+**Step 3 — Poll for completion**
+```bash
+curl "http://localhost:8000/pipeline/jobs/<job_id>" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+**Step 4 — Fetch the dossier value once promoted**
+```bash
+curl "http://localhost:8000/pipeline/cache/value?entity_kind=school_dossier&entity_id=<school_id>" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+The dossier includes:
+- Program overview, requirements, deadlines (citation-backed)
+- Official links (admissions, program page)
+- Funding summary
+- `confidence` score and `warnings[]` for unverified fields
+- `citations_json` with source URLs and retrieval timestamps
+
+**Frontend display**: The `InstitutionCard` and `InstitutionModal` show the dossier. The enrichment freshness badge reflects `confidence` and `fresh_until`.
+
+---
+
+### Flow C: Professor Matching
 
 ```bash
-# Trigger full pipeline for one institution
-curl -X POST http://localhost:8000/ingestion/pipeline/run \
-  -H "Authorization: Bearer <admin-token>" \
-  -d '{"institution_id": "<uuid>"}'
-
-# Batch pipeline for multiple institutions
-curl -X POST http://localhost:8000/ingestion/pipeline/batch \
-  -H "Authorization: Bearer <admin-token>" \
-  -d '{"institution_ids": ["<uuid1>", "<uuid2>"]}'
+curl -X POST "http://localhost:8000/dossiers/schools/<school_id>/professors/match" \
+  -H "Cookie: session=<user-jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "research_interests": ["Machine Learning", "NLP"],
+    "degree_level": "phd"
+  }'
 ```
+
+The system uses the user's `research_areas` from profile automatically. The `research_interests` body field is optional (overrides profile if provided).
+
+The professor graph:
+1. Queries OpenAlex for authors affiliated with the school and matching research interests (up to 5 interests, up to 25 candidates)
+2. Enriches with Semantic Scholar (h-index, recent papers, citation counts)
+3. Synthesises a ranked list via Perplexity with the `professor_synthesis_v1` prompt
+
+**Read aggregated results across all saved schools**:
+```bash
+curl "http://localhost:8000/dossiers/professors/recommended" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+**Frontend display**: The `ProfessorsTile` on the dashboard reads from this endpoint.
+
+---
+
+### Flow D: Funding Dossier
+
+```bash
+curl -X POST "http://localhost:8000/dossiers/schools/<school_id>/funding/research" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+The funding dossier includes **two sections**:
+
+**Internal funding** — institutional scholarships, TA/RA assistantships, fellowships:
+```json
+{
+  "funding_opportunities": [
+    {
+      "name": "NSF Graduate Research Fellowship [c1]",
+      "type": "fellowship",
+      "scope": "internal",
+      "amount_min": 34000,
+      "amount_max": 34000,
+      "covers_tuition": true,
+      "covers_stipend": true,
+      "eligibility_criteria": "US citizens/nationals, early-career graduate students [c2]"
+    }
+  ]
+}
+```
+
+**External funding** — national fellowships and grants relevant to the user's field and citizenship:
+```json
+{
+  "external_opportunities": [
+    {
+      "name": "NSF Graduate Research Fellowship Program [c8]",
+      "funder": "National Science Foundation",
+      "type": "fellowship",
+      "amount_min": 37000,
+      "deadline": "October annually",
+      "url": "https://www.nsfgrfp.org/",
+      "eligibility_note": "US citizens/nationals; early-career PhD students in STEM [c9]"
+    },
+    {
+      "name": "Hertz Fellowship [c10]",
+      "funder": "Fannie and John Hertz Foundation",
+      ...
+    }
+  ]
+}
+```
+
+The model selects external opportunities based on the user's `primary_field_of_study`, `research_areas`, and `country_of_citizenship`.
+
+---
+
+### Flow E: Dashboard Deadlines
+
+Application deadlines are extracted automatically from school dossiers:
+
+```bash
+curl "http://localhost:8000/dossiers/deadlines" \
+  -H "Cookie: session=<user-jwt>"
+```
+
+Returns:
+```json
+[
+  {
+    "school_name": "MIT",
+    "program_name": "PhD in Computer Science",
+    "deadline_date": "2026-12-15",
+    "deadline_label": "Fall 2027 Application Deadline",
+    "confidence": 0.91,
+    "is_verified": true,
+    "source_url": "https://www.eecs.mit.edu/academics/graduate/"
+  }
+]
+```
+
+`is_verified: false` means confidence < 0.78 — the frontend shows a "verify with school" warning.
+
+**Frontend display**: The `CalendarTile` reads from this endpoint and computes urgency client-side.
 
 ---
 
 ## Pipeline Components
 
-### 1. Scraping Orchestrator
+### 1. Research Gateway
 
-Centralizes URL discovery and robots.txt checks:
+Unified provider abstraction for all external research calls.
 
-```python
-from src.pipeline.scraping import ScrapingOrchestrator
+| Mode | Behavior |
+|------|----------|
+| **Perplexity** (`PERPLEXITY_API_KEY` set) | Real Sonar API: deep research with web access |
+| **Stub** (no key) | Heuristic paths; for local development and testing |
 
-orchestrator = ScrapingOrchestrator()
-result = orchestrator.discover_graduate_pages("https://stanford.edu")
-# result.discovered.overview, .programs, .faculty, .funding
+Results cached in Redis (24h TTL, keyed by request hash).
+
+### 2. DossierGraph (Primary enrichment)
+
+6-node LangGraph state machine per dossier type:
+
+```
+load_dossier_context
+    → research_extract        (Perplexity prompt → structured JSON)
+    → validate_citations      (check citation coverage, URL quality)
+    → score_dossier_confidence
+    → stage_dossier           (write to enrichment_cache with user_id)
+    → promote_dossier         (if confidence >= 0.78)
 ```
 
-### 2. Extractors
+Confidence formula: `0.4 * citation_quality + 0.3 * citation_coverage + 0.3 * extraction_completeness`
 
-Parse scraped markdown into structured data:
+| Score | Routing |
+|-------|---------|
+| ≥ 0.78 | Auto-promote to production tables |
+| 0.55 – 0.77 | Stage only — shown with confidence badge |
+| < 0.55 | Stage with "unverified" warning — no auto-repair |
 
-- `FundingExtractor` – scholarships, fellowships, assistantships
-- `FacultyExtractor` – professors, research interests
-- `OverviewExtractor` – acceptance rate, enrollment, campus setting
-- `ProgramExtractor` – graduate programs, requirements, deadlines
+**Repair is on-demand only** (admin or future paid-tier feature). This reduces LLM costs significantly.
 
-### 3. Processors
+### 3. ProfessorMatchGraph
 
-- **Validator**: Schema validation, business rules (e.g., funding amount 0–100k)
-- **Transformer**: Date parsing, text cleanup, normalization
-- **Enricher**: Metadata (source_url, data_source)
+5-node graph using academic APIs:
 
-### 4. Storage
+```
+load_professor_context    (user research_areas → keyword list)
+    → query_openalex      (author search, up to 25 candidates)
+    → enrich_semantic_scholar  (h-index, recent papers, batch ≤ 20 @ 1 rps)
+    → synthesize_rank     (Perplexity: rank by research overlap + accepting students)
+    → stage_professor_matches  (enrichment_cache with user_id)
+```
 
-- **Raw (MinIO)**: `raw/YYYY/MM/DD/{institution_id}/{job_type}/`
-- **Staging (PostgreSQL)**: `staging.staging_records` for review before promotion
-- **Production**: `institutions`, `programs`, `professors`, `funding_opportunities`
+### 4. Source Trust Scoring
 
-### 5. Research Gateway (New)
+Used in `ConfidenceScorer.score_source()`:
 
-URL discovery and deep research for scraping:
+| Source | Score | Examples |
+|--------|-------|---------|
+| Official entity domain | 1.0 | `mit.edu` for MIT |
+| Known academic aggregators | 0.8 | usnews.com, niche.com, petersons.com, gradschools.com |
+| `.edu` / `.gov` (not entity) | 0.7 | `harvard.edu` when enriching Stanford |
+| General reputable | 0.5 | wikipedia.org, bloomberg.com, chronicle.com |
+| Other domain | 0.3 | Any other URL |
+| No URL | 0.0 | Missing citation |
 
-- `POST /internal/research/run` – Run URL_DISCOVERY or REPAIR_EXTRACTION
-- Categories: SCHOOL_OVERVIEW, PROGRAM_REQUIREMENTS, FACULTY_DIRECTORY, PROGRAM_FUNDING, etc.
-- Stub provider uses heuristic paths; configure Perplexity API for real discovery
+### 5. Per-User Enrichment Cache
 
-### 6. LangGraph Orchestrator (New)
+Each cache entry optionally stores a `user_id`. The lookup strategy is:
 
-State machine workflow: discovery → fetch → extract → validate → promote.
+1. Try per-user entry matching `(entity_kind, entity_id, user_id, freshness_bucket)`
+2. Fall back to global entry (user_id IS NULL)
 
-- Celery task: `pipeline.run_orchestrator` with `institution_id`, `category`
-- Requires `pip install langgraph`
-- Repair loop for low-confidence extractions
+This allows personalized dossiers (e.g., external funding matched to the user's citizenship and research areas) while still benefiting from shared global entries for commonly-accessed data.
+
+### 6. Legacy LangGraph Orchestrator (Scraping, Disabled by Default)
+
+15-node scrape pipeline: `load_context → discover_urls → fetch_page → store_raw → extract_structured → validate → score_confidence → stage_write → promote_write`
+
+Enabled only when `ENABLE_SCRAPE_FALLBACK=true` and confidence remains below the stage threshold after agentic extraction.
 
 ---
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/internal/research/run` | POST | Research Gateway: URL discovery, repair extraction |
-| `/ingestion/schools/scorecard/load` | POST | Load graduate schools from College Scorecard |
-| `/ingestion/schools/scorecard` | POST | Enrich existing institutions with Scorecard financials |
-| `/ingestion/schools/ipeds` | POST | Load from IPEDS data |
-| `/ingestion/pipeline/run` | POST | Run full scrape pipeline for one institution |
-| `/ingestion/pipeline/batch` | POST | Run pipeline for multiple institutions |
-| `/ingestion/pipeline/jobs` | GET | List scrape jobs (filter by institution_id, status) |
-| `/ingestion/pipeline/jobs/{id}` | GET | Get scrape job details |
+### User Research & Dossiers (requires user session)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/recommendations/request` | Trigger AI school recommendations |
+| GET | `/recommendations/latest` | Get latest recommendations for current user |
+| POST | `/dossiers/schools/{id}/research` | Request school dossier |
+| POST | `/dossiers/schools/{id}/professors/match` | Request professor matches |
+| POST | `/dossiers/schools/{id}/funding/research` | Request funding dossier |
+| GET | `/dossiers/professors/recommended` | Aggregated professor matches across saved schools |
+| GET | `/dossiers/deadlines` | Upcoming deadlines from school dossiers |
+| GET | `/schools/saved` | Schools researched or recommended for current user |
+
+### Enrichment & Cache (requires user session)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/pipeline/enrich` | Enrich single entity |
+| POST | `/pipeline/enrich/shortlist` | Batch enrich up to 20 entities |
+| GET | `/pipeline/cache/status` | Cache freshness for entity |
+| GET | `/pipeline/cache/value` | Cached dossier value |
+| GET | `/pipeline/jobs/{id}` | Job status |
+
+### Ingestion (requires `X-Internal-Key` or admin session)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/ingestion/schools/scorecard/load` | Load from College Scorecard |
+| POST | `/ingestion/pipeline/bulk-enrich` | Bulk LangGraph enrichment |
+| GET | `/ingestion/pipeline/jobs` | List all pipeline jobs |
+
+### Admin (requires `X-Internal-Key` or admin session)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/pipeline/admin/refresh` | Force refresh entity |
+| POST | `/pipeline/admin/jobs/{id}/rerun` | Retry failed job |
+| POST | `/pipeline/admin/jobs/{id}/cancel` | Cancel queued job |
+| GET | `/pipeline/admin/domains` | Domain health overview |
+| POST | `/pipeline/admin/cache/purge` | Purge expired cache |
 
 ---
 
-## Celery Tasks
+## Cache TTLs (Freshness Buckets)
 
-| Task | Schedule | Description |
-|------|----------|-------------|
-| `pipeline.run_orchestrator` | On-demand | LangGraph orchestrator for institution + category |
-| `pipeline.refresh_stale` | Monday 3:00 UTC | Queue scrape for institutions not scraped in 30+ days |
-| `ingestion.scorecard` | Wednesday 4:00 UTC | Enrich institutions with College Scorecard |
-| `search.reindex` | Sunday 5:00 UTC | Reindex Meilisearch |
+| Job Type | TTL | Key format |
+|----------|-----|------------|
+| `recommendation_run` | 7 days | `recommendation_run:7d` |
+| `school_dossier` | 30 days | `school_dossier:30d` |
+| `professor_matches` | 30 days | `professor_matches:30d` |
+| `funding_dossier` | 14 days | `funding_dossier:14d` |
 
----
-
-## Database Schemas
-
-### Production (public)
-
-- `institutions` – Schools (from Scorecard, enriched by scraping)
-- `programs` – Graduate programs
-- `professors` – Faculty
-- `funding_opportunities` – Scholarships, fellowships, assistantships
-- `professor_programs` – Professor–program associations
-- `scrape_jobs` – Pipeline job audit
-
-### Staging (staging schema)
-
-- `staging_records` – Records pending promotion (entity_type, payload, validation_status, approved_at)
-
-### Pipeline infra (migration 014)
-
-- `source_documents` – Canonical URLs per entity + category
-- `pipeline_jobs` – Unified job table (research, scrape, extract, validate, promote)
-- `raw_artifacts` – Metadata for downloaded content (storage pointer)
-- `extraction_runs` – LLM extraction results and confidence
-- `enrichment_cache` – Cached enriched data per entity
+Manual refresh is available via `POST /pipeline/admin/refresh` or `POST /pipeline/enrich` with `force_refresh: true`.
 
 ---
 
-## Raw Data Lake (MinIO)
+## Celery Tasks & Queues
 
-Structure:
+| Task | Queue | Trigger |
+|------|-------|---------|
+| `run_enrichment_pipeline` | `pipeline` | On-demand enrichment API |
+| `run_dossier_pipeline` | `pipeline.heavy` | Dossier research API |
+| `run_professor_match_pipeline` | `scholarly_api` | Professor match API |
+| `purge_expired_cache` | `default` | Daily 2:00 UTC |
+| `reset_domain_health` | `default` | Saturday 3:00 UTC |
+| `cleanup_old_jobs` | `default` | 1st of month 4:00 UTC |
 
+Start workers:
+```bash
+celery -A src.workers.celery_app worker -l info -Q default,pipeline,pipeline.heavy,scholarly_api
 ```
-guidr-data-lake/
-├── raw/
-│   └── 2026/
-│       └── 02/
-│           └── 02/
-│               └── {institution_id}/
-│                   ├── overview/
-│                   │   └── overview.md
-│                   ├── funding/
-│                   │   └── raw_pages.json
-│                   ├── faculty/
-│                   │   └── raw_pages.json
-│                   └── programs/
-│                       └── raw_pages.json
-└── audit/
-    └── scorecard_load/
-        └── load_summary.json
-```
 
-Access MinIO console: http://localhost:9001
+---
+
+## Database Tables
+
+### Production
+`institutions`, `programs`, `professors`, `funding_opportunities`
+
+### Pipeline Infrastructure
+`pipeline_jobs`, `source_documents`, `raw_artifacts`, `extraction_runs`, `enrichment_cache` (with `user_id` FK), `entity_promotions`, `domain_health`
+
+### User Data
+`users`, `user_profiles` (with `research_areas` JSONB, `career_goals` TEXT), `recommendation_sessions`, `recommendation_results`
+
+---
+
+## Feature Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `ENABLE_AGENTIC_DOSSIERS` | `true` | Use DossierGraph for school/funding/professor research |
+| `ENABLE_SCRAPE_FALLBACK` | `false` | Allow Firecrawl fallback when agentic confidence is low |
+| `ENABLE_BULK_SCRAPE` | `false` | Allow bulk scraping operations |
 
 ---
 
 ## Troubleshooting
 
-**Pipeline not running**
-- Ensure Celery worker is up: `docker-compose logs celery-worker`
-- Check Redis: `docker-compose ps redis`
+**Jobs stuck in "queued"**: Celery worker not consuming the `pipeline` queue. Restart with the full queue list above.
 
-**MinIO connection refused**
-- Start MinIO: `docker-compose up -d minio`
-- Verify at http://localhost:9001
+**"Quota exceeded"**: User hit 50 enrichments/day. Admin can bypass or increase via config.
 
-**Firecrawl 429**
-- Reduce `SCRAPER_DELAY_SECONDS` or wait for rate limit reset
+**Confidence too low**: Check `GET /pipeline/cache/value` for `warnings[]` list. Common causes: unrecognised source domain, missing citation URLs, incomplete extraction.
 
-**No institutions to scrape**
-- Load Scorecard data first: POST `/ingestion/schools/scorecard/load`
+**"Circuit breaker open"**: Domain has too many errors. Check `GET /pipeline/admin/domains`.
+
+**No results in professor match**: Ensure user profile has `research_areas` populated. The graph uses up to 5 interests for the OpenAlex query.
+
+**Funding dossier missing external opportunities**: Verify `country_of_citizenship` is set in user profile — external fellowship filtering depends on it.

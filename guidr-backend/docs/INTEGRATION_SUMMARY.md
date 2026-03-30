@@ -1,281 +1,249 @@
-# Integration Summary: How the New Components Work Together
+# Integration Summary
 
-This document explains how all the new data collection components integrate with your existing system.
+How all data collection, enrichment, and agentic research components work together.
 
-## Architecture Overview
+---
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Collection Flow                     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         AGENTIC CORE (primary)                     │
+│                                                                     │
+│  User Profile                                                       │
+│  (research_areas, career_goals, citizenship, preferences)           │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌──────────────┐  ┌─────────────────┐  ┌──────────────────────┐   │
+│  │Recommendations│  │DossierGraph     │  │ProfessorMatchGraph   │   │
+│  │(Perplexity)   │  │(Perplexity +    │  │(OpenAlex + S2 +      │   │
+│  │               │  │ citation check) │  │ Perplexity synth.)   │   │
+│  └──────┬────────┘  └────────┬────────┘  └──────────┬───────────┘   │
+│         │                   │                       │              │
+│         └───────────────────┴───────────────────────┘              │
+│                             │                                       │
+│                             ▼                                       │
+│             enrichment_cache (per-user, TTL-keyed,                  │
+│                              citations_json, user_id)               │
+│                             │                                       │
+│                             │ confidence >= 0.78                    │
+│                             ▼                                       │
+│             institutions / programs / professors                    │
+│             (production tables, canonical truth)                    │
+└─────────────────────────────────────────────────────────────────────┘
+         ▲
+         │ foundation data (basic metadata)
+┌────────┴──────────┐
+│ College Scorecard │
+│ API (bootstrap)   │
+└───────────────────┘
 
-1. School Discovery
-   ├─ MultiSourceFetcher (aggregates from IPEDS, rankings, etc.)
-   └─ GoogleSearchAgent (finds websites when missing)
-
-2. School Data Collection
-   ├─ ComprehensiveSchoolCollector (primary)
-   │  ├─ Firecrawl (scrape homepage)
-   │  ├─ LLM Agent (extract description, acceptance rate)
-   │  └─ Playwright (dynamic content)
-   └─ College Scorecard API (financial data)
-
-3. Program Discovery
-   ├─ ProgramDiscoveryAgent
-   │  ├─ Firecrawl crawl (program pages)
-   │  ├─ LLM navigation (find listing pages)
-   │  └─ Google search (fallback)
-   └─ Extract program URLs
-
-4. Program Data Collection
-   ├─ ProgramCollectionAgent
-   │  ├─ Firecrawl (structured extraction)
-   │  ├─ LLM Agent (complex layouts)
-   │  └─ Playwright (JavaScript content)
-   └─ Validate & Save
-
-5. Data Processing
-   ├─ DataValidator (schema + business logic)
-   ├─ DataQualityTracker (metrics)
-   └─ Database storage
+Scraping (Firecrawl): DISABLED by default — optional fallback only
 ```
 
-## Integration Points
+---
 
-### 1. With Existing Data Ingestion Service
+## Authentication
 
-The new components work alongside your existing `DataIngestionService`:
+All pipeline-triggering endpoints use a dual-auth approach:
 
-```python
-# Existing code still works
-from src.services.data_ingestion import DataIngestionService
+| Method | Header | Use case |
+|--------|--------|----------|
+| Internal API key | `X-Internal-Key: <key>` | Scripts, CI/CD, agents, cron jobs |
+| Admin session | `Cookie: session=<jwt>` | Admin users in browser |
 
-service = DataIngestionService(db)
-service.ingest_institution(institution_seed)  # Still works
-service.ingest_program(program_seed, institution_id)  # Still works
+User-facing endpoints (`/pipeline/enrich`, `/dossiers/*`, `/recommendations/*`) require a logged-in user session cookie.
 
-# New: Enhanced collection
-from src.scrapers.schools.comprehensive_collector import ComprehensiveSchoolCollector
+---
 
-collector = ComprehensiveSchoolCollector()
-school_data = await collector.collect_school_data("MIT", "https://mit.edu")
-# Then use service.ingest_institution() with enriched data
-```
+## Data Collection Methods
 
-### 2. With Existing Worker Jobs
+### Method 1: Foundation Load (Scorecard API)
 
-New Celery tasks complement existing ones:
-
-```python
-# Existing tasks still work
-from src.workers.scraper_worker import scrape_institution_programs_task
-
-# New comprehensive tasks
-from src.workers.scraper_worker import (
-    collect_school_comprehensive_task,
-    discover_programs_task,
-    collect_program_comprehensive_task
-)
-
-# Use them together
-collect_school_comprehensive_task.delay(institution_id)
-discover_programs_task.delay(institution_id)
-```
-
-### 3. With Existing Models
-
-All new components use your existing models:
-
-```python
-from src.models.institution import Institution
-from src.models.program import Program
-
-# New collectors work with existing models
-institution = db.query(Institution).first()
-program_seed = await agent.collect_program_data(url, institution)
-```
-
-### 4. With Existing Validation
-
-Enhanced validator extends existing validation:
-
-```python
-# Existing validation still works
-from src.services.data_validator import validate_institution, validate_program
-
-# New: Enhanced validation with completeness scoring
-from src.services.data_validator import (
-    calculate_completeness_score_institution,
-    calculate_completeness_score_program,
-    detect_duplicates
-)
-
-score = calculate_completeness_score_institution(seed)
-deduplicated = detect_duplicates(schools)
-```
-
-## Migration Path
-
-### Option 1: Gradual Adoption (Recommended)
-
-1. **Keep existing scripts working** - They still work as before
-2. **Test new system** - Run `quick_start_data_collection.py` first
-3. **Use for new schools** - Use comprehensive collection for new schools
-4. **Enhance existing** - Gradually enrich existing schools with comprehensive data
-
-### Option 2: Full Migration
-
-1. **Backup database** - Always backup before major changes
-2. **Run comprehensive collection** - Collect data for all schools
-3. **Update existing records** - Merge new data with existing
-4. **Verify quality** - Check data quality metrics
-
-## Usage Patterns
-
-### Pattern 1: Quick Collection (New Schools)
-
-```python
-# Use when adding new schools
-from src.scrapers.schools.multi_source_fetcher import MultiSourceFetcher
-from src.scrapers.schools.comprehensive_collector import ComprehensiveSchoolCollector
-
-fetcher = MultiSourceFetcher()
-schools = await fetcher.fetch_all_schools(limit=10)
-
-collector = ComprehensiveSchoolCollector()
-for school in schools:
-    data = await collector.collect_school_data(school.name, school.website_url)
-    # Save to database
-```
-
-### Pattern 2: Program Discovery (Existing Schools)
-
-```python
-# Use when you have schools but need programs
-from src.scrapers.agents.program_discovery_agent import ProgramDiscoveryAgent
-from src.scrapers.agents.program_collection_agent import ProgramCollectionAgent
-
-discovery = ProgramDiscoveryAgent()
-program_urls = await discovery.discover_programs("MIT", "https://mit.edu")
-
-collection = ProgramCollectionAgent()
-for url in program_urls:
-    program = await collection.collect_program_data(url, institution)
-    # Save to database
-```
-
-### Pattern 3: Background Jobs (Large Batches)
-
-```python
-# Use for large-scale collection
-from src.workers.scraper_worker import (
-    collect_school_comprehensive_task,
-    discover_programs_task
-)
-
-# Queue jobs
-for institution in institutions:
-    collect_school_comprehensive_task.delay(str(institution.id))
-    discover_programs_task.delay(str(institution.id))
-```
-
-### Pattern 4: Batch Script (Easiest)
+Populates the database with basic school metadata (name, city, state, institution type).
 
 ```bash
-# Simplest way - handles everything
-python -m scripts.comprehensive_data_collection --max-schools 50
+curl -X POST http://localhost:8000/ingestion/schools/scorecard/load \
+  -H "X-Internal-Key: $INTERNAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"async_run": true}'
 ```
 
-## Data Flow Example
+### Method 2: Agentic Dossiers (primary enrichment)
 
-Here's what happens when you run the batch script:
+Sends structured prompts to Perplexity for complete JSON dossiers with citation tracking.
+Confidence gates data quality:
 
-```
-1. MultiSourceFetcher
-   └─> Fetches 50 schools from:
-       - IPEDS (US schools)
-       - Top schools lists
-       - Rankings (QS, THE, etc.)
-   └─> Deduplicates and ranks
+| Score | Routing |
+|-------|---------|
+| ≥ 0.78 | Auto-promote to production tables |
+| 0.55 – 0.77 | Stage in `enrichment_cache` (shown with confidence badge) |
+| < 0.55 | Stage with "unverified" warning — no auto-repair |
 
-2. For each school:
-   a. ComprehensiveSchoolCollector
-      └─> Tries Firecrawl (scrape homepage)
-      └─> Falls back to LLM agent (extract description)
-      └─> Uses Playwright (if dynamic content)
-      └─> Enriches with College Scorecard
-   
-   b. ProgramDiscoveryAgent
-      └─> Tries Firecrawl crawl (program pages)
-      └─> Uses LLM to find listing page
-      └─> Falls back to Google search
-      └─> Extracts program URLs
-   
-   c. For each program URL:
-      ProgramCollectionAgent
-      └─> Tries Firecrawl (structured extraction)
-      └─> Falls back to LLM agent (complex layouts)
-      └─> Uses Playwright (JavaScript content)
-      └─> Validates data
-      └─> Saves to database
+Repair is **on-demand only** — no automatic repair to control LLM costs.
 
-3. Data Quality Tracking
-   └─> Records success rates
-   └─> Calculates completeness scores
-   └─> Tracks validation failures
-   └─> Reports metrics
+```bash
+# School dossier
+curl -X POST http://localhost:8000/dossiers/schools/<id>/research \
+  -H "Cookie: session=<jwt>"
+
+# Professor matching (uses profile research_areas automatically)
+curl -X POST http://localhost:8000/dossiers/schools/<id>/professors/match \
+  -H "Cookie: session=<jwt>"
+
+# Funding dossier (internal + external opportunities)
+curl -X POST http://localhost:8000/dossiers/schools/<id>/funding/research \
+  -H "Cookie: session=<jwt>"
+
+# AI-powered recommendations
+curl -X POST http://localhost:8000/recommendations/request \
+  -H "Cookie: session=<jwt>"
 ```
 
-## Configuration
+### Method 3: Legacy LangGraph Enrichment (fallback, disabled by default)
 
-All components respect your existing configuration:
+The original Firecrawl scraping pipeline is available as a fallback.
 
-```python
-# src/config.py
-settings.firecrawl_api_key  # Used by FirecrawlScraper
-settings.groq_api_key       # Used by LLM agents
-settings.openai_api_key     # Alternative LLM provider
-settings.enable_llm_extraction  # Toggle LLM features
-settings.scraper_delay_seconds   # Rate limiting
+```bash
+# Only enable if ENABLE_SCRAPE_FALLBACK=true in .env
+curl -X POST http://localhost:8000/ingestion/pipeline/bulk-enrich \
+  -H "X-Internal-Key: $INTERNAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"entity_kind": "school"}'
 ```
 
-New configuration options:
-```python
-settings.google_search_enabled
-settings.playwright_browser
-settings.playwright_timeout
-settings.agent_max_steps
-settings.agent_retry_attempts
+---
+
+## Recommended Workflow
+
+### Initial Setup (one-time)
+
+```bash
+docker-compose up -d
+python run.py                   # Start server, auto-migrates
+
+# Load foundation data
+curl -X POST http://localhost:8000/ingestion/schools/scorecard/load \
+  -H "X-Internal-Key: $INTERNAL_API_KEY" -H "Content-Type: application/json" \
+  -d '{"async_run": true}'
 ```
 
-## Error Handling
+### User Flow (per user, on-demand)
 
-The system is designed to be resilient:
+```
+1. User registers → completes onboarding → profile saved
+         ↓
+2. POST /recommendations/request → Perplexity generates school shortlist
+         ↓
+3. User saves a school → POST /dossiers/schools/{id}/research
+         ↓
+4. Dossier staged in enrichment_cache (per-user)
+   → confidence ≥ 0.78 → promoted to production
+         ↓
+5. POST /dossiers/schools/{id}/professors/match
+   → OpenAlex + S2 → Perplexity synthesis → ranked list
+         ↓
+6. POST /dossiers/schools/{id}/funding/research
+   → internal funding + external fellowships (field + citizenship filtered)
+         ↓
+7. GET /dossiers/deadlines → deadlines extracted from all dossiers
+```
 
-1. **Automatic Fallbacks**: If Firecrawl fails → LLM agent → Playwright
-2. **Graceful Degradation**: Missing data is logged but doesn't stop collection
-3. **Retry Logic**: Worker jobs retry with exponential backoff
-4. **Error Tracking**: All errors logged to data quality tracker
+### Scheduled Maintenance
 
-## Performance Considerations
+Celery Beat handles recurring tasks automatically:
 
-- **Firecrawl**: Fastest, use for bulk scraping
-- **LLM Agents**: Slower but handles complex layouts
-- **Playwright**: Slowest but necessary for dynamic content
-- **Batch Processing**: Use Celery for large batches
-- **Rate Limiting**: Built-in delays prevent blocking
+| Schedule | Task |
+|----------|------|
+| Daily 2:00 UTC | Purge expired enrichment_cache entries |
+| Saturday 3:00 UTC | Reset stale domain health blocks |
+| 1st of month 4:00 UTC | Clean up old pipeline job records |
 
-## Next Steps
+---
 
-1. **Test**: Run `quick_start_data_collection.py`
-2. **Small Batch**: Collect 10 schools
-3. **Review**: Check data quality metrics
-4. **Scale**: Increase to larger batches
-5. **Automate**: Set up scheduled jobs
+## User Profile → Research Pipeline Mapping
 
-## Support
+The user profile fields are directly consumed by the agentic pipeline:
 
-- Check logs: `guidr-backend/logs/`
-- Review quality metrics in script output
-- See [COMPREHENSIVE_DATA_COLLECTION_GUIDE.md](COMPREHENSIVE_DATA_COLLECTION_GUIDE.md) for details
+| Profile Field | Used in |
+|---------------|---------|
+| `research_areas` | OpenAlex author search keywords (professor matching), recommendation prompt, funding dossier external filter |
+| `primary_field_of_study` | All dossier prompts, funding dossier `field_of_study` variable |
+| `career_goals` | Recommendation prompt for rationale personalisation |
+| `country_of_citizenship` | External fellowship eligibility filtering (NSF, NIH, Fulbright, etc.) |
+| `intended_degree` | Recommendation tier weighting, program matching |
+| `funding_priority` | Recommendation prompt emphasis |
+| `preferred_countries` / `preferred_cities` | Recommendation geography filtering |
 
+Profile fields are set during onboarding and editable at **Settings → Application Settings** (Research Interests + Career Goals sections).
+
+---
+
+## Dashboard Data Endpoints
+
+| Tile | API Endpoint | Data Source |
+|------|-------------|-------------|
+| Recommended Schools | `GET /recommendations/latest` | Latest recommendation session |
+| Saved Schools | `GET /schools/saved` | Dossier cache entries + recommendation session |
+| Professors | `GET /dossiers/professors/recommended` | Aggregated professor matches across saved schools |
+| Upcoming Deadlines | `GET /dossiers/deadlines` | Deadline fields extracted from school dossiers |
+| Profile Completion | `GET /profile` | User profile completion score |
+
+All tiles load independently with skeleton loaders — no tile blocks another.
+
+---
+
+## Confidence & Source Trust
+
+**Confidence formula (DossierGraph):**
+`0.4 × citation_quality + 0.3 × citation_coverage + 0.3 × extraction_completeness`
+
+**Source trust scoring:**
+
+| Source | Score |
+|--------|-------|
+| Official entity domain (e.g., mit.edu for MIT) | 1.0 |
+| Known aggregators (usnews, niche, petersons, gradschools) | 0.8 |
+| `.edu` / `.gov` (not the entity's own domain) | 0.7 |
+| Reputable sources (wikipedia, bloomberg, chronicle, nature) | 0.5 |
+| Other URL | 0.3 |
+| No URL | 0.0 |
+
+---
+
+## Per-User Cache
+
+`enrichment_cache` rows carry an optional `user_id` FK (migration 017). The lookup strategy:
+1. Try per-user cache entry `(entity_kind, entity_id, user_id, freshness_bucket)`
+2. Fall back to global entry (user_id IS NULL)
+
+This means:
+- First user to request a dossier for MIT gets a personalised entry (their citizenship, research_areas fed into the prompt)
+- A second user requesting the same school may get a new per-user entry if they have different preferences
+- Global entries serve as a shared baseline if no per-user entry exists
+
+Cache TTLs: recommendations 7 days, school dossier 30 days, professor matches 30 days, funding dossier 14 days.
+
+---
+
+## Error Handling & Resilience
+
+| Concern | Mechanism |
+|---------|-----------|
+| Concurrent duplicate jobs | Redis dedup lock — only one job runs per fingerprint |
+| API quota | Per-user Redis quota: 50 enrichments/day |
+| Perplexity unavailable | Stub provider fallback (dev mode) |
+| Domain blocks (scraping) | DomainHealthService circuit breaker (only relevant when scraping is enabled) |
+| Inflight overload | Redis inflight semaphore caps concurrent pipeline jobs |
+| Failed jobs | `retry_backoff` node re-queues with exponential delay |
+| Low-confidence data | Staged with badge; no automatic LLM repair (saves cost) |
+
+---
+
+## Related Docs
+
+- [Quick Start](QUICK_START.md) — Step-by-step walkthrough with curl commands
+- [Pipeline Guide](PIPELINE_GUIDE.md) — Full architecture, all endpoints, DossierGraph internals
+- [Enrichment Verification](ENRICHMENT_PIPELINE_VERIFICATION.md) — End-to-end smoke tests
+- [R2 Setup](R2_SETUP.md) — Cloudflare R2 for production document storage
+- [RFC: Agentic Research Pivot](RFC_AGENTIC_RESEARCH_PIVOT.md) — Adopted architecture decision

@@ -65,6 +65,7 @@ R2_BUCKET_NAME=your_bucket_name_here
 ```bash
 DATABASE_URL=postgresql://guidr_user:guidr_password@localhost:5432/guidr_db
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-min-32-chars
+INTERNAL_API_KEY=your-internal-api-key-here
 REDIS_URL=redis://localhost:6379/0
 ENV=development
 
@@ -73,7 +74,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
-EMAIL_FROM=nanakwameagyeituffour@gmail.com
+EMAIL_FROM=Guidr <no-reply@guidr.app>
 
 # Cloudflare R2 Configuration
 R2_ACCOUNT_ID=abc123def456789
@@ -89,6 +90,7 @@ In addition to the R2 settings above, the data-ingestion stack relies on the fol
 | Key | Purpose |
 | --- | --- |
 | `COLLEGE_SCORECARD_API_KEY` | Required to call the U.S. Department of Education College Scorecard API |
+| `INTERNAL_API_KEY` | Required for service-to-service auth on `/ingestion/*` and `/pipeline/admin/*` endpoints |
 | `MEILISEARCH_HOST` / `MEILISEARCH_MASTER_KEY` | Configures the self-hosted Meilisearch instance for fast querying |
 | `GROQ_API_KEY` / `OPENAI_API_KEY` | Optional LLM providers that power the structured extraction flow |
 | `SCRAPER_USER_AGENT`, `SCRAPER_DELAY_SECONDS`, `SCRAPER_MAX_RETRIES` | Control polite scraping defaults for IPEDS/Scrapy jobs |
@@ -117,7 +119,7 @@ Check the logs - there should be no errors about missing R2 credentials.
 2. Request an upload URL:
    ```bash
    curl -X POST http://localhost:8000/documents/upload-url \
-     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Cookie: session=YOUR_JWT_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{
        "filename": "test.txt",
