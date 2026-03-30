@@ -66,7 +66,8 @@ def run_enrichment_pipeline(self, job_id: str) -> dict:
                 "progress": [],
             }
 
-            result = graph.invoke(initial_state)
+            run_config = {"configurable": {"thread_id": str(job.id)}}
+            result = graph.invoke(initial_state, config=run_config)
 
             # 4. Complete the job
             status = result.get("status", "succeeded")

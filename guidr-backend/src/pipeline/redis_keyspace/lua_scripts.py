@@ -75,3 +75,34 @@ end
 
 return {1, current}
 """
+
+# Atomic inflight semaphore: check max, then increment with PEXPIRE guard.
+# Returns {1, new_count} if acquired, {0, current_count} if at capacity.
+INFLIGHT_INCR = """
+local key     = KEYS[1]
+local maximum = tonumber(ARGV[1])
+local ttl_ms  = tonumber(ARGV[2])
+
+local current = tonumber(redis.call("GET", key))
+if current == nil then current = 0 end
+
+if current >= maximum then
+  return {0, current}
+end
+
+current = redis.call("INCR", key)
+redis.call("PEXPIRE", key, ttl_ms)
+return {1, current}
+"""
+
+# Atomic inflight decrement.  Floors at 0 to prevent negative counts.
+# Returns new counter value.
+INFLIGHT_DECR = """
+local key = KEYS[1]
+local current = tonumber(redis.call("GET", key))
+if current == nil or current <= 0 then
+  return 0
+end
+current = redis.call("DECR", key)
+return current
+"""

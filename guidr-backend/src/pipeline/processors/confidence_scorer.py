@@ -2,10 +2,20 @@
 
 Formula: 0.35 * source + 0.35 * extraction + 0.25 * validation + 0.05 * staleness
 
-Thresholds:
-  >= 0.85 -> auto-promote to production tables
-  0.70-0.84 -> stage in enrichment_cache, schedule re-check
-  < 0.70 -> trigger repair flow or flag for manual review
+Thresholds (profit-optimised, lenient-til-threshold):
+  >= 0.78 -> auto-promote to production tables
+  0.55-0.77 -> stage in enrichment_cache (shown with confidence badge)
+  < 0.55 -> stage with "unverified" warning (no automatic repair)
+
+Repair is on-demand only (paid tier / manual admin) to control LLM costs.
+
+Source scoring (broader trusted-domain policy):
+  1.0 = source is on the entity's official domain
+  0.8 = known academic aggregators (usnews, niche, petersons, gradschools, etc.)
+  0.7 = .edu or .gov (not matching entity directly)
+  0.5 = general reputable domains (wikipedia, bloomberg, reuters, etc.)
+  0.3 = other domain with URL
+  0.0 = no URL
 """
 from __future__ import annotations
 
@@ -25,8 +35,36 @@ W_VALIDATION = 0.25
 W_STALENESS = 0.05
 
 # Thresholds
-AUTO_PROMOTE_THRESHOLD = 0.85
-STAGE_THRESHOLD = 0.70
+AUTO_PROMOTE_THRESHOLD = 0.78   # was 0.85 — more lenient to reduce repair costs
+STAGE_THRESHOLD = 0.55          # was 0.70 — data still shown to user with confidence badge
+
+# Known academic aggregator hostnames (score 0.8)
+_AGGREGATOR_DOMAINS = frozenset({
+    "usnews.com",
+    "niche.com",
+    "petersons.com",
+    "gradschools.com",
+    "collegeconfidential.com",
+    "cappex.com",
+    "studentdoctor.net",
+    "thegradcafe.com",
+    "magoosh.com",
+})
+
+# General reputable domains (score 0.5)
+_REPUTABLE_DOMAINS = frozenset({
+    "wikipedia.org",
+    "en.wikipedia.org",
+    "bloomberg.com",
+    "reuters.com",
+    "nytimes.com",
+    "wsj.com",
+    "chronicle.com",
+    "insidehighered.com",
+    "nature.com",
+    "sciencemag.org",
+    "science.org",
+})
 
 # Expected field counts per entity kind
 EXPECTED_FIELDS: Dict[str, list[str]] = {
@@ -99,11 +137,14 @@ class ConfidenceScorer:
         return confidence >= AUTO_PROMOTE_THRESHOLD
 
     def should_stage(self, confidence: float) -> bool:
-        """Whether data should be staged (not promoted but not rejected)."""
+        """Whether data should be staged (shown with badge, not full promotion)."""
         return STAGE_THRESHOLD <= confidence < AUTO_PROMOTE_THRESHOLD
 
-    def should_repair(self, confidence: float) -> bool:
-        """Whether a repair flow should be triggered."""
+    def should_warn(self, confidence: float) -> bool:
+        """Whether data is below staging threshold — display with 'unverified' warning.
+
+        Repair is NOT triggered automatically; it is on-demand only.
+        """
         return confidence < STAGE_THRESHOLD
 
     @staticmethod
@@ -111,37 +152,44 @@ class ConfidenceScorer:
         """Score how trustworthy the source URL is.
 
         1.0 = source is on the entity's official domain
-        0.7 = source is .edu or .gov
-        0.4 = other domain
+        0.8 = known academic aggregator (usnews, niche, petersons, etc.)
+        0.7 = .edu or .gov (not matching entity directly)
+        0.5 = general reputable domain (wikipedia, bloomberg, etc.)
+        0.3 = other domain with URL
         0.0 = no URL
         """
         if not source_url:
             return 0.0
 
         try:
-            source_host = urlparse(source_url).netloc.lower()
+            source_host = urlparse(source_url).netloc.lower().removeprefix("www.")
         except Exception:
             return 0.2
 
-        # Check if same domain as entity
+        # Check if same domain as entity (official source)
         if entity_website:
             try:
                 entity_host = urlparse(
                     entity_website if "://" in entity_website else f"https://{entity_website}"
-                ).netloc.lower()
-                # Strip www. for comparison
-                source_clean = source_host.replace("www.", "")
-                entity_clean = entity_host.replace("www.", "")
-                if source_clean == entity_clean or source_clean.endswith(f".{entity_clean}"):
+                ).netloc.lower().removeprefix("www.")
+                if source_host == entity_host or source_host.endswith(f".{entity_host}"):
                     return 1.0
             except Exception:
                 pass
 
-        # Trust .edu and .gov domains
+        # Known academic aggregators
+        if any(source_host == d or source_host.endswith(f".{d}") for d in _AGGREGATOR_DOMAINS):
+            return 0.8
+
+        # .edu and .gov domains (institutional, not matched as official)
         if source_host.endswith(".edu") or source_host.endswith(".gov"):
             return 0.7
 
-        return 0.4
+        # General reputable domains
+        if any(source_host == d or source_host.endswith(f".{d}") for d in _REPUTABLE_DOMAINS):
+            return 0.5
+
+        return 0.3
 
     @staticmethod
     def score_extraction(extracted: Optional[Dict[str, Any]], entity_kind: str) -> float:

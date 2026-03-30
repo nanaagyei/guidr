@@ -22,6 +22,12 @@ def extract_funding_for_institution(self, institution_id: str) -> Dict:
     Returns:
         Summary dict with counts and status.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Scraping disabled (enable_bulk_scrape=False), skipping funding for %s", institution_id)
+        return {"status": "skipped", "reason": "scraping_disabled", "institution_id": institution_id}
+
     from src.models.institution import Institution
     from src.models.funding_opportunity import FundingOpportunity
     from src.models.scrape_job import ScrapeJob
@@ -129,6 +135,12 @@ def extract_faculty_for_institution(self, institution_id: str) -> Dict:
     Returns:
         Summary dict.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Scraping disabled (enable_bulk_scrape=False), skipping faculty for %s", institution_id)
+        return {"status": "skipped", "reason": "scraping_disabled", "institution_id": institution_id}
+
     from src.models.institution import Institution
     from src.models.professor import Professor
     from src.models.scrape_job import ScrapeJob
@@ -241,6 +253,12 @@ def extract_programs_for_institution(self, institution_id: str) -> Dict:
     Returns:
         Summary dict.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Scraping disabled (enable_bulk_scrape=False), skipping programs for %s", institution_id)
+        return {"status": "skipped", "reason": "scraping_disabled", "institution_id": institution_id}
+
     from src.models.institution import Institution
     from src.models.program import Program
     from src.models.scrape_job import ScrapeJob
@@ -355,6 +373,12 @@ def scrape_overview_for_institution(self, institution_id: str) -> Dict:
     Returns:
         Summary dict.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Scraping disabled (enable_bulk_scrape=False), skipping overview for %s", institution_id)
+        return {"status": "skipped", "reason": "scraping_disabled", "institution_id": institution_id}
+
     from src.models.institution import Institution
     from src.models.scrape_job import ScrapeJob
     from src.pipeline.clients.firecrawl_enhanced import EnhancedFirecrawlClient

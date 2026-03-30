@@ -4,14 +4,27 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from typing import Optional
+from typing import Optional, Union
 
-from src.pipeline.research_gateway.schemas import ResearchRequest, ResearchResponse
+from src.pipeline.research_gateway.schemas import (
+    ResearchRequest,
+    ResearchResponse,
+    DossierResponse,
+    DOSSIER_JOB_TYPES,
+)
 from src.pipeline.research_gateway.providers.perplexity_stub import PerplexityStubProvider
 
 logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+
+# Category-specific TTLs (seconds)
+CATEGORY_TTL = {
+    "recommendation_run": 7 * 24 * 3600,
+    "school_dossier": 30 * 24 * 3600,
+    "professor_matches": 30 * 24 * 3600,
+    "funding_dossier": 14 * 24 * 3600,
+}
 
 
 def _dedupe_key(request: ResearchRequest) -> str:
@@ -19,6 +32,7 @@ def _dedupe_key(request: ResearchRequest) -> str:
     parts = [
         request.entity.entity_type,
         request.entity.entity_id or "-",
+        request.job_type,
         request.category,
         "v1",
         hashlib.sha256(str(sorted(request.constraints.domains_allowlist or [])).encode()).hexdigest()[:16],
@@ -59,14 +73,16 @@ class ResearchGatewayService:
     def __init__(self) -> None:
         self._provider = _select_provider()
 
-    def run(self, request: ResearchRequest) -> ResearchResponse:
+    def run(self, request: ResearchRequest) -> Union[ResearchResponse, DossierResponse]:
         """Execute research job with cache check and budget enforcement."""
         dedupe = request.cache.dedupe_key or _dedupe_key(request)
         request.cache.dedupe_key = dedupe
 
+        is_dossier = request.job_type in DOSSIER_JOB_TYPES
+
         # Cache check
         if request.cache.use_cache:
-            cached = self._cache_get(dedupe)
+            cached = self._cache_get(dedupe, is_dossier=is_dossier)
             if cached:
                 logger.info("Research cache hit for %s", dedupe[:16])
                 cached.metrics.cache_hit = True
@@ -76,15 +92,18 @@ class ResearchGatewayService:
 
         # Cache store on success
         if request.cache.use_cache and response.status == "SUCCESS":
-            self._cache_set(dedupe, response)
+            ttl = CATEGORY_TTL.get(request.category, CACHE_TTL_SECONDS)
+            self._cache_set(dedupe, response, ttl=ttl)
 
-        # Persist source_documents for discovered URLs
-        if response.results:
+        # Persist source_documents for discovered URLs (non-dossier only)
+        if not is_dossier and isinstance(response, ResearchResponse) and response.results:
             self._persist_source_documents(request, response)
 
         return response
 
-    def _cache_get(self, key: str) -> Optional[ResearchResponse]:
+    def _cache_get(
+        self, key: str, is_dossier: bool = False
+    ) -> Optional[Union[ResearchResponse, DossierResponse]]:
         """Look up cached response in Redis."""
         r = _get_redis()
         if r is None:
@@ -93,19 +112,26 @@ class ResearchGatewayService:
             cache_key = f"guidr:v1:research:cache:{key}"
             raw = r.get(cache_key)
             if raw:
+                if is_dossier:
+                    return DossierResponse.model_validate_json(raw)
                 return ResearchResponse.model_validate_json(raw)
         except Exception as exc:
             logger.debug("Research cache get failed: %s", exc)
         return None
 
-    def _cache_set(self, key: str, response: ResearchResponse) -> None:
+    def _cache_set(
+        self,
+        key: str,
+        response: Union[ResearchResponse, DossierResponse],
+        ttl: int = CACHE_TTL_SECONDS,
+    ) -> None:
         """Store response in Redis with TTL."""
         r = _get_redis()
         if r is None:
             return
         try:
             cache_key = f"guidr:v1:research:cache:{key}"
-            r.setex(cache_key, CACHE_TTL_SECONDS, response.model_dump_json())
+            r.setex(cache_key, ttl, response.model_dump_json())
         except Exception as exc:
             logger.debug("Research cache set failed: %s", exc)
 

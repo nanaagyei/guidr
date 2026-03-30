@@ -201,40 +201,55 @@ def canonicalize_urls(state: OrchestratorState) -> dict:
 # ------------------------------------------------------------------
 
 def fetch_page(state: OrchestratorState) -> dict:
-    """Fetch URL via EnhancedFirecrawlClient with rate limiting."""
+    """Fetch URL via EnhancedFirecrawlClient with rate limiting and domain health checks."""
     url = state.get("target_url")
     if not url:
         return {"error": "No target URL", "status": "failed", **_progress(state, "fetch_page")}
 
-    # Check circuit breaker
-    from src.pipeline.redis_keyspace import check_circuit_breaker, take_token_for_url
     from urllib.parse import urlparse
+    from src.pipeline.services.domain_health_service import DomainHealthService
+    from src.pipeline.redis_keyspace import take_token_for_url
 
     host = urlparse(url).netloc
-    if check_circuit_breaker(host):
-        return {"error": f"Circuit breaker open for {host}", "status": "failed", **_progress(state, "fetch_page")}
+    domain_health = DomainHealthService()
 
-    # Rate limit
+    # Check domain health (Redis circuit breaker + DB block flag)
+    if domain_health.is_blocked(host):
+        return {
+            "error": f"Domain blocked: {host}",
+            "status": "failed",
+            **_progress(state, "fetch_page"),
+        }
+
+    # Apply per-domain token-bucket rate limit
     token_result = take_token_for_url(url)
     if not token_result.allowed:
-        logger.warning("Rate limited for %s, proceeding with delay", url)
+        logger.warning("Rate limited for %s, adding short delay", url)
         import time
         time.sleep(2)
 
     # Fetch via Firecrawl
     from src.pipeline.clients import EnhancedFirecrawlClient
     client = EnhancedFirecrawlClient()
-    data = client.scrape_url(url)
+    http_status: int = 0
+
+    try:
+        data = client.scrape_url(url)
+        http_status = data.get("metadata", {}).get("statusCode", 200) if data else 0
+    except Exception as exc:
+        domain_health.record_error(host, http_status=0)
+        logger.error("fetch_page exception for %s: %s", url, exc)
+        return {"error": str(exc), "status": "failed", **_progress(state, "fetch_page")}
 
     if not data or not data.get("markdown"):
-        # Record domain error for circuit breaker
-        from src.pipeline.redis_keyspace import record_domain_error
-        record_domain_error(host)
-        return {"error": f"Failed to fetch {url}", "status": "failed", **_progress(state, "fetch_page")}
+        domain_health.record_error(host, http_status=http_status or 0)
+        return {
+            "error": f"No content from {url} (HTTP {http_status})",
+            "status": "failed",
+            **_progress(state, "fetch_page"),
+        }
 
-    # Record success
-    from src.pipeline.redis_keyspace import record_domain_success
-    record_domain_success(host)
+    domain_health.record_success(host)
 
     raw_content = data.get("markdown", "")
     content_hash = hashlib.sha256(raw_content.encode("utf-8")).hexdigest()
@@ -498,6 +513,9 @@ def promote_write(state: OrchestratorState) -> dict:
         entity_uuid = uuid.UUID(entity_id)
         diff = {}
 
+        confidence = state.get("confidence", 0.0)
+        now = datetime.utcnow()
+
         if entity_kind == "school":
             from src.models.institution import Institution
             inst = db.query(Institution).get(entity_uuid)
@@ -510,8 +528,11 @@ def promote_write(state: OrchestratorState) -> dict:
                         if old_val != new_val:
                             diff[field] = {"old": str(old_val), "new": str(new_val)}
                             setattr(inst, field, new_val)
-                inst.last_scraped_at = datetime.utcnow()
+                inst.last_scraped_at = now
                 inst.scrape_status = "completed"
+                inst.last_enriched_at = now
+                inst.last_enrichment_confidence = confidence
+                inst.data_version = (inst.data_version or 0) + 1
 
         elif entity_kind == "program":
             from src.models.program import Program
@@ -525,7 +546,10 @@ def promote_write(state: OrchestratorState) -> dict:
                         if old_val != new_val:
                             diff[field] = {"old": str(old_val), "new": str(new_val)}
                             setattr(prog, field, new_val)
-                prog.last_scraped_at = datetime.utcnow()
+                prog.last_scraped_at = now
+                prog.last_enriched_at = now
+                prog.last_enrichment_confidence = confidence
+                prog.data_version = (prog.data_version or 0) + 1
 
         elif entity_kind == "professor":
             from src.models.professor import Professor
@@ -538,7 +562,26 @@ def promote_write(state: OrchestratorState) -> dict:
                         if old_val != new_val:
                             diff[field] = {"old": str(old_val), "new": str(new_val)}
                             setattr(prof, field, new_val)
-                prof.last_scraped_at = datetime.utcnow()
+                prof.last_scraped_at = now
+                prof.last_enriched_at = now
+                prof.last_enrichment_confidence = confidence
+                prof.data_version = (prof.data_version or 0) + 1
+
+        elif entity_kind == "funding":
+            from src.models.funding_opportunity import FundingOpportunity
+            opp = db.query(FundingOpportunity).get(entity_uuid)
+            if opp:
+                for field in ["name", "description", "amount_min", "amount_max",
+                              "deadline", "eligibility_criteria", "covers_tuition", "covers_stipend"]:
+                    new_val = extracted.get(field)
+                    if new_val is not None:
+                        old_val = getattr(opp, field, None)
+                        if str(old_val) != str(new_val):
+                            diff[field] = {"old": str(old_val), "new": str(new_val)}
+                            setattr(opp, field, new_val)
+                opp.last_enriched_at = now
+                opp.last_enrichment_confidence = confidence
+                opp.data_version = (opp.data_version or 0) + 1
 
         # Create entity_promotions audit row
         if diff and extraction_run_id:

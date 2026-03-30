@@ -128,6 +128,30 @@ class JobRepository:
             .first()
         )
 
+    def find_by_fingerprint(
+        self,
+        job_type: str,
+        entity_kind: str,
+        entity_id: Optional[str] = None,
+        target_url: Optional[str] = None,
+        schema_version: str = "v1",
+        freshness_bucket: str = "default",
+    ) -> Optional[PipelineJob]:
+        """Find any job with matching fingerprint (any status)."""
+        fingerprint, _ = compute_job_fingerprint(
+            job_type=job_type,
+            schema_version=schema_version,
+            freshness_bucket=freshness_bucket,
+            entity_kind=entity_kind,
+            entity_id=entity_id,
+            target_url=target_url,
+        )
+        return (
+            self.db.query(PipelineJob)
+            .filter(PipelineJob.fingerprint == fingerprint)
+            .first()
+        )
+
     def claim_job(self, job_id: str, run_by: str) -> Optional[PipelineJob]:
         """Atomically claim a queued job (UPDATE WHERE status='queued').
 

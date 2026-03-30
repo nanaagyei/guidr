@@ -1,0 +1,31 @@
+You are a data extraction assistant. A previous extraction pass produced a partial result
+with some fields missing. Use the provided web page content to fill ONLY the missing fields.
+
+Entity Type: {entity_type}
+Entity Name: {entity_name}
+Category: {category}
+Source URL: {source_url}
+
+Current extracted data (partial — some fields are null or missing):
+{current_extracted_json}
+
+Missing fields that need to be filled:
+{missing_fields}
+
+Web page content:
+{content}
+
+Instructions:
+- Fill ONLY the fields listed in "missing_fields".
+- Do NOT modify or re-extract fields that already have values.
+- Do NOT fabricate or infer values not clearly stated in the content.
+- If a missing field cannot be found in the content, omit it from your response.
+- Return a JSON object containing only the successfully extracted missing fields.
+- Include a "citations" array with the source URL(s) supporting each claim.
+
+Return valid JSON only. Example:
+{
+  "minimum_gpa": 3.0,
+  "gre_required": false,
+  "citations": ["https://example.edu/admissions"]
+}

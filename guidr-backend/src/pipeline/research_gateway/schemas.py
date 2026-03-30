@@ -48,9 +48,11 @@ class Trace(BaseModel):
 
 class ResearchRequest(BaseModel):
     """Request to run a research job."""
-    job_type: str  # URL_DISCOVERY, CHANGE_CHECK, REPAIR_EXTRACTION, SYNTHESIS_SUMMARY
+    job_type: str  # URL_DISCOVERY, CHANGE_CHECK, REPAIR_EXTRACTION, SYNTHESIS_SUMMARY,
+    #               DOSSIER_EXTRACTION, RECOMMENDATION_RUN, PROFESSOR_SYNTHESIS, FUNDING_DOSSIER
     entity: EntityContext
     category: str  # SCHOOL_OVERVIEW, PROGRAM_REQUIREMENTS, etc.
+    prompt_override: Optional[str] = None  # Pre-rendered prompt for dossier jobs
     constraints: Constraints = Field(default_factory=Constraints)
     budget: Budget = Field(default_factory=Budget)
     cache: CacheConfig = Field(default_factory=CacheConfig)
@@ -92,3 +94,34 @@ class ResearchResponse(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
     metrics: Metrics = Field(default_factory=Metrics)
     errors: list[str] = Field(default_factory=list)
+
+
+# --- Dossier-specific schemas ---
+
+class DossierCitation(BaseModel):
+    """Citation with structured metadata for dossier results."""
+    id: str  # e.g. "c1", "c2"
+    url: str
+    title: Optional[str] = None
+    snippet: Optional[str] = None
+    publisher: Optional[str] = None
+
+
+class DossierResponse(BaseModel):
+    """Response from a dossier extraction job."""
+    status: str  # SUCCESS, PARTIAL, FAILED
+    final_json: dict[str, Any] = Field(default_factory=dict)
+    report_markdown: Optional[str] = None
+    citations: list[DossierCitation] = Field(default_factory=list)
+    evidence_map: dict[str, list[str]] = Field(default_factory=dict)  # field -> [citation_ids]
+    metrics: Metrics = Field(default_factory=Metrics)
+    errors: list[str] = Field(default_factory=list)
+
+
+# Job type constants
+DOSSIER_JOB_TYPES = frozenset({
+    "DOSSIER_EXTRACTION",
+    "RECOMMENDATION_RUN",
+    "PROFESSOR_SYNTHESIS",
+    "FUNDING_DOSSIER",
+})

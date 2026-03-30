@@ -28,6 +28,15 @@ def run_full_pipeline(institution_id: str) -> Dict:
     Returns:
         Summary of queued sub-tasks.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info(
+            "Bulk scraping disabled (enable_bulk_scrape=False), skipping institution %s",
+            institution_id,
+        )
+        return {"status": "skipped", "reason": "bulk_scrape_disabled", "institution_id": institution_id}
+
     from src.models.institution import Institution
     from src.models.scrape_job import ScrapeJob
 
@@ -95,6 +104,12 @@ def batch_scrape_institutions(
     Returns:
         Summary with queued/skipped/failed counts.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Bulk scraping disabled (enable_bulk_scrape=False), skipping batch")
+        return {"status": "skipped", "reason": "bulk_scrape_disabled", "queued": 0, "skipped": len(institution_ids), "failed": 0}
+
     from src.models.institution import Institution
 
     db = SessionLocal()
@@ -132,6 +147,12 @@ def refresh_stale_institutions() -> Dict:
     Returns:
         Dict with queued, skipped, failed counts.
     """
+    from src.config import settings
+
+    if not settings.enable_bulk_scrape:
+        logger.info("Bulk scraping disabled (enable_bulk_scrape=False), skipping stale refresh")
+        return {"status": "skipped", "reason": "bulk_scrape_disabled", "queued": 0, "skipped": 0, "failed": 0}
+
     from src.models.institution import Institution
 
     db = SessionLocal()
@@ -201,7 +222,8 @@ def run_orchestrator_pipeline(
             "website_hint": inst.website_url,
             "known_sources": [],
         }
-        result = graph.invoke(initial)
+        run_config = {"configurable": {"thread_id": str(institution_id)}}
+        result = graph.invoke(initial, config=run_config)
         return {
             "institution_id": institution_id,
             "status": result.get("status", "unknown"),
