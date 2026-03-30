@@ -83,3 +83,9 @@ Thumbs.db
 
 # Local / project-specific
 .cursor/
+
+INSPIRATION.md
+.claude/
+.codex/
+
+ROADMAP.md
