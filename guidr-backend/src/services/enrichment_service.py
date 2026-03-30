@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.models.enrichment_cache import EnrichmentCache
@@ -31,6 +32,14 @@ FRESHNESS_BUCKETS = {
     "program": "14d",
     "professor": "30d",
     "funding": "14d",
+}
+
+# Dossier freshness buckets
+DOSSIER_FRESHNESS_BUCKETS = {
+    "recommendation_run": "recommendation_run:7d",
+    "school_dossier": "school_dossier:30d",
+    "professor_matches": "professor_matches:30d",
+    "funding_dossier": "funding_dossier:14d",
 }
 
 
@@ -119,6 +128,32 @@ class EnrichmentService:
                 input_json={"force_refresh": force_refresh},
             )
             self.db.commit()
+        except IntegrityError:
+            # Race condition: another request created the same fingerprint first.
+            self.db.rollback()
+            logger.debug(
+                "Dedup race detected for enrichment entity_kind=%s entity_id=%s bucket=%s",
+                entity_kind,
+                entity_id,
+                freshness_bucket,
+            )
+            existing = self.repo.find_in_progress(
+                job_type="enrichment",
+                entity_kind=entity_kind,
+                entity_id=entity_id,
+                freshness_bucket=freshness_bucket,
+            )
+            if existing:
+                return EnrichmentResult(
+                    status="dedup_in_progress",
+                    job=existing,
+                    message="Enrichment already in progress.",
+                )
+            # If no in-progress job is visible yet, avoid 500 and ask caller to retry.
+            return EnrichmentResult(
+                status="dedup_in_progress",
+                message="Equivalent enrichment job already queued. Retry in a moment.",
+            )
         except Exception:
             self.db.rollback()
             raise
@@ -189,8 +224,25 @@ class EnrichmentService:
         )
 
     def _dispatch(self, job: PipelineJob) -> None:
-        """Dispatch job to Celery. Uses orchestrator task if available,
-        falls back to legacy scrape tasks."""
+        """Dispatch job to Celery. Routes dossier job types to dossier tasks,
+        uses orchestrator task for standard enrichment, falls back to legacy."""
+        job_type = job.job_type or "enrichment"
+
+        # Route dossier/professor_match jobs to dossier tasks
+        if job_type in ("dossier", "professor_match"):
+            try:
+                if job_type == "professor_match":
+                    from src.pipeline.tasks.dossier_tasks import run_professor_match_pipeline
+                    run_professor_match_pipeline.delay(str(job.id))
+                else:
+                    from src.pipeline.tasks.dossier_tasks import run_dossier_pipeline
+                    run_dossier_pipeline.delay(str(job.id))
+                logger.info("Dispatched %s pipeline for job %s", job_type, job.id)
+                return
+            except (ImportError, Exception) as exc:
+                logger.warning("Dossier task unavailable (%s), falling back", exc)
+
+        # Standard enrichment
         try:
             from src.pipeline.tasks.orchestrator_tasks import run_enrichment_pipeline
 

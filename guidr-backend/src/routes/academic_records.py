@@ -7,10 +7,10 @@ from src.db import get_db
 from src.models.academic_record import AcademicRecord
 from src.models.user_profile import UserProfile
 from src.models.user import User
-from src.schemas.academic_record import AcademicRecordCreate, AcademicRecordResponse
+from src.schemas.academic_record import AcademicRecordCreate, AcademicRecordUpdate, AcademicRecordResponse
 from src.dependencies.auth import get_current_user
 from src.utils.gpa import normalize_gpa
-from src.utils.profile_completion import calculate_profile_completion_score
+from src.utils.profile_completion import calculate_profile_completion, calculate_profile_completion_score
 
 router = APIRouter(prefix="/academic-records", tags=["academic-records"])
 
@@ -100,13 +100,84 @@ async def create_academic_record(
     db.commit()
     db.refresh(new_record)
     
-    # Update profile completion score
+    # Update profile completion score and get full completion data
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+    completion_data = None
     if profile:
-        profile.profile_completion_score = calculate_profile_completion_score(profile, db)
+        completion_data = calculate_profile_completion(profile, db)
+        profile.profile_completion_score = completion_data["percent"]
         db.commit()
-    
-    return new_record
+
+    response = AcademicRecordResponse.model_validate(new_record)
+    response.completion = completion_data
+    return response
+
+
+@router.put("/{record_id}", response_model=AcademicRecordResponse)
+async def update_academic_record(
+    record_id: UUID,
+    record_data: AcademicRecordUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an academic record.
+
+    Args:
+        record_id: ID of the record to update
+        record_data: Fields to update
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Updated academic record
+    """
+    record = db.query(AcademicRecord).filter(
+        AcademicRecord.id == record_id,
+        AcademicRecord.user_id == current_user.id
+    ).first()
+
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Academic record not found"
+        )
+
+    update_fields = record_data.model_dump(exclude_unset=True)
+
+    # Validate degree level if provided
+    if "degree_level" in update_fields:
+        valid_degree_levels = ['bachelors', 'masters', 'phd', 'other']
+        if update_fields["degree_level"] not in valid_degree_levels:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"degree_level must be one of: {', '.join(valid_degree_levels)}"
+            )
+
+    for field, value in update_fields.items():
+        setattr(record, field, value)
+
+    # Recalculate normalized GPA if GPA fields changed
+    gpa_value = record.gpa_value
+    gpa_scale = record.gpa_scale
+    if gpa_value and gpa_scale:
+        record.normalized_gpa = normalize_gpa(float(gpa_value), float(gpa_scale))
+    else:
+        record.normalized_gpa = None
+
+    db.commit()
+    db.refresh(record)
+
+    # Update profile completion score and get full completion data
+    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+    completion_data = None
+    if profile:
+        completion_data = calculate_profile_completion(profile, db)
+        profile.profile_completion_score = completion_data["percent"]
+        db.commit()
+
+    response = AcademicRecordResponse.model_validate(record)
+    response.completion = completion_data
+    return response
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)

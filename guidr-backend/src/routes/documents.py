@@ -114,9 +114,10 @@ async def confirm_upload(
     document.processing_status = "processing"
     db.commit()
     
-    # TODO: Enqueue worker job `document.process`
-    # For now, just return success
-    
+    # Enqueue background processing via Celery
+    from src.workers.document_processor import process_document_task
+    process_document_task.delay(str(document_id))
+
     return {
         "status": "queued",
         "document_id": str(document_id)

@@ -14,6 +14,7 @@ from src.models.academic_record import AcademicRecord
 from src.models.program import Program
 from src.models.outreach_email import OutreachEmail
 from src.dependencies.auth import get_current_user
+from src.dependencies.feature_gate import require_level
 from src.services.email_generator import generate_cold_email, generate_email_template_simple
 
 router = APIRouter(prefix="/professors", tags=["professors"])
@@ -189,7 +190,7 @@ async def get_professor(
 async def generate_email_draft(
     professor_id: str,
     program_id: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_level(3)),
     db: Session = Depends(get_db)
 ):
     """Generate a cold email draft for a professor.

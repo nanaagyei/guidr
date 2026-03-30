@@ -17,6 +17,7 @@ async def list_programs(
     degree_level: Optional[str] = Query(None),
     field_of_study: Optional[str] = Query(None),
     country: Optional[str] = Query(None),
+    institution_id: Optional[str] = Query(None),
     min_tuition: Optional[float] = Query(None),
     max_tuition: Optional[float] = Query(None),
     deadline_before: Optional[date] = Query(None),
@@ -27,11 +28,12 @@ async def list_programs(
     db: Session = Depends(get_db)
 ):
     """List programs with filters and pagination.
-    
+
     Args:
         degree_level: Filter by degree level ('masters' or 'phd')
         field_of_study: Filter by field of study
         country: Filter by institution country
+        institution_id: Filter by institution UUID
         min_tuition: Minimum tuition filter
         max_tuition: Maximum tuition filter
         deadline_before: Filter programs with deadline before this date
@@ -39,7 +41,7 @@ async def list_programs(
         page: Page number (1-indexed)
         page_size: Number of results per page
         db: Database session
-        
+
     Returns:
         Paginated list of programs
     """
@@ -78,10 +80,17 @@ async def list_programs(
             }
 
     query = db.query(Program).join(Institution)
-    
+
+    if institution_id:
+        from uuid import UUID as _UUID
+        try:
+            query = query.filter(Program.institution_id == _UUID(institution_id))
+        except ValueError:
+            pass  # Invalid UUID — ignore filter
+
     if degree_level:
         query = query.filter(Program.degree_level == degree_level)
-    
+
     if field_of_study:
         query = query.filter(Program.field_of_study.ilike(f"%{field_of_study}%"))
     
@@ -126,6 +135,8 @@ async def list_programs(
             "field_of_study": program.field_of_study,
             "tuition": float(program.tuition_estimate_per_year) if program.tuition_estimate_per_year else None,
             "deadline": program.application_deadline_primary.isoformat() if program.application_deadline_primary else None,
+            "data_completeness_score": program.data_completeness_score,
+            "last_enriched_at": program.last_enriched_at.isoformat() if getattr(program, "last_enriched_at", None) else None,
         })
     
     total_pages = (total_results + page_size - 1) // page_size

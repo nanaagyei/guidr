@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Dict, Optional
 from uuid import UUID
 
+from celery import shared_task
 from sqlalchemy.orm import Session
 
 from src.config import settings
@@ -17,8 +18,10 @@ from src.db import SessionLocal
 from src.models.academic_record import AcademicRecord
 from src.models.document import Document
 from src.models.document_processing_log import DocumentProcessingLog
+from src.models.user_profile import UserProfile
 from src.services.storage import storage_service
 from src.utils.gpa import normalize_gpa
+from src.utils.profile_completion import calculate_profile_completion_score
 
 logger = logging.getLogger(__name__)
 
@@ -51,22 +54,22 @@ except ImportError:
 
 class DocumentExtractor:
     """LLM-powered document extraction service."""
-    
+
     def __init__(self):
         self._groq = None
         self._openai = None
-        
+
         if settings.groq_api_key and GROQ_AVAILABLE:
             self._groq = Groq(api_key=settings.groq_api_key)
         if settings.openai_api_key and OPENAI_AVAILABLE:
             self._openai = OpenAI(api_key=settings.openai_api_key)
-    
+
     def extract_text_from_pdf(self, file_data: bytes) -> str:
         """Extract text from PDF file."""
         if not PDF_AVAILABLE:
             logger.warning("PyPDF2 not available for PDF extraction")
             return ""
-        
+
         try:
             pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_data))
             text_parts = []
@@ -78,24 +81,24 @@ class DocumentExtractor:
         except Exception as e:
             logger.error(f"PDF extraction error: {e}")
             return ""
-    
+
     def extract_text_from_docx(self, file_data: bytes) -> str:
         """Extract text from DOCX file."""
         if not DOCX_AVAILABLE:
             logger.warning("python-docx not available for DOCX extraction")
             return ""
-        
+
         try:
             doc = DocxDocument(io.BytesIO(file_data))
             return "\n".join([para.text for para in doc.paragraphs])
         except Exception as e:
             logger.error(f"DOCX extraction error: {e}")
             return ""
-    
+
     def extract_text(self, file_data: bytes, filename: str) -> str:
         """Extract text based on file type."""
         filename_lower = filename.lower()
-        
+
         if filename_lower.endswith(".pdf"):
             return self.extract_text_from_pdf(file_data)
         elif filename_lower.endswith((".docx", ".doc")):
@@ -108,12 +111,12 @@ class DocumentExtractor:
                 return file_data.decode("utf-8", errors="ignore")
             except:
                 return ""
-    
+
     def extract_transcript_with_llm(self, text: str) -> Dict:
         """Use LLM to extract structured transcript data."""
         if not text or len(text) < 50:
             return self._fallback_transcript_extraction(text)
-        
+
         prompt = """Analyze this academic transcript and extract the following information as JSON:
 
 {
@@ -133,7 +136,7 @@ Only include fields where you have high confidence. Use null for uncertain value
 
 Transcript text:
 """
-        
+
         try:
             response = self._call_llm(prompt + text[:8000])
             if response:
@@ -143,14 +146,14 @@ Transcript text:
                     return json.loads(json_match.group())
         except Exception as e:
             logger.error(f"LLM transcript extraction error: {e}")
-        
+
         return self._fallback_transcript_extraction(text)
-    
+
     def extract_resume_with_llm(self, text: str) -> Dict:
         """Use LLM to extract structured resume data."""
         if not text or len(text) < 50:
             return {"skills": [], "education": [], "experiences": []}
-        
+
         prompt = """Analyze this resume and extract the following information as JSON:
 
 {
@@ -180,7 +183,7 @@ Transcript text:
 
 Resume text:
 """
-        
+
         try:
             response = self._call_llm(prompt + text[:8000])
             if response:
@@ -189,14 +192,14 @@ Resume text:
                     return json.loads(json_match.group())
         except Exception as e:
             logger.error(f"LLM resume extraction error: {e}")
-        
+
         return {"skills": [], "education": [], "experiences": []}
-    
+
     def extract_essay_with_llm(self, text: str) -> Dict:
         """Extract and summarize essay content."""
         if not text:
             return {"text": "", "summary": "", "word_count": 0}
-        
+
         summary = ""
         if len(text) > 500:
             prompt = """Provide a 2-3 sentence summary of this essay, focusing on the main themes and the author's goals:
@@ -206,13 +209,13 @@ Resume text:
                 summary = self._call_llm(prompt + text[:6000]) or ""
             except Exception as e:
                 logger.error(f"LLM essay extraction error: {e}")
-        
+
         return {
             "text": text,
             "summary": summary,
             "word_count": len(text.split()),
         }
-    
+
     def _call_llm(self, prompt: str) -> Optional[str]:
         """Call LLM provider."""
         try:
@@ -224,7 +227,7 @@ Resume text:
                     max_tokens=2000,
                 )
                 return response.choices[0].message.content
-            
+
             elif self._openai:
                 response = self._openai.chat.completions.create(
                     model="gpt-3.5-turbo",
@@ -235,9 +238,9 @@ Resume text:
                 return response.choices[0].message.content
         except Exception as e:
             logger.error(f"LLM call error: {e}")
-        
+
         return None
-    
+
     def _fallback_transcript_extraction(self, text: str) -> Dict:
         """Fallback heuristic extraction when LLM unavailable."""
         result = {
@@ -248,12 +251,12 @@ Resume text:
             "gpa_value": None,
             "gpa_scale": None,
         }
-        
+
         if not text:
             return result
-        
+
         text_lower = text.lower()
-        
+
         # Try to find GPA
         gpa_match = re.search(r"(?:gpa|grade point average)[:\s]*(\d+\.?\d*)\s*/?\s*(\d+\.?\d*)?", text_lower)
         if gpa_match:
@@ -262,7 +265,7 @@ Resume text:
                 result["gpa_scale"] = float(gpa_match.group(2))
             else:
                 result["gpa_scale"] = 4.0 if result["gpa_value"] <= 4.0 else 10.0
-        
+
         # Detect degree level
         if "ph.d" in text_lower or "doctorate" in text_lower:
             result["degree_level"] = "phd"
@@ -270,7 +273,7 @@ Resume text:
             result["degree_level"] = "masters"
         elif "bachelor" in text_lower or "b.s." in text_lower or "b.a." in text_lower:
             result["degree_level"] = "bachelors"
-        
+
         return result
 
 
@@ -285,34 +288,40 @@ def get_extractor() -> DocumentExtractor:
     return _extractor
 
 
-def process_document(document_id: str, attempt: int = 1):
+@shared_task(name="document.process", bind=True, max_retries=3, default_retry_delay=30)
+def process_document_task(self, document_id: str):
+    """Celery task to process a document: download, extract, and store results."""
+    _process_document(document_id, attempt=self.request.retries + 1)
+
+
+def _process_document(document_id: str, attempt: int = 1):
     """Process a document: download, extract, and store results.
-    
+
     Args:
         document_id: Document UUID as string
         attempt: Attempt number for retries
     """
     db = SessionLocal()
     log = None
-    
+
     try:
         doc_uuid = UUID(document_id)
-        
+
         # Fetch document
         document = db.query(Document).filter(Document.id == doc_uuid).first()
         if not document:
             logger.error(f"Document {document_id} not found")
             return
-        
+
         # Check if already completed (idempotency)
         if document.processing_status == "completed":
             logger.info(f"Document {document_id} already processed")
             return
-        
+
         # Update status
         document.processing_status = "processing"
         db.commit()
-        
+
         # Create processing log
         log = DocumentProcessingLog(
             document_id=doc_uuid,
@@ -323,18 +332,18 @@ def process_document(document_id: str, attempt: int = 1):
         )
         db.add(log)
         db.commit()
-        
+
         # Download file
         file_data = storage_service.download_file(document.storage_key)
         if not file_data:
             raise Exception("Failed to download file from storage")
-        
+
         # Get extractor
         extractor = get_extractor()
-        
+
         # Extract text first
         text = extractor.extract_text(file_data, document.original_filename)
-        
+
         # Route by document type
         if document.document_type == "transcript":
             extracted_data = extractor.extract_transcript_with_llm(text)
@@ -344,27 +353,33 @@ def process_document(document_id: str, attempt: int = 1):
             extracted_data = extractor.extract_essay_with_llm(text)
         else:
             extracted_data = {"text": text[:5000]}
-        
+
         # Update document
         document.extracted_summary = extracted_data
         document.processing_status = "completed"
         document.processed_at = datetime.utcnow()
-        
-        # For transcripts, create AcademicRecord
+
+        # For transcripts, create AcademicRecord and update profile completion
         if document.document_type == "transcript" and extracted_data:
             create_academic_record_from_transcript(db, document, extracted_data)
-        
+            # Recalculate profile completion after adding academic record
+            profile = db.query(UserProfile).filter(
+                UserProfile.user_id == document.user_id
+            ).first()
+            if profile:
+                profile.profile_completion_score = calculate_profile_completion_score(profile, db)
+
         # Update log
         log.status = "succeeded"
         log.finished_at = datetime.utcnow()
-        
+
         db.commit()
         logger.info(f"Document {document_id} processed successfully")
-        
+
     except Exception as e:
         logger.error(f"Error processing document {document_id}: {e}")
         db.rollback()
-        
+
         # Update document status
         try:
             document = db.query(Document).filter(Document.id == UUID(document_id)).first()
@@ -374,7 +389,7 @@ def process_document(document_id: str, attempt: int = 1):
                 db.commit()
         except:
             pass
-        
+
         # Update log
         if log:
             try:
@@ -384,8 +399,8 @@ def process_document(document_id: str, attempt: int = 1):
                 db.commit()
             except:
                 pass
-        
-        raise  # Re-raise for retry handling
+
+        raise  # Re-raise for Celery retry handling
     finally:
         db.close()
 
@@ -396,7 +411,7 @@ def create_academic_record_from_transcript(
     extracted_data: dict
 ):
     """Create AcademicRecord from extracted transcript data.
-    
+
     Args:
         db: Database session
         document: Document object
@@ -406,17 +421,17 @@ def create_academic_record_from_transcript(
     if not institution_name:
         logger.warning("No institution name extracted from transcript")
         return
-    
+
     # Check if record already exists
     existing = db.query(AcademicRecord).filter(
         AcademicRecord.user_id == document.user_id,
         AcademicRecord.institution_name == institution_name,
         AcademicRecord.source == "transcript_extraction"
     ).first()
-    
+
     gpa_value = extracted_data.get("gpa_value")
     gpa_scale = extracted_data.get("gpa_scale")
-    
+
     if existing:
         # Update existing record
         if gpa_value and gpa_scale:
@@ -429,12 +444,12 @@ def create_academic_record_from_transcript(
             existing.degree_level = extracted_data["degree_level"]
         logger.info(f"Updated existing academic record for {institution_name}")
         return
-    
+
     # Calculate normalized GPA
     normalized_gpa = None
     if gpa_value and gpa_scale:
         normalized_gpa = normalize_gpa(gpa_value, gpa_scale)
-    
+
     # Create new record
     record = AcademicRecord(
         user_id=document.user_id,
@@ -450,7 +465,6 @@ def create_academic_record_from_transcript(
         source="transcript_extraction",
         notes=f"Extracted from document: {document.original_filename}",
     )
-    
+
     db.add(record)
     logger.info(f"Created academic record for {institution_name}")
-

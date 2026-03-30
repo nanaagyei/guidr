@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, contains_eager, joinedload
 
 from src.db import get_db
 from src.dependencies.auth import get_current_user
+from src.dependencies.feature_gate import require_level
 from src.models.funding_opportunity import FundingOpportunity
 from src.models.institution import Institution
 from src.models.user import User
@@ -30,10 +31,11 @@ async def list_funding(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     use_search: bool = Query(True),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_level(2)),
     db: Session = Depends(get_db),
 ):
     """List funding opportunities with filtering and pagination.
+    Requires profile completion Level 2 (targeting complete).
 
     Query Parameters:
         institution_id: Filter by institution UUID

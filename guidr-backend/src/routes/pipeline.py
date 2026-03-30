@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from src.db import get_db
-from src.dependencies.auth import get_current_user, require_admin_user
+from src.dependencies.auth import get_current_user, require_admin_user, require_admin_or_internal_key
 from src.models.pipeline_job import PipelineJob
 from src.models.user import User
 from src.pipeline.repositories.job_repository import JobRepository
@@ -177,7 +177,7 @@ async def get_job_status(
 @router.post("/admin/refresh")
 async def admin_force_refresh(
     request: EnrichRequest,
-    admin_user: User = Depends(require_admin_user),
+    _auth: str = Depends(require_admin_or_internal_key),
     db: Session = Depends(get_db),
 ):
     """Force refresh an entity (admin only, bypasses quota)."""
@@ -199,7 +199,7 @@ async def admin_force_refresh(
 @router.post("/admin/jobs/{job_id}/rerun")
 async def admin_rerun_job(
     job_id: str,
-    admin_user: User = Depends(require_admin_user),
+    _auth: str = Depends(require_admin_or_internal_key),
     db: Session = Depends(get_db),
 ):
     """Retry a failed job (admin only)."""
@@ -217,7 +217,7 @@ async def admin_rerun_job(
 @router.post("/admin/jobs/{job_id}/cancel")
 async def admin_cancel_job(
     job_id: str,
-    admin_user: User = Depends(require_admin_user),
+    _auth: str = Depends(require_admin_or_internal_key),
     db: Session = Depends(get_db),
 ):
     """Cancel a queued job (admin only)."""
@@ -234,7 +234,7 @@ async def admin_cancel_job(
 
 @router.get("/admin/domains")
 async def admin_domain_health(
-    admin_user: User = Depends(require_admin_user),
+    _auth: str = Depends(require_admin_or_internal_key),
     db: Session = Depends(get_db),
 ):
     """Domain health overview (admin only)."""
@@ -247,7 +247,7 @@ async def admin_domain_health(
 @router.post("/admin/cache/purge")
 async def admin_purge_cache(
     max_age_days: int = Query(90),
-    admin_user: User = Depends(require_admin_user),
+    _auth: str = Depends(require_admin_or_internal_key),
     db: Session = Depends(get_db),
 ):
     """Purge expired cache entries (admin only)."""
