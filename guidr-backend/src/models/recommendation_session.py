@@ -36,9 +36,12 @@ class RecommendationSession(Base):
     )
     error_message = Column(String, nullable=True)
     
+    pipeline_job_id = Column(UUID(as_uuid=True), ForeignKey("pipeline_jobs.id", ondelete="SET NULL"), nullable=True)
+    citations_json = Column(JSON, nullable=False, default=list)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
-    
+
     # Relationships
     user = relationship("User", backref="recommendation_sessions")
     results = relationship("RecommendationResult", back_populates="session", cascade="all, delete-orphan")

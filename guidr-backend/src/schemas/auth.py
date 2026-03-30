@@ -4,18 +4,17 @@ from typing import Optional
 
 
 class UserRegister(BaseModel):
-    """User registration schema."""
+    """User registration schema (requires email 2FA code)."""
     email: EmailStr
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
     full_name: str
-    verification_code: Optional[str] = None  # 2FA code for final registration step
+    verification_code: Optional[str] = None
 
 
 class UserLogin(BaseModel):
-    """User login schema."""
+    """User login schema (email + password only, no 2FA code)."""
     email: EmailStr
     password: str
-    verification_code: Optional[str] = None  # 2FA code for login verification
     remember_me: bool = False
 
 

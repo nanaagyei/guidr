@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -46,6 +46,11 @@ class FundingOpportunity(Base):
     covers_stipend = Column(Boolean, nullable=True)
     source_url = Column(String, nullable=True)
     data_source = Column(String, default="web_scrape", nullable=False)
+
+    # Enrichment tracking (set by promote_write node)
+    last_enriched_at = Column(DateTime(timezone=True), nullable=True)
+    last_enrichment_confidence = Column(Numeric(4, 3), nullable=True)
+    data_version = Column(Integer, nullable=False, default=1)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(

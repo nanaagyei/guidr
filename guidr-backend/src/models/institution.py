@@ -54,6 +54,11 @@ class Institution(Base):
     last_scraped_at = Column(DateTime, nullable=True)
     scrape_status = Column(String, nullable=True)  # 'pending', 'scraping', 'completed', 'failed'
 
+    # Enrichment tracking (set by promote_write node)
+    last_enriched_at = Column(DateTime(timezone=True), nullable=True)
+    last_enrichment_confidence = Column(Numeric(4, 3), nullable=True)
+    data_version = Column(Integer, nullable=False, default=1)
+
     is_deleted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

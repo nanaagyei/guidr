@@ -39,6 +39,11 @@ class Program(Base):
     minimum_gpa = Column(Numeric(3, 2), nullable=True)
     last_scraped_at = Column(DateTime, nullable=True)
 
+    # Enrichment tracking (set by promote_write node)
+    last_enriched_at = Column(DateTime(timezone=True), nullable=True)
+    last_enrichment_confidence = Column(Numeric(4, 3), nullable=True)
+    data_version = Column(Integer, nullable=False, default=1)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

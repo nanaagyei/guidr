@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import relationship
 
@@ -19,7 +19,7 @@ class RawArtifact(Base):
     __tablename__ = "raw_artifacts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_document_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    source_document_id = Column(UUID(as_uuid=True), ForeignKey("source_documents.id", ondelete="SET NULL"), nullable=True, index=True)
     fetched_from_url = Column(Text, nullable=False)
     fetched_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 

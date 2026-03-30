@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, Numeric, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import relationship
 
@@ -19,8 +19,8 @@ class ExtractionRun(Base):
     __tablename__ = "extraction_runs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    job_id = Column(UUID(as_uuid=True), nullable=True, index=True)
-    raw_artifact_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("pipeline_jobs.id", ondelete="SET NULL"), nullable=True, index=True)
+    raw_artifact_id = Column(UUID(as_uuid=True), ForeignKey("raw_artifacts.id", ondelete="CASCADE"), nullable=False, index=True)
 
     entity_kind = Column(String, nullable=False)
     entity_id = Column(UUID(as_uuid=True), nullable=True)
@@ -32,6 +32,7 @@ class ExtractionRun(Base):
 
     extracted_json = Column(JSON, nullable=False)
     citations_json = Column(JSON, nullable=False, default=list)
+    evidence_map_json = Column(JSON, nullable=False, default=dict)
     confidence = Column(Numeric(4, 3), nullable=True)
 
     status = Column(String, nullable=False, default="draft")  # draft, validated, promoted, rejected

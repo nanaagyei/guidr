@@ -9,6 +9,7 @@ from src.models.two_factor_code import TwoFactorCode
 from src.models.password_history import PasswordHistory
 from src.models.recommendation_session import RecommendationSession
 from src.models.recommendation_result import RecommendationResult
+from src.models.saved_recommendation import SavedRecommendation
 from src.models.professor import Professor
 from src.models.professor_research_tag import ProfessorResearchTag
 from src.models.outreach_email import OutreachEmail

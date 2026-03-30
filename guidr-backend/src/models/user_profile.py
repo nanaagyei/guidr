@@ -30,7 +30,11 @@ class UserProfile(Base):
     preferred_cities = Column(JSON, nullable=True)  # Array of city strings
     funding_priority = Column(String, nullable=True)  # 'must_have', 'nice_to_have', 'no_preference'
     program_style_preference = Column(String, nullable=True)  # 'research', 'coursework', 'both'
-    
+
+    # Research interests & goals (collected during onboarding)
+    research_areas = Column(JSON, nullable=True)   # Array of research interest strings
+    career_goals = Column(String, nullable=True)    # Free-text career goals
+
     # Completion & embeddings
     profile_completion_score = Column(Integer, default=0, nullable=False)  # 0-100
     profile_embedding = Column(JSON, nullable=True)  # Vector for semantic matching (future)

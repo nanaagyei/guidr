@@ -1,4 +1,5 @@
 """Pydantic schemas for institutions."""
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
@@ -26,5 +27,8 @@ class InstitutionResponse(BaseModel):
     graduation_rate: Optional[Decimal] = None
     median_earnings: Optional[Decimal] = None
     data_completeness_score: int
+    last_enriched_at: Optional[datetime] = None
+    last_enrichment_confidence: Optional[Decimal] = None
+    data_version: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
