@@ -1,14 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { School, MapPin, Star, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { School, MapPin, Star, ExternalLink, CheckCircle2, Bookmark, Calendar, DollarSign, Loader2 } from 'lucide-react';
 
 interface RecommendationCardProps {
   recommendation: {
-    program_id: string;
+    result_id?: string;
+    program_id?: string | null;
     program_name: string;
     institution_name?: string;
+    school_name?: string;
     institution_city?: string;
     institution_country?: string;
     score: number;
@@ -16,11 +19,21 @@ interface RecommendationCardProps {
     explanation?: string;
     reason_features?: string[];
     rank: number;
+    funding_summary?: string;
+    deadline?: string;
+    website_url?: string;
+    is_saved?: boolean;
+    saved_id?: string;
   };
   index?: number;
+  onExplain?: (recommendation: any) => void;
+  onSave?: (resultId: string) => Promise<void>;
 }
 
-export default function RecommendationCard({ recommendation, index = 0 }: RecommendationCardProps) {
+export default function RecommendationCard({ recommendation, index = 0, onExplain, onSave }: RecommendationCardProps) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(recommendation.is_saved || false);
+
   const getTierConfig = (tier: string) => {
     switch (tier) {
       case 'dream':
@@ -57,6 +70,20 @@ export default function RecommendationCard({ recommendation, index = 0 }: Recomm
   };
 
   const tierConfig = getTierConfig(recommendation.tier);
+  const displayName = recommendation.institution_name || recommendation.school_name;
+
+  async function handleSave() {
+    if (!onSave || !recommendation.result_id || saving || saved) return;
+    setSaving(true);
+    try {
+      await onSave(recommendation.result_id);
+      setSaved(true);
+    } catch {
+      // Error handled by parent
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <motion.div
@@ -77,8 +104,8 @@ export default function RecommendationCard({ recommendation, index = 0 }: Recomm
               <h3 className="text-lg font-semibold text-text mb-1 truncate">
                 {recommendation.program_name}
               </h3>
-              {recommendation.institution_name && (
-                <p className="text-sm text-gray-600 truncate">{recommendation.institution_name}</p>
+              {displayName && (
+                <p className="text-sm text-gray-600 truncate">{displayName}</p>
               )}
             </div>
           </div>
@@ -114,9 +141,25 @@ export default function RecommendationCard({ recommendation, index = 0 }: Recomm
             </div>
           )}
 
+          {/* Funding Summary */}
+          {recommendation.funding_summary && (
+            <div className="flex items-start gap-2 mb-2">
+              <DollarSign className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-700">{recommendation.funding_summary}</p>
+            </div>
+          )}
+
+          {/* Deadline */}
+          {recommendation.deadline && (
+            <div className="flex items-start gap-2 mb-2">
+              <Calendar className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-700">Deadline: {recommendation.deadline}</p>
+            </div>
+          )}
+
           {/* Reason Features */}
           {recommendation.reason_features && recommendation.reason_features.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 mt-3">
               {recommendation.reason_features.slice(0, 3).map((reason, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -130,14 +173,60 @@ export default function RecommendationCard({ recommendation, index = 0 }: Recomm
 
       {/* Actions */}
       <div className="flex gap-3 pt-4 border-t border-border">
-        <Link
-          href={`/programs/${recommendation.program_id}`}
-          className="flex-1 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition text-center text-sm"
-        >
-          View Program
-        </Link>
+        {recommendation.program_id ? (
+          <Link
+            href={`/programs/${recommendation.program_id}`}
+            className="flex-1 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition text-center text-sm"
+          >
+            View Program
+          </Link>
+        ) : recommendation.website_url ? (
+          <a
+            href={recommendation.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition text-center text-sm inline-flex items-center justify-center gap-1.5"
+          >
+            Visit Program
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+
+        {onSave && recommendation.result_id && (
+          <button
+            onClick={handleSave}
+            disabled={saving || saved}
+            className={`flex items-center justify-center gap-1.5 px-4 py-2 font-semibold rounded-lg transition text-sm ${
+              saved
+                ? 'bg-green-100 text-green-700 border border-green-200'
+                : 'bg-muted text-text hover:bg-border'
+            }`}
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Saved
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-4 w-4" />
+                Save School
+              </>
+            )}
+          </button>
+        )}
+
+        {onExplain && (
+          <button
+            onClick={() => onExplain(recommendation)}
+            className="px-4 py-2 bg-muted text-text font-semibold rounded-lg hover:bg-border transition text-center text-sm"
+          >
+            Why This?
+          </button>
+        )}
       </div>
     </motion.div>
   );
 }
-

@@ -8,36 +8,30 @@ import { TileHeader } from '@/components/ui/tile-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getMockDeadlines, type MockDeadline } from '@/utils/mockData';
+import { getUpcomingDeadlines } from '@/utils/api';
 
 export default function CalendarTile() {
-  const [deadlines, setDeadlines] = useState<MockDeadline[]>([]);
+  const [deadlines, setDeadlines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDeadlines = async () => {
-      setLoading(true);
-      setTimeout(() => {
-        const data = getMockDeadlines();
-        setDeadlines(data);
-        setLoading(false);
-      }, 500);
-    };
-
-    fetchDeadlines();
+    getUpcomingDeadlines()
+      .then((rows) => setDeadlines(Array.isArray(rows) ? rows : []))
+      .catch(() => setDeadlines([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const getUrgencyBadge = (urgency: string) => {
-    switch (urgency) {
-      case 'high':
-        return <Badge variant="danger">Urgent</Badge>;
-      case 'medium':
-        return <Badge variant="warning">Soon</Badge>;
-      case 'low':
-        return <Badge variant="success">Upcoming</Badge>;
-      default:
-        return <Badge>{urgency}</Badge>;
-    }
+  const getDaysUntil = (dateString: string) => {
+    const today = new Date();
+    const deadline = new Date(dateString);
+    return Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const getUrgencyBadge = (dateString: string) => {
+    const days = getDaysUntil(dateString);
+    if (days <= 7) return <Badge variant="danger">Urgent</Badge>;
+    if (days <= 21) return <Badge variant="warning">Soon</Badge>;
+    return <Badge variant="success">Upcoming</Badge>;
   };
 
   const formatDate = (dateString: string) => {
@@ -55,7 +49,7 @@ export default function CalendarTile() {
         <TileHeader
           title="Upcoming Deadlines"
           actionLabel="View All"
-          actionHref="/dashboard/calendar"
+          actionHref="/schools"
           icon={<Calendar className="h-5 w-5" />}
         />
       </CardHeader>
@@ -91,20 +85,24 @@ export default function CalendarTile() {
                       {deadline.program_name}
                     </p>
                   </div>
-                  {getUrgencyBadge(deadline.urgency)}
+                  {getUrgencyBadge(deadline.deadline_date)}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-textSecondary">
                   <Clock className="h-3 w-3" />
                   <span className="font-medium">{formatDate(deadline.deadline_date)}</span>
                   <span className="text-textMuted">•</span>
                   <span>
-                    {deadline.days_until === 0
-                      ? 'Due today'
-                      : deadline.days_until === 1
-                        ? 'Due tomorrow'
-                        : `${deadline.days_until} days left`}
+                    {(() => {
+                      const d = getDaysUntil(deadline.deadline_date);
+                      if (d <= 0) return 'Due today';
+                      if (d === 1) return 'Due tomorrow';
+                      return `${d} days left`;
+                    })()}
                   </span>
                 </div>
+                {deadline.is_verified === false && (
+                  <p className="text-xs text-amber-500 mt-1">Data may be incomplete — verify with school</p>
+                )}
               </div>
             ))}
           </div>

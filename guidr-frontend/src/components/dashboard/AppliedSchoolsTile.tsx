@@ -8,23 +8,28 @@ import { TileHeader } from '@/components/ui/tile-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getMockAppliedSchools, type MockAppliedSchool } from '@/utils/mockData';
+import { getLatestRecommendations } from '@/utils/api';
 
 export default function AppliedSchoolsTile() {
-  const [applications, setApplications] = useState<MockAppliedSchool[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchApplications = async () => {
-      setLoading(true);
-      setTimeout(() => {
-        const data = getMockAppliedSchools();
-        setApplications(data);
-        setLoading(false);
-      }, 500);
-    };
-
-    fetchApplications();
+    getLatestRecommendations()
+      .then((session) => {
+        if (!session) { setApplications([]); return; }
+        // Flatten dream/reach_target/safety into a single list with tier labels
+        const all: any[] = [];
+        const tiers = ['dream', 'reach_target', 'safety'] as const;
+        tiers.forEach((tier) => {
+          (session[tier] || []).forEach((school: any) => {
+            all.push({ ...school, status: tier === 'dream' ? 'interested' : tier === 'reach_target' ? 'in_progress' : 'interested' });
+          });
+        });
+        setApplications(all);
+      })
+      .catch(() => setApplications([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -62,7 +67,7 @@ export default function AppliedSchoolsTile() {
         <TileHeader
           title="Applied Schools"
           actionLabel="Manage Applications"
-          actionHref="/dashboard/applications"
+          actionHref="/recommendations"
           icon={<FileCheck className="h-5 w-5" />}
         />
       </CardHeader>
@@ -84,32 +89,35 @@ export default function AppliedSchoolsTile() {
           />
         ) : (
           <div className="space-y-3 flex-1">
-            {applications.map((app) => {
-              const daysUntil = app.application_deadline
-                ? getDaysUntil(app.application_deadline)
-                : null;
+            {applications.map((app, idx) => {
+              const schoolName = app.school_name || app.name;
+              const programName = app.program_guess || app.program_name;
+              const deadline = app.application_deadline;
+              const daysUntil = deadline ? getDaysUntil(deadline) : null;
 
               return (
                 <div
-                  key={app.id}
+                  key={app.id || idx}
                   className="p-3 rounded-xl border border-border hover:border-primary/30 transition-colors bg-muted/30"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-text text-sm mb-1 truncate">
-                        {app.school_name}
+                        {schoolName}
                       </h3>
-                      <p className="text-xs text-textSecondary truncate mb-2">
-                        {app.program_name}
-                      </p>
+                      {programName && (
+                        <p className="text-xs text-textSecondary truncate mb-2">
+                          {programName}
+                        </p>
+                      )}
                     </div>
                     {getStatusBadge(app.status)}
                   </div>
-                  {app.application_deadline && (
+                  {deadline && (
                     <div className="flex items-center gap-2 text-xs text-textSecondary">
                       <Clock className="h-3 w-3" />
                       <span>
-                        Deadline: {formatDate(app.application_deadline)}
+                        Deadline: {formatDate(deadline)}
                         {daysUntil !== null && daysUntil >= 0 && (
                           <span className="ml-1">
                             ({daysUntil === 0

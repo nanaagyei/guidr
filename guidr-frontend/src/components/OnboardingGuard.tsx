@@ -35,8 +35,9 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
       }
 
       try {
-        const { needsOnboarding } = await checkOnboardingStatus();
-        if (needsOnboarding) {
+        const { level } = await checkOnboardingStatus();
+        // Only redirect to onboarding if level 0 (no basic info at all)
+        if (level === 0) {
           router.push('/onboarding');
         }
       } catch (error) {
@@ -61,4 +62,3 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   return <>{children}</>;
 }
-

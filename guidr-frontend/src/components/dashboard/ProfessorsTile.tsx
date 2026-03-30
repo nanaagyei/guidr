@@ -7,25 +7,19 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { TileHeader } from '@/components/ui/tile-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
-import { getMockProfessors, type MockProfessor } from '@/utils/mockData';
+import { getRecommendedProfessors } from '@/utils/api';
 import { useRouter } from 'next/navigation';
 
 export default function ProfessorsTile() {
   const router = useRouter();
-  const [professors, setProfessors] = useState<MockProfessor[]>([]);
+  const [professors, setProfessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfessors = async () => {
-      setLoading(true);
-      setTimeout(() => {
-        const data = getMockProfessors();
-        setProfessors(data);
-        setLoading(false);
-      }, 500);
-    };
-
-    fetchProfessors();
+    getRecommendedProfessors()
+      .then((rows) => setProfessors(Array.isArray(rows) ? rows : []))
+      .catch(() => setProfessors([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleDraftEmail = async (professorId: string) => {
