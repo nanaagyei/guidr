@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getFundingOpportunities } from '@/utils/api';
 import { DollarSign, Search, Building2, Calendar, ExternalLink } from 'lucide-react';
+import ProfileHealthBanner from '@/components/ProfileHealthBanner';
 
 const FUNDING_TYPES = [
   { value: '', label: 'All types' },
@@ -88,6 +89,7 @@ export default function FundingPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <ProfileHealthBanner requiredLevel={2} featureName="Funding" />
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-semibold text-text mb-2">
           Funding Opportunities

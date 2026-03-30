@@ -15,6 +15,7 @@ import ProfessorCard from '@/components/ProfessorCard';
 import EmailDraftModal from '@/components/EmailDraftModal';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Search, Filter, X, Loader2, AlertCircle } from 'lucide-react';
+import ProfileHealthBanner from '@/components/ProfileHealthBanner';
 
 export default function ProfessorsPage() {
   const { user } = useAuth();
@@ -140,6 +141,7 @@ export default function ProfessorsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      <ProfileHealthBanner requiredLevel={2} featureName="Professors" />
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-text mb-2">Professors</h1>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '../styles/globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ProfileCompletionProvider } from '@/contexts/ProfileCompletionContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import ConditionalLayout from '@/components/ConditionalLayout'
 
@@ -29,11 +30,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <ToastProvider>
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
-          </ToastProvider>
+          <ProfileCompletionProvider>
+            <ToastProvider>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </ToastProvider>
+          </ProfileCompletionProvider>
         </AuthProvider>
       </body>
     </html>

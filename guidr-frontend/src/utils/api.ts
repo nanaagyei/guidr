@@ -30,7 +30,7 @@ async function fetchWithCredentials(
  */
 export async function send2FACode(data: {
   email: string;
-  purpose: 'register' | 'login' | 'password_reset';
+  purpose: 'register' | 'password_reset';
 }): Promise<any> {
   const response = await fetchWithCredentials('/auth/2fa/send', {
     method: 'POST',
@@ -70,7 +70,7 @@ export async function checkEmail(data: {
 export async function verify2FACode(data: {
   email: string;
   code: string;
-  purpose: 'register' | 'login';
+  purpose: 'register' | 'password_reset';
 }): Promise<any> {
   const response = await fetchWithCredentials('/auth/2fa/verify', {
     method: 'POST',
@@ -128,12 +128,11 @@ export async function verifyCredentials(data: {
 }
 
 /**
- * Login user (requires 2FA code).
+ * Login user (email + password, no 2FA code).
  */
 export async function postLogin(data: {
   email: string;
   password: string;
-  verification_code: string;
   remember_me?: boolean;
 }): Promise<any> {
   const response = await fetchWithCredentials('/auth/login', {
@@ -294,6 +293,22 @@ export async function postAcademicRecord(data: any): Promise<any> {
     throw new Error(error.detail || 'Failed to create academic record');
   }
 
+  return response.json();
+}
+
+/**
+ * Update academic record.
+ */
+export async function putAcademicRecord(id: string, data: any): Promise<any> {
+  const response = await fetchWithCredentials(`/academic-records/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to update academic record');
+  }
   return response.json();
 }
 
@@ -571,7 +586,10 @@ export async function getLatestRecommendations(): Promise<any> {
     throw new Error(error.detail || 'Failed to fetch recommendations');
   }
 
-  return response.json();
+  const data = await response.json();
+  // Backend returns {session_id: null, results: []} when no sessions exist
+  if (!data.session_id) return null;
+  return data;
 }
 
 /**
@@ -586,6 +604,51 @@ export async function getRecommendationSession(sessionId: string): Promise<any> 
   }
 
   return response.json();
+}
+
+/**
+ * Save a recommendation result (triggers deep research pipelines).
+ */
+export async function saveRecommendation(resultId: string): Promise<any> {
+  const response = await fetchWithCredentials(`/recommendations/results/${resultId}/save`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to save recommendation');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get saved recommendations with research progress.
+ */
+export async function getSavedRecommendations(): Promise<any[]> {
+  const response = await fetchWithCredentials('/recommendations/saved');
+
+  if (!response.ok) {
+    if (response.status === 404) return [];
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch saved recommendations');
+  }
+
+  return response.json();
+}
+
+/**
+ * Remove a saved recommendation.
+ */
+export async function unsaveRecommendation(savedId: string): Promise<void> {
+  const response = await fetchWithCredentials(`/recommendations/saved/${savedId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to remove saved recommendation');
+  }
 }
 
 /**
@@ -862,21 +925,51 @@ export async function getFundingByInstitution(institutionId: string): Promise<{
 }
 
 /**
- * Check if user needs onboarding (based on profile completion).
+ * Profile completion details with level-based unlocks.
  */
-export async function checkOnboardingStatus(): Promise<{ needsOnboarding: boolean; completionScore: number }> {
+export interface ProfileCompletion {
+  percent: number;
+  level: number;
+  missing_fields: string[];
+  unlocks: {
+    dashboard: boolean;
+    recommendations: boolean;
+    professors: boolean;
+    funding: boolean;
+  };
+}
+
+/**
+ * Get profile completion details (level, missing fields, unlocks).
+ */
+export async function getProfileCompletion(): Promise<ProfileCompletion> {
+  const response = await fetchWithCredentials('/profile/completion');
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch profile completion');
+  }
+
+  return response.json();
+}
+
+/**
+ * Check if user needs onboarding (based on profile completion level).
+ */
+export async function checkOnboardingStatus(): Promise<{ needsOnboarding: boolean; completionScore: number; level: number }> {
   try {
-    const profile = await getProfile();
-    const completionScore = profile?.profile_completion_score || 0;
+    const completion = await getProfileCompletion();
     return {
-      needsOnboarding: completionScore < 30,
-      completionScore,
+      needsOnboarding: completion.level === 0,
+      completionScore: completion.percent,
+      level: completion.level,
     };
   } catch (error) {
     // If profile doesn't exist, user needs onboarding
     return {
       needsOnboarding: true,
       completionScore: 0,
+      level: 0,
     };
   }
 }
@@ -960,4 +1053,126 @@ export async function getCacheStatus(
   }
 
   return response.json();
+}
+
+/**
+ * Normalize `GET /schools/saved` payload — API returns `{ schools, total }`.
+ */
+function normalizeSavedSchoolsPayload(data: unknown): any[] {
+  const raw = Array.isArray(data)
+    ? data
+    : data &&
+        typeof data === 'object' &&
+        Array.isArray((data as { schools?: unknown }).schools)
+      ? (data as { schools: unknown[] }).schools
+      : [];
+
+  return raw.map((item: any) => {
+    const parts = [item.city, item.state_or_province, item.country].filter(Boolean);
+    const location = parts.length ? parts.join(', ') : (item.location ?? '—');
+    return {
+      ...item,
+      location: item.location ?? location,
+    };
+  });
+}
+
+/**
+ * Normalize `GET /dossiers/professors/recommended` — API returns `{ professors, total }`.
+ */
+function normalizeRecommendedProfessorsPayload(data: unknown): any[] {
+  const raw = Array.isArray(data)
+    ? data
+    : data &&
+        typeof data === 'object' &&
+        Array.isArray((data as { professors?: unknown }).professors)
+      ? (data as { professors: unknown[] }).professors
+      : [];
+  return raw;
+}
+
+/**
+ * Get saved schools for the current user (from dossier cache + recommendations).
+ */
+export async function getSavedSchools(): Promise<any[]> {
+  const response = await fetchWithCredentials('/schools/saved');
+
+  if (!response.ok) {
+    if (response.status === 404) return [];
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch saved schools');
+  }
+
+  const data = await response.json();
+  return normalizeSavedSchoolsPayload(data);
+}
+
+/**
+ * Get recommended professors aggregated from the user's saved school dossiers.
+ */
+export async function getRecommendedProfessors(): Promise<any[]> {
+  const response = await fetchWithCredentials('/dossiers/professors/recommended');
+
+  if (!response.ok) {
+    if (response.status === 404) return [];
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch recommended professors');
+  }
+
+  const data = await response.json();
+  return normalizeRecommendedProfessorsPayload(data);
+}
+
+/**
+ * Normalize `GET /dossiers/deadlines` payload for dashboard calendar UI.
+ * Backend returns `{ deadlines: [...] }` with `deadline` (not `deadline_date`).
+ */
+function normalizeUpcomingDeadlinesPayload(data: unknown): any[] {
+  const raw = Array.isArray(data)
+    ? data
+    : data &&
+        typeof data === 'object' &&
+        Array.isArray((data as { deadlines?: unknown }).deadlines)
+      ? (data as { deadlines: unknown[] }).deadlines
+      : [];
+
+  const coerceDeadlineIso = (d: unknown): string => {
+    if (d == null) return '';
+    if (typeof d === 'string') return d;
+    if (typeof d === 'object' && d !== null) {
+      const o = d as Record<string, unknown>;
+      if (typeof o.date === 'string') return o.date;
+      if (typeof o.deadline === 'string') return o.deadline;
+      if (typeof o.iso === 'string') return o.iso;
+    }
+    try {
+      return JSON.stringify(d);
+    } catch {
+      return '';
+    }
+  };
+
+  return raw.map((item: any, i: number) => ({
+    id: item.id ?? item.entity_id ?? `deadline-${i}`,
+    school_name: item.school_name ?? 'Unknown school',
+    program_name: item.program_name ?? '',
+    deadline_date: coerceDeadlineIso(item.deadline_date ?? item.deadline),
+    is_verified: item.is_verified,
+  }));
+}
+
+/**
+ * Get upcoming application deadlines extracted from school dossiers.
+ */
+export async function getUpcomingDeadlines(): Promise<any[]> {
+  const response = await fetchWithCredentials('/dossiers/deadlines');
+
+  if (!response.ok) {
+    if (response.status === 404) return [];
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch upcoming deadlines');
+  }
+
+  const data = await response.json();
+  return normalizeUpcomingDeadlinesPayload(data);
 }

@@ -8,16 +8,20 @@ import {
   requestRecommendations,
   getLatestRecommendations,
   getRecommendationSession,
+  saveRecommendation,
 } from '@/utils/api';
 import { getProfile } from '@/utils/api';
 import RecommendationCard from '@/components/RecommendationCard';
 import TierBadge from '@/components/TierBadge';
 import { Sparkles, Loader2, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useProfileCompletion } from '@/contexts/ProfileCompletionContext';
+import RecommendationExplainModal from '@/components/RecommendationExplainModal';
 
 export default function RecommendationsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { completion } = useProfileCompletion();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<any>(null);
@@ -25,6 +29,10 @@ export default function RecommendationsPage() {
   const [error, setError] = useState('');
   const [pollingSessionId, setPollingSessionId] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingStartRef = useRef<number>(0);
+  const POLLING_TIMEOUT_MS = 120_000; // 2 minutes max
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [explainRec, setExplainRec] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -38,7 +46,17 @@ export default function RecommendationsPage() {
   useEffect(() => {
     // Poll for session completion if generating
     if (pollingSessionId && !pollingIntervalRef.current) {
+      pollingStartRef.current = Date.now();
       pollingIntervalRef.current = setInterval(() => {
+        // Stop polling after timeout
+        if (Date.now() - pollingStartRef.current > POLLING_TIMEOUT_MS) {
+          clearInterval(pollingIntervalRef.current!);
+          pollingIntervalRef.current = null;
+          setPollingSessionId(null);
+          setGenerating(false);
+          setError('Request timed out. The pipeline may still be processing — try refreshing in a moment.');
+          return;
+        }
         checkSessionStatus(pollingSessionId);
       }, 3000); // Poll every 3 seconds
     }
@@ -107,7 +125,18 @@ export default function RecommendationsPage() {
 
     try {
       const response = await requestRecommendations('dashboard_button');
+      if (response.status === 'failed') {
+        setGenerating(false);
+        setError(response.error_message || 'Failed to generate recommendations');
+        return;
+      }
       if (response.session_id) {
+        if (response.status === 'completed') {
+          // Completed synchronously — reload results
+          setGenerating(false);
+          await loadRecommendations();
+          return;
+        }
         setPollingSessionId(response.session_id);
         // Check immediately, then polling will take over
         setTimeout(() => checkSessionStatus(response.session_id), 2000);
@@ -118,8 +147,27 @@ export default function RecommendationsPage() {
     }
   }
 
-  const completionScore = profile?.profile_completion_score || 0;
-  const canGenerate = completionScore >= 60;
+  async function handleSaveSchool(resultId: string) {
+    try {
+      await saveRecommendation(resultId);
+      // Update local state to mark as saved
+      setRecommendations((prev: any) => {
+        if (!prev?.results) return prev;
+        return {
+          ...prev,
+          results: prev.results.map((r: any) =>
+            r.result_id === resultId ? { ...r, is_saved: true } : r
+          ),
+        };
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to save school');
+      throw err;
+    }
+  }
+
+  const completionScore = completion?.percent ?? profile?.profile_completion_score ?? 0;
+  const canGenerate = (completion?.level ?? 0) >= 2;
 
   // Group recommendations by tier
   const tierGroups = recommendations?.results?.reduce((acc: any, rec: any) => {
@@ -161,7 +209,13 @@ export default function RecommendationsPage() {
           <p className="text-textSecondary">Get personalized program recommendations based on your profile.</p>
         </div>
         <Button
-          onClick={handleGenerateRecommendations}
+          onClick={() => {
+            if (recommendations) {
+              setShowConfirm(true);
+            } else {
+              handleGenerateRecommendations();
+            }
+          }}
           disabled={!canGenerate || generating}
         >
           {generating ? (
@@ -230,8 +284,8 @@ export default function RecommendationsPage() {
           >
             <Loader2 className="h-12 w-12 text-text" />
           </motion.div>
-          <p className="text-lg font-medium text-text mb-2">Generating recommendations...</p>
-          <p className="text-sm text-textSecondary">This may take a few moments</p>
+          <p className="text-lg font-medium text-text mb-2">Researching programs...</p>
+          <p className="text-sm text-textSecondary">This may take 30-60 seconds as we analyze programs for you</p>
         </motion.div>
       )}
 
@@ -276,9 +330,11 @@ export default function RecommendationsPage() {
                 <div className="grid grid-cols-1 gap-4">
                   {tierRecs.map((rec: any, index: number) => (
                     <RecommendationCard
-                      key={rec.program_id}
+                      key={rec.result_id || rec.program_id || index}
                       recommendation={rec}
                       index={index}
+                      onExplain={setExplainRec}
+                      onSave={handleSaveSchool}
                     />
                   ))}
                 </div>
@@ -308,6 +364,44 @@ export default function RecommendationsPage() {
           </p>
         </motion.div>
       )}
+      {/* Confirmation dialog for regeneration */}
+      {showConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowConfirm(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-display font-semibold text-text mb-2">Regenerate Recommendations?</h3>
+              <p className="text-sm text-textSecondary mb-6">
+                This may take 30-60 seconds. Your current results will be preserved until new ones are ready.
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-textSecondary hover:text-text transition"
+                >
+                  Cancel
+                </button>
+                <Button
+                  onClick={() => {
+                    setShowConfirm(false);
+                    handleGenerateRecommendations();
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Explain recommendation modal */}
+      <RecommendationExplainModal
+        recommendation={explainRec}
+        open={!!explainRec}
+        onClose={() => setExplainRec(null)}
+      />
     </div>
   );
 }

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProfile, putProfile } from '@/utils/api';
+import { getProfile, putProfile, getAcademicRecords } from '@/utils/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, GraduationCap } from 'lucide-react';
+import Link from 'next/link';
+import { useProfileCompletion } from '@/contexts/ProfileCompletionContext';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -33,6 +35,8 @@ export default function ProfilePage() {
   });
 
   const [profile, setProfile] = useState<any>(null);
+  const [recordCount, setRecordCount] = useState<number>(0);
+  const { completion } = useProfileCompletion();
 
   useEffect(() => {
     if (!user) {
@@ -40,6 +44,7 @@ export default function ProfilePage() {
       return;
     }
     loadProfile();
+    getAcademicRecords().then(r => setRecordCount(r.length)).catch(() => {});
   }, [user, router]);
 
   async function loadProfile() {
@@ -123,6 +128,38 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Academic Records cross-link */}
+      <Card className="mb-6">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primaryLight rounded-lg">
+                <GraduationCap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text">
+                  Academic Records ({recordCount})
+                </p>
+                {completion?.missing_fields?.includes('academic_record') ? (
+                  <p className="text-xs text-amber-600">
+                    Add a record to unlock professor matching
+                  </p>
+                ) : (
+                  <p className="text-xs text-textSecondary">
+                    Manage your academic history
+                  </p>
+                )}
+              </div>
+            </div>
+            <Link href="/academic-records">
+              <Button variant="outline" size="sm">
+                {completion?.missing_fields?.includes('academic_record') ? 'Add Records' : 'View'}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {error && (
         <motion.div

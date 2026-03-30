@@ -3,20 +3,39 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  getAcademicRecords, 
-  postAcademicRecord, 
+import {
+  getAcademicRecords,
+  postAcademicRecord,
+  putAcademicRecord,
   deleteAcademicRecord,
   getDocumentUploadUrl,
   confirmDocumentUpload,
   getDocuments
 } from '@/utils/api';
 import { useToast } from '@/contexts/ToastContext';
+import { useProfileCompletion } from '@/contexts/ProfileCompletionContext';
 
 export default function AcademicRecordsPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
+  const { completion, refresh: refreshCompletion } = useProfileCompletion();
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const prevLevelRef = useRef<number>(completion?.level ?? 0);
+
+  // Toast when profile level increases
+  useEffect(() => {
+    const currentLevel = completion?.level ?? 0;
+    if (currentLevel > prevLevelRef.current && prevLevelRef.current >= 0) {
+      const unlockMessages: Record<number, string> = {
+        1: 'Level 1 unlocked! Dashboard is now available.',
+        2: 'Level 2 unlocked! Recommendations, Funding, and Professors are now available.',
+        3: 'Level 3 unlocked! Professor matching and email generation are now available.',
+      };
+      addToast(unlockMessages[currentLevel] || `Level ${currentLevel} unlocked!`, 'success');
+    }
+    prevLevelRef.current = currentLevel;
+  }, [completion?.level, addToast]);
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -24,6 +43,7 @@ export default function AcademicRecordsPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -46,6 +66,9 @@ export default function AcademicRecordsPage() {
     }
     loadRecords();
     loadDocuments();
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [user, router]);
 
   async function loadRecords() {
@@ -115,10 +138,29 @@ export default function AcademicRecordsPage() {
       setShowUploadModal(false);
       loadDocuments();
 
-      // Refresh records after a delay to get extracted data
-      setTimeout(() => {
-        loadRecords();
-      }, 5000);
+      // Poll for processing completion (every 3s, max 60s)
+      let elapsed = 0;
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = setInterval(async () => {
+        elapsed += 3000;
+        try {
+          const docs = await getDocuments();
+          const transcripts = docs.filter((d: any) => d.document_type === 'transcript');
+          setDocuments(transcripts);
+          const stillProcessing = transcripts.some((d: any) =>
+            d.processing_status === 'pending' || d.processing_status === 'processing'
+          );
+          if (!stillProcessing || elapsed >= 60000) {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            pollingRef.current = null;
+            await loadRecords();
+            await refreshCompletion();
+          }
+        } catch {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      }, 3000);
 
     } catch (err: any) {
       setError(err.message);
@@ -129,6 +171,40 @@ export default function AcademicRecordsPage() {
         fileInputRef.current.value = '';
       }
     }
+  }
+
+  function openEditModal(record: any) {
+    setEditingId(record.id);
+    setFormData({
+      institution_name: record.institution_name || '',
+      country: record.country || '',
+      degree_level: record.degree_level || '',
+      field_of_study: record.field_of_study || '',
+      gpa_value: record.gpa_value ? String(record.gpa_value) : '',
+      gpa_scale: record.gpa_scale ? String(record.gpa_scale) : '',
+      start_year: record.start_year ? String(record.start_year) : '',
+      end_year: record.end_year ? String(record.end_year) : '',
+      is_current: record.is_current || false,
+      notes: record.notes || '',
+    });
+    setShowModal(true);
+  }
+
+  function resetForm() {
+    setEditingId(null);
+    setFormData({
+      institution_name: '',
+      country: '',
+      degree_level: '',
+      field_of_study: '',
+      gpa_value: '',
+      gpa_scale: '',
+      start_year: '',
+      end_year: '',
+      is_current: false,
+      notes: '',
+    });
+    setShowModal(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -143,21 +219,14 @@ export default function AcademicRecordsPage() {
         start_year: formData.start_year ? parseInt(formData.start_year) : null,
         end_year: formData.end_year ? parseInt(formData.end_year) : null,
       };
-      await postAcademicRecord(data);
-      setShowModal(false);
-      setFormData({
-        institution_name: '',
-        country: '',
-        degree_level: '',
-        field_of_study: '',
-        gpa_value: '',
-        gpa_scale: '',
-        start_year: '',
-        end_year: '',
-        is_current: false,
-        notes: '',
-      });
-      loadRecords();
+      if (editingId) {
+        await putAcademicRecord(editingId, data);
+      } else {
+        await postAcademicRecord(data);
+      }
+      resetForm();
+      await loadRecords();
+      await refreshCompletion();
     } catch (err: any) {
       setError(err.message);
     }
@@ -170,7 +239,8 @@ export default function AcademicRecordsPage() {
 
     try {
       await deleteAcademicRecord(id);
-      loadRecords();
+      await loadRecords();
+      await refreshCompletion();
     } catch (err: any) {
       setError(err.message);
     }
@@ -192,7 +262,7 @@ export default function AcademicRecordsPage() {
             Upload Transcript
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => { setEditingId(null); resetForm(); setShowModal(true); }}
             className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition"
           >
             Add Manually
@@ -254,12 +324,20 @@ export default function AcademicRecordsPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(record.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => openEditModal(record)}
+                    className="text-primary hover:text-primaryHover font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(record.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -269,7 +347,7 @@ export default function AcademicRecordsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-semibold mb-4 text-text">Add Academic Record</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-text">{editingId ? 'Edit Academic Record' : 'Add Academic Record'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -404,7 +482,7 @@ export default function AcademicRecordsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={resetForm}
                   className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
                 >
                   Cancel

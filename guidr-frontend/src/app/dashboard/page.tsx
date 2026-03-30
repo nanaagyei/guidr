@@ -11,6 +11,7 @@ import ProfileCompletionTile from '@/components/dashboard/ProfileCompletionTile'
 import AppliedSchoolsTile from '@/components/dashboard/AppliedSchoolsTile';
 import TipsTile from '@/components/dashboard/TipsTile';
 import ProfessorsTile from '@/components/dashboard/ProfessorsTile';
+import ResearchJobsTile from '@/components/dashboard/ResearchJobsTile';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -122,6 +123,16 @@ export default function DashboardPage() {
           className="lg:col-span-1"
         >
           <ProfessorsTile />
+        </motion.div>
+
+        {/* Research Jobs Tile */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="lg:col-span-1"
+        >
+          <ResearchJobsTile />
         </motion.div>
       </div>
     </div>
