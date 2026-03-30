@@ -1,6 +1,8 @@
 """Configuration settings for Guidr backend."""
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -11,6 +13,9 @@ class Settings(BaseSettings):
     
     # JWT
     jwt_secret: str
+    
+    # Internal API key for service-to-service / pipeline trigger auth
+    internal_api_key: Optional[str] = None
     
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -73,6 +78,29 @@ class Settings(BaseSettings):
     # Perplexity (Research Gateway)
     perplexity_api_key: Optional[str] = None
     research_max_concurrent: int = 3
+
+    # Dossier feature flags
+    enable_agentic_dossiers: bool = True
+    enable_scrape_fallback: bool = False
+    enable_bulk_scrape: bool = False
+
+    # Inflight concurrency cap for dossier/professor pipeline jobs
+    max_concurrent_dossier_jobs: int = 10
+
+    # Per-endpoint rate limiting toggle (set False to bypass in emergencies)
+    endpoint_rate_limit_enabled: bool = True
+
+    # Academic API keys (accept OPENALEX_* and OPEN_ALEX_* env spellings)
+    semantic_scholar_api_key: Optional[str] = None
+    openalex_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("OPENALEX_API_KEY", "OPEN_ALEX_API_KEY"),
+    )
+    semantic_scholar_rps: float = 1.0
+    openalex_rps: float = Field(
+        default=10.0,
+        validation_alias=AliasChoices("OPENALEX_RPS", "OPEN_ALEX_RPS"),
+    )
 
     # Agent Settings
     agent_max_steps: int = 10
