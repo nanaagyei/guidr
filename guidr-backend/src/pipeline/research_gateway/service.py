@@ -51,8 +51,15 @@ def _get_redis():
 
 
 def _select_provider():
-    """Select the best available provider: real Perplexity if API key present, stub otherwise."""
+    """Select the best available provider with tiered fallback.
+
+    Tier 1: Real Perplexity Sonar (if PERPLEXITY_API_KEY set)
+    Tier 2: OpenAI-compatible deep research (if OPEN_DEEP_RESEARCH_API_KEY + _BASE_URL set)
+    Tier 3: Stub provider (always available, returns synthetic data)
+    """
     from src.config import settings
+
+    # Tier 1: Real Perplexity
     api_key = getattr(settings, "perplexity_api_key", None)
     if api_key:
         try:
@@ -63,6 +70,21 @@ def _select_provider():
                 return provider
         except ImportError:
             pass
+
+    # Tier 2: Open Deep Research (OpenAI-compatible)
+    odr_key = getattr(settings, "open_deep_research_api_key", None)
+    odr_url = getattr(settings, "open_deep_research_base_url", None)
+    if odr_key and odr_url:
+        try:
+            from src.pipeline.research_gateway.providers.open_deep_research import OpenDeepResearchProvider
+            provider = OpenDeepResearchProvider(api_key=odr_key, base_url=odr_url)
+            if provider.is_available():
+                logger.debug("Using OpenDeepResearch provider")
+                return provider
+        except ImportError:
+            pass
+
+    # Tier 3: Stub
     logger.debug("Using stub Perplexity provider")
     return PerplexityStubProvider()
 

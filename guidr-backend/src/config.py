@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     perplexity_api_key: Optional[str] = None
     research_max_concurrent: int = 3
 
+    # Open Deep Research (OpenAI-compatible fallback for Research Gateway)
+    open_deep_research_api_key: Optional[str] = None
+    open_deep_research_base_url: Optional[str] = None
+
     # Dossier feature flags
     enable_agentic_dossiers: bool = True
     enable_scrape_fallback: bool = False
