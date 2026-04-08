@@ -54,7 +54,7 @@
 | `extract_structured` node             | ✅      | Dispatches to appropriate extractor (funding/faculty/program/overview) |
 | `validate_payload` node               | ✅      | Calls `DataValidator` with business rules                              |
 | `score_confidence` node               | ✅      | Calls `ConfidenceScorer.compute()`                                     |
-| `stage_write` node                    | ✅      | Writes to `enrichment_cache`, creates `extraction_runs` row            |
+| `stage_write` node                    | ✅      | Writes to `enrichment_cache`, creates `extraction_runs` row, persists `validation_reports` + `confidence_scores` |
 | `promote_write` node                  | ✅      | Upserts to production tables, creates `entity_promotions` audit row    |
 | `repair_extraction` node              | ✅      | Calls Research Gateway REPAIR_EXTRACTION job type                      |
 | `retry_backoff` node                  | ✅      | Creates new pipeline_job with exponential delay                        |
@@ -238,7 +238,7 @@
 | Beat schedules registered                                      | ✅      | `src/pipeline/tasks/scheduled_tasks.py`                                                                    |
 | Default Celery worker handles all queues (dev)                 | ✅      | `docker-compose.yml`                                                                                       |
 | Dedicated `celery-worker-pipeline` (prod profile)              | ✅      | `docker-compose.yml` `profiles: [production]`                                                              |
-| Priority queue routing (`pipeline.critical`, `.high`, `.bulk`) | 🔶     | Queue names defined in `celery_app.py` routing; Celery priority within a queue not configured              |
+| Priority-within-queue ordering                                | ✅      | `broker_transport_options` with `priority_steps` (0-9) and per-task priorities in `task_annotations`: dossier/professor_match=0 (critical), enrichment=3, extraction/scraping=6, maintenance=9 |
 | Exponential backoff retry policy on pipeline tasks             | ✅      | `autoretry_for` + `retry_backoff` configured on all task files (orchestrator, pipeline, scrape, maintenance, dossier) |
 | Worker concurrency / time limits per type                      | ✅      | `docker-compose.yml` — default worker `-c 4`, pipeline worker `-c 2`, both use `--pool=prefork`            |
 
@@ -290,10 +290,8 @@
 ### Priority Next Steps
 
 1. **Run the data pipeline** — execute `scripts/reset_data.py` → load scorecard → `POST /ingestion/pipeline/bulk-enrich` to populate institutions + programs
-2. **Wire validation_reports/confidence_scores into orchestrator nodes** — the tables exist but `score_confidence` and `validate_payload` nodes don't yet write to them
-3. **Add research-specific DB tables** (Skill 17, low priority) — `research_jobs`, `research_results`, `research_cache` tables if needed beyond enrichment_cache
-4. **Add Celery priority-within-queue** (Skill 27) — priority queue ordering not yet configured
-5. **Add prompt A/B versioning** (Skill 22) — registry loads by name only; no version selection logic
+2. **Add research-specific DB tables** (Skill 17, low priority) — `research_jobs`, `research_results`, `research_cache` tables if needed beyond enrichment_cache
+3. **Add prompt A/B versioning** (Skill 22) — registry loads by name only; no version selection logic
 
 ---
 
@@ -382,7 +380,7 @@
 | `research_extract` node                               | ✅      | Renders prompt, calls gateway with `DOSSIER_EXTRACTION`     |
 | `validate_citations` node                             | ✅      | Computes `citation_coverage_ratio`                          |
 | `score_dossier_confidence` node                       | ✅      | 40% citation + 30% coverage + 30% extraction                |
-| `stage_dossier` node                                  | ✅      | Writes to `enrichment_cache` with citations                 |
+| `stage_dossier` node                                  | ✅      | Writes to `enrichment_cache` with citations, persists `validation_reports` + `confidence_scores` |
 | `fallback_scrape` node                                | ✅      | Conditional: confidence < 0.55 AND `enable_scrape_fallback` (default false) |
 | `promote_dossier` node                                | ✅      | Reuses `promote_write` pattern                              |
 | Conditional graph routing (≥0.78 / 0.55–0.77 / <0.55) | ✅      | **Updated thresholds** — `src/pipeline/orchestrator/dossier_graph.py` |
