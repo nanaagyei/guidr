@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 from uuid import UUID
 
+import httpx
 from celery import chain, group
 
 from src.db import SessionLocal
@@ -16,8 +17,15 @@ logger = logging.getLogger(__name__)
 STALE_DAYS = 30
 
 
-@celery_app.task(name="pipeline.run_full")
-def run_full_pipeline(institution_id: str) -> Dict:
+@celery_app.task(
+    name="pipeline.run_full",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
+def run_full_pipeline(self, institution_id: str) -> Dict:
     """Run the complete scraping pipeline for a single institution.
 
     Orchestrates overview → funding + faculty extraction in sequence.
@@ -92,8 +100,15 @@ def run_full_pipeline(institution_id: str) -> Dict:
         db.close()
 
 
-@celery_app.task(name="pipeline.batch_scrape")
+@celery_app.task(
+    name="pipeline.batch_scrape",
+    bind=True,
+    max_retries=2,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+)
 def batch_scrape_institutions(
+    self,
     institution_ids: List[str],
 ) -> Dict:
     """Queue full pipeline runs for multiple institutions.
@@ -137,8 +152,14 @@ def batch_scrape_institutions(
         db.close()
 
 
-@celery_app.task(name="pipeline.refresh_stale")
-def refresh_stale_institutions() -> Dict:
+@celery_app.task(
+    name="pipeline.refresh_stale",
+    bind=True,
+    max_retries=2,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+)
+def refresh_stale_institutions(self) -> Dict:
     """Queue full pipeline for institutions not scraped in the last N days.
 
     Called by Celery Beat (e.g., weekly). Institutions with last_scraped_at
@@ -184,8 +205,16 @@ def refresh_stale_institutions() -> Dict:
         db.close()
 
 
-@celery_app.task(name="pipeline.run_orchestrator")
+@celery_app.task(
+    name="pipeline.run_orchestrator",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
 def run_orchestrator_pipeline(
+    self,
     institution_id: str,
     category: str = "SCHOOL_OVERVIEW",
 ) -> Dict:

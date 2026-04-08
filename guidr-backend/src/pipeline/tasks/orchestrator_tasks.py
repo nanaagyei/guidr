@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 
+import httpx
+
 from src.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,9 @@ logger = logging.getLogger(__name__)
     bind=True,
     max_retries=3,
     default_retry_delay=60,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
 )
 def run_enrichment_pipeline(self, job_id: str) -> dict:
     """Run the LangGraph enrichment pipeline for a given job.

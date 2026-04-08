@@ -9,7 +9,12 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name="pipeline.maintenance.purge_expired_cache")
+@shared_task(
+    name="pipeline.maintenance.purge_expired_cache",
+    max_retries=2,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+)
 def purge_expired_cache() -> dict:
     """Delete expired enrichment_cache rows.
 
@@ -37,7 +42,12 @@ def purge_expired_cache() -> dict:
         db.close()
 
 
-@shared_task(name="pipeline.maintenance.reset_domain_health")
+@shared_task(
+    name="pipeline.maintenance.reset_domain_health",
+    max_retries=2,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+)
 def reset_domain_health() -> dict:
     """Reset blocked domains that have been in cooldown long enough.
 
@@ -50,7 +60,12 @@ def reset_domain_health() -> dict:
     return {"domains_reset": count}
 
 
-@shared_task(name="pipeline.maintenance.cleanup_old_jobs")
+@shared_task(
+    name="pipeline.maintenance.cleanup_old_jobs",
+    max_retries=2,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+)
 def cleanup_old_jobs(days: int = 90) -> dict:
     """Archive (delete) pipeline_jobs older than N days.
 

@@ -6,13 +6,22 @@ from datetime import datetime
 from typing import Dict
 from uuid import UUID
 
+import httpx
+
 from src.db import SessionLocal
 from src.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="pipeline.extract_funding", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.extract_funding",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
 def extract_funding_for_institution(self, institution_id: str) -> Dict:
     """Scrape and extract funding opportunities for an institution.
 
@@ -125,7 +134,14 @@ def extract_funding_for_institution(self, institution_id: str) -> Dict:
         db.close()
 
 
-@celery_app.task(name="pipeline.extract_faculty", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.extract_faculty",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
 def extract_faculty_for_institution(self, institution_id: str) -> Dict:
     """Scrape and extract faculty data for an institution.
 
@@ -243,7 +259,14 @@ def extract_faculty_for_institution(self, institution_id: str) -> Dict:
         db.close()
 
 
-@celery_app.task(name="pipeline.extract_programs", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.extract_programs",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
 def extract_programs_for_institution(self, institution_id: str) -> Dict:
     """Scrape and extract graduate programs for an institution.
 
@@ -363,7 +386,14 @@ def extract_programs_for_institution(self, institution_id: str) -> Dict:
         db.close()
 
 
-@celery_app.task(name="pipeline.scrape_overview", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.scrape_overview",
+    bind=True,
+    max_retries=3,
+    autoretry_for=(ConnectionError, TimeoutError, httpx.TimeoutException, httpx.ConnectError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+)
 def scrape_overview_for_institution(self, institution_id: str) -> Dict:
     """Scrape overview/about data for an institution and update the record.
 
