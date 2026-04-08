@@ -25,4 +25,6 @@ from src.models.extraction_run import ExtractionRun
 from src.models.entity_promotion import EntityPromotion
 from src.models.enrichment_cache import EnrichmentCache
 from src.models.domain_health import DomainHealth
+from src.models.validation_report import ValidationReport
+from src.models.confidence_score import ConfidenceScore
 

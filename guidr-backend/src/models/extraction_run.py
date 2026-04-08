@@ -46,3 +46,5 @@ class ExtractionRun(Base):
     job = relationship("PipelineJob", back_populates="extraction_runs")
     raw_artifact = relationship("RawArtifact", back_populates="extraction_runs")
     promotions = relationship("EntityPromotion", back_populates="extraction_run")
+    validation_reports = relationship("ValidationReport", back_populates="extraction_run")
+    confidence_scores = relationship("ConfidenceScore", back_populates="extraction_run")

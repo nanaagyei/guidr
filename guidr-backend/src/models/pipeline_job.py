@@ -53,3 +53,5 @@ class PipelineJob(Base):
 
     # Relationships
     extraction_runs = relationship("ExtractionRun", back_populates="job")
+    validation_reports = relationship("ValidationReport", back_populates="pipeline_job")
+    confidence_scores = relationship("ConfidenceScore", back_populates="pipeline_job")
