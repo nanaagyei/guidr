@@ -195,7 +195,8 @@ class TestStageDossier:
         result = stage_dossier(state)
 
         assert "stage_dossier" in result["progress"]
-        mock_db.add.assert_called_once()
+        # 3 calls: EnrichmentCache + ValidationReport + ConfidenceScore
+        assert mock_db.add.call_count == 3
         mock_db.commit.assert_called_once()
 
     @patch("src.pipeline.orchestrator.dossier_nodes._get_db")
