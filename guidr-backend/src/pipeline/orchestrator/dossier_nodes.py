@@ -30,15 +30,15 @@ CRITICAL_FIELDS = [
 _CRITICAL_COVERAGE_THRESHOLD = 0.30
 
 
+def _get_db():
+    from src.db import SessionLocal
+    return SessionLocal()
+
+
 def _progress(state: dict, step: str) -> dict:
     p = list(state.get("progress", []))
     p.append(step)
     return {"progress": p}
-
-
-def _get_db():
-    from src.db import SessionLocal
-    return SessionLocal()
 
 
 # ------------------------------------------------------------------
@@ -472,6 +472,44 @@ def stage_dossier(state: DossierState) -> dict:
                     source_extraction_run_ids=[],
                 )
                 db.add(cache_entry)
+
+        # Write validation report (citation validation results)
+        from src.models.validation_report import ValidationReport
+        citation_issues = state.get("citation_issues", [])
+        citation_coverage = state.get("citation_coverage", 0.0)
+        validation_passed = not citation_issues or citation_coverage >= _CRITICAL_COVERAGE_THRESHOLD
+
+        report = ValidationReport(
+            extraction_run_id=None,  # dossier pipeline has no ExtractionRun
+            pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
+            entity_kind=entity_kind,
+            entity_id=uuid.UUID(entity_id) if entity_id else None,
+            validator_name="CitationValidator",
+            passed=validation_passed,
+            overall_score=citation_coverage,
+            field_results_json=[],
+            warnings_json=citation_issues,
+            errors_json=[],
+            metadata_json={"job_type": job_type, "citation_count": len(citations)},
+        )
+        db.add(report)
+
+        # Write confidence score
+        from src.models.confidence_score import ConfidenceScore
+        score_record = ConfidenceScore(
+            extraction_run_id=None,
+            pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
+            entity_kind=entity_kind,
+            entity_id=uuid.UUID(entity_id) if entity_id else None,
+            overall_confidence=confidence,
+            source_score=None,
+            extraction_score=None,
+            validation_score=citation_coverage,
+            staleness_score=None,
+            weights_json={"citation_quality": 0.4, "citation_coverage": 0.3, "extraction": 0.3},
+            details_json={"job_type": job_type, "citation_issues": citation_issues},
+        )
+        db.add(score_record)
 
         db.commit()
     except Exception as exc:

@@ -29,6 +29,8 @@ class OrchestratorState(TypedDict, total=False):
     extracted: Optional[dict[str, Any]]
 
     validation_errors: list[str]
+    validation_warnings: list[str]
+    validation_passed: bool
     confidence: float
 
     promote: bool

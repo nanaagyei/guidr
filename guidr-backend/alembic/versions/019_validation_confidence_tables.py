@@ -19,7 +19,7 @@ def upgrade() -> None:
     op.create_table(
         "validation_reports",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("extraction_run_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("extraction_run_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("pipeline_job_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("entity_kind", sa.String(), nullable=False),
         sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=True),
@@ -60,7 +60,7 @@ def upgrade() -> None:
     op.create_table(
         "confidence_scores",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("extraction_run_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("extraction_run_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("pipeline_job_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("entity_kind", sa.String(), nullable=False),
         sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=True),

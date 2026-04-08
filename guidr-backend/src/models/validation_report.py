@@ -23,7 +23,7 @@ class ValidationReport(Base):
     extraction_run_id = Column(
         UUID(as_uuid=True),
         ForeignKey("extraction_runs.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     pipeline_job_id = Column(

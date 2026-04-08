@@ -366,7 +366,12 @@ def validate_payload(state: OrchestratorState) -> dict:
     result = validator.validate_generic(entity_kind, extracted)
 
     errors = result.errors if not result.passed else []
-    return {"validation_errors": errors, **_progress(state, "validate")}
+    return {
+        "validation_errors": errors,
+        "validation_warnings": result.warnings,
+        "validation_passed": result.passed,
+        **_progress(state, "validate"),
+    }
 
 
 # ------------------------------------------------------------------
@@ -414,6 +419,41 @@ def score_confidence(state: OrchestratorState) -> dict:
 
 
 # ------------------------------------------------------------------
+# Helpers: persist validation + confidence to dedicated tables
+# ------------------------------------------------------------------
+
+def _write_validation_report(db, extraction_run_id, state, entity_kind, entity_id):
+    """Persist a ValidationReport row linked to the extraction run."""
+    from src.models.validation_report import ValidationReport
+    report = ValidationReport(
+        extraction_run_id=extraction_run_id,
+        pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
+        entity_kind=entity_kind,
+        entity_id=uuid.UUID(entity_id) if entity_id else None,
+        validator_name="DataValidator",
+        passed=state.get("validation_passed", not state.get("validation_errors")),
+        overall_score=None,
+        errors_json=state.get("validation_errors", []),
+        warnings_json=state.get("validation_warnings", []),
+    )
+    db.add(report)
+
+
+def _write_confidence_score(db, extraction_run_id, state, entity_kind, entity_id, confidence):
+    """Persist a ConfidenceScore row linked to the extraction run."""
+    from src.models.confidence_score import ConfidenceScore
+    score = ConfidenceScore(
+        extraction_run_id=extraction_run_id,
+        pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
+        entity_kind=entity_kind,
+        entity_id=uuid.UUID(entity_id) if entity_id else None,
+        overall_confidence=confidence,
+        weights_json={"source": 0.35, "extraction": 0.35, "validation": 0.25, "staleness": 0.05},
+    )
+    db.add(score)
+
+
+# ------------------------------------------------------------------
 # Node: stage_write
 # ------------------------------------------------------------------
 
@@ -445,6 +485,12 @@ def stage_write(state: OrchestratorState) -> dict:
             db.add(run)
             db.flush()
             extraction_run_id = str(run.id)
+
+            # Persist validation report
+            _write_validation_report(db, run.id, state, entity_kind, entity_id)
+
+            # Persist confidence score
+            _write_confidence_score(db, run.id, state, entity_kind, entity_id, confidence)
 
         # Upsert enrichment_cache
         from src.models.enrichment_cache import EnrichmentCache
