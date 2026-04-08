@@ -48,44 +48,65 @@ celery_app.conf.update(
     # soft_time_limit raises SoftTimeLimitExceeded (catchable);
     # time_limit is a hard SIGKILL (uncatchable).
     task_annotations={
+        # Priority 0 = critical (user-facing, real-time)
+        # Priority 3 = high (enrichment pipelines)
+        # Priority 6 = normal (batch scraping, extraction)
+        # Priority 9 = low (maintenance, cleanup)
         "pipeline.run_enrichment": {
             "rate_limit": "30/m",
             "max_retries": 5,
             "soft_time_limit": 300,
             "time_limit": 600,
+            "priority": 3,
         },
         "pipeline.run_dossier": {
             "rate_limit": "10/m",
             "soft_time_limit": 300,
             "time_limit": 600,
+            "priority": 0,  # user-facing — highest priority
         },
         "pipeline.run_professor_match": {
             "rate_limit": "10/m",
             "soft_time_limit": 240,
             "time_limit": 480,
+            "priority": 0,  # user-facing — highest priority
         },
         "pipeline.extract_funding": {
             "soft_time_limit": 120,
             "time_limit": 180,
+            "priority": 6,
         },
         "pipeline.extract_faculty": {
             "soft_time_limit": 120,
             "time_limit": 180,
+            "priority": 6,
         },
         "pipeline.extract_programs": {
             "soft_time_limit": 120,
             "time_limit": 180,
+            "priority": 6,
         },
         "pipeline.scrape_overview": {
             "soft_time_limit": 120,
             "time_limit": 180,
+            "priority": 6,
         },
         "pipeline.maintenance.*": {
             "rate_limit": "5/m",
             "soft_time_limit": 60,
             "time_limit": 120,
+            "priority": 9,  # lowest — background cleanup
         },
     },
+    # Priority-within-queue ordering.
+    # Redis does not natively support AMQP priorities, so Celery emulates them
+    # by creating separate lists per priority level (0 = highest, 9 = lowest).
+    # We use 4 steps to keep overhead low: 0 (critical), 3 (high), 6 (normal), 9 (low).
+    broker_transport_options={
+        "priority_steps": list(range(10)),
+        "queue_order_strategy": "priority",
+    },
+    task_default_priority=6,  # normal priority for undecorated tasks
     # Beat schedule for recurring tasks
     beat_schedule=PIPELINE_BEAT_SCHEDULE,
 )
