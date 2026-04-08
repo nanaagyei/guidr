@@ -60,7 +60,7 @@ services:
     build:
       context: .
     container_name: guidr-celery-worker
-    command: celery -A src.workers.celery_app worker -l info -Q default,scraping,processing,pipeline
+    command: celery -A src.workers.celery_app worker -l info -Q default,scraping,processing,pipeline --pool=prefork -c 4 -n default@%h
     env_file:
       - .env
     depends_on:
@@ -72,7 +72,7 @@ services:
     build:
       context: .
     container_name: guidr-celery-worker-pipeline
-    command: celery -A src.workers.celery_app worker -l info -Q pipeline -n pipeline@%h
+    command: celery -A src.workers.celery_app worker -l info -Q pipeline --pool=prefork -c 2 -n pipeline@%h
     env_file:
       - .env
     depends_on:
