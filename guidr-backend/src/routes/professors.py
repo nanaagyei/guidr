@@ -1,13 +1,16 @@
 """Professor routes."""
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from typing import List, Optional
 from uuid import UUID
 from src.db import get_db
 from src.models.professor import Professor
 from src.models.professor_research_tag import ProfessorResearchTag
 from src.models.institution import Institution
+from src.models.enrichment_cache import EnrichmentCache
+from src.models.funding_opportunity import FundingOpportunity
 from src.models.user import User
 from src.models.user_profile import UserProfile
 from src.models.academic_record import AcademicRecord
@@ -183,6 +186,293 @@ async def get_professor(
             "last_updated": last_updated.isoformat() if last_updated else None,
             "is_stale": is_stale,
         },
+    }
+
+
+def _compute_topic_overlap(user_interests: list, prof_tags: list) -> dict:
+    """Compute topic overlap between user research interests and professor tags."""
+    if not user_interests or not prof_tags:
+        return {"score": 0, "explanation": "Insufficient data for topic comparison"}
+
+    user_set = {t.lower().strip() for t in user_interests if t}
+    prof_set = {t.lower().strip() for t in prof_tags if t}
+
+    if not user_set or not prof_set:
+        return {"score": 0, "explanation": "No research interests to compare"}
+
+    intersection = user_set & prof_set
+    union = user_set | prof_set
+    ratio = len(intersection) / len(union) if union else 0
+
+    # Also check partial keyword overlap for broader matching
+    partial_matches = 0
+    for u in user_set:
+        for p in prof_set:
+            if u in p or p in u:
+                partial_matches += 1
+    partial_ratio = min(partial_matches / max(len(user_set), 1), 1.0)
+
+    score = round(max(ratio, partial_ratio * 0.7) * 100)
+    matched = len(intersection)
+    total = len(user_set)
+    return {
+        "score": min(score, 100),
+        "explanation": f"{matched} of {total} research areas match" if matched else f"Partial overlap in {partial_matches} areas",
+    }
+
+
+def _compute_activity_score(h_index: int | None, enrichment_data: dict | None) -> dict:
+    """Score research activity from h-index and enrichment data."""
+    if h_index is not None and h_index > 0:
+        score = round(min(h_index / 50, 1.0) * 100)
+        papers = enrichment_data.get("paper_count", "N/A") if enrichment_data else "N/A"
+        return {"score": score, "explanation": f"h-index {h_index}, {papers} publications"}
+
+    if enrichment_data:
+        works = enrichment_data.get("works_count", 0)
+        if works:
+            score = round(min(works / 100, 1.0) * 100)
+            return {"score": score, "explanation": f"{works} published works"}
+
+    return {"score": 0, "explanation": "No publication data available"}
+
+
+def _compute_availability_score(is_accepting: bool | None) -> dict:
+    """Score availability based on accepting students flag."""
+    if is_accepting is True:
+        return {"score": 100, "explanation": "Accepting students"}
+    if is_accepting is False:
+        return {"score": 0, "explanation": "Not currently accepting students"}
+    return {"score": 50, "explanation": "Availability unknown"}
+
+
+def _compute_funding_score(funding_count: int) -> dict:
+    """Score funding availability at the professor's institution."""
+    if funding_count == 0:
+        return {"score": 0, "explanation": "No funding opportunities found at institution"}
+    score = round(min(funding_count / 5, 1.0) * 100)
+    return {"score": score, "explanation": f"{funding_count} funding opportunit{'y' if funding_count == 1 else 'ies'} at institution"}
+
+
+def _compute_methods_score(user_field: str | None, research_summary: str | None) -> dict:
+    """Score methods alignment via keyword overlap in research summary."""
+    if not user_field or not research_summary:
+        return {"score": 0, "explanation": "Insufficient data for methods comparison"}
+
+    field_keywords = {w.lower() for w in user_field.split() if len(w) > 3}
+    summary_lower = research_summary.lower()
+
+    matches = sum(1 for kw in field_keywords if kw in summary_lower)
+    ratio = matches / max(len(field_keywords), 1)
+    score = round(min(ratio, 1.0) * 100)
+
+    if matches > 0:
+        return {"score": score, "explanation": f"{matches} field keywords found in research summary"}
+    return {"score": 0, "explanation": "No clear methods overlap detected"}
+
+
+@router.get("/{professor_id}/fit-score")
+async def get_professor_fit_score(
+    professor_id: str,
+    current_user: User = Depends(require_level(2)),
+    db: Session = Depends(get_db),
+):
+    """Compute fit score between the current user and a professor.
+
+    Returns 5 dimension scores (topic, activity, availability, funding, methods)
+    and an overall weighted score.
+    """
+    try:
+        professor = db.query(Professor).filter(Professor.id == UUID(professor_id)).first()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid professor_id format")
+
+    if not professor:
+        raise HTTPException(status_code=404, detail="Professor not found")
+
+    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="User profile not found — complete onboarding first")
+
+    # Gather professor data
+    prof_tags = professor.interests_tags if isinstance(professor.interests_tags, list) else []
+    user_interests = profile.research_areas if isinstance(profile.research_areas, list) else []
+
+    # Check enrichment cache for extra data (h_index, match_score)
+    enrichment_data = None
+    cache_match_score = None
+    if professor.institution_id:
+        cache_entry = (
+            db.query(EnrichmentCache)
+            .filter(
+                EnrichmentCache.entity_id == professor.institution_id,
+                EnrichmentCache.freshness_bucket == "professor_matches:30d",
+                EnrichmentCache.user_id == current_user.id,
+                EnrichmentCache.expires_at > datetime.utcnow(),
+            )
+            .order_by(EnrichmentCache.computed_at.desc())
+            .first()
+        )
+        if cache_entry and cache_entry.value_json:
+            ranked = cache_entry.value_json.get("ranked_professors", [])
+            for p in ranked:
+                if (
+                    p.get("openalex_id") == professor.openalex_id
+                    or (p.get("name", "").lower() == (professor.full_name or "").lower())
+                ):
+                    enrichment_data = p
+                    cache_match_score = p.get("match_score")
+                    break
+
+    h_index = None
+    if enrichment_data:
+        h_index = enrichment_data.get("h_index")
+
+    # Count funding opportunities at institution
+    funding_count = 0
+    if professor.institution_id:
+        funding_count = (
+            db.query(func.count(FundingOpportunity.id))
+            .filter(FundingOpportunity.institution_id == professor.institution_id)
+            .scalar()
+        ) or 0
+
+    # Compute dimensions
+    topic = _compute_topic_overlap(user_interests, prof_tags)
+    activity = _compute_activity_score(h_index, enrichment_data)
+    availability = _compute_availability_score(professor.is_accepting_students)
+    funding = _compute_funding_score(funding_count)
+    methods = _compute_methods_score(profile.primary_field_of_study, professor.research_summary)
+
+    # Weighted overall (topic: 0.30, activity: 0.20, availability: 0.20, funding: 0.15, methods: 0.15)
+    overall = round(
+        topic["score"] * 0.30
+        + activity["score"] * 0.20
+        + availability["score"] * 0.20
+        + funding["score"] * 0.15
+        + methods["score"] * 0.15
+    )
+
+    return {
+        "overall_score": overall,
+        "dimensions": {
+            "topic_overlap": topic,
+            "research_activity": activity,
+            "availability": availability,
+            "funding": funding,
+            "methods_alignment": methods,
+        },
+        "enrichment_match_score": cache_match_score,
+        "funding_count": funding_count,
+    }
+
+
+@router.get("/{professor_id}/detail")
+async def get_professor_detail(
+    professor_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Extended professor detail with enrichment data and funding info."""
+    try:
+        professor = db.query(Professor).filter(Professor.id == UUID(professor_id)).first()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid professor_id format")
+
+    if not professor:
+        raise HTTPException(status_code=404, detail="Professor not found")
+
+    institution = professor.institution
+
+    # Tags
+    tags = []
+    if professor.interests_tags and isinstance(professor.interests_tags, list):
+        tags = professor.interests_tags
+    else:
+        research_tags = db.query(ProfessorResearchTag).filter(
+            ProfessorResearchTag.professor_id == professor.id
+        ).all()
+        tags = [tag.tag for tag in research_tags]
+
+    # Enrichment cache data
+    enrichment_extra = {}
+    if professor.institution_id:
+        cache_entry = (
+            db.query(EnrichmentCache)
+            .filter(
+                EnrichmentCache.entity_id == professor.institution_id,
+                EnrichmentCache.freshness_bucket == "professor_matches:30d",
+                EnrichmentCache.user_id == current_user.id,
+                EnrichmentCache.expires_at > datetime.utcnow(),
+            )
+            .order_by(EnrichmentCache.computed_at.desc())
+            .first()
+        )
+        if cache_entry and cache_entry.value_json:
+            ranked = cache_entry.value_json.get("ranked_professors", [])
+            for p in ranked:
+                if (
+                    p.get("openalex_id") == professor.openalex_id
+                    or (p.get("name", "").lower() == (professor.full_name or "").lower())
+                ):
+                    enrichment_extra = {
+                        "h_index": p.get("h_index"),
+                        "citation_count": p.get("citation_count"),
+                        "works_count": p.get("works_count"),
+                        "match_score": p.get("match_score"),
+                        "recent_papers": p.get("recent_papers", [])[:5],
+                    }
+                    break
+
+    # Funding at institution
+    funding_opportunities = []
+    if professor.institution_id:
+        fundings = (
+            db.query(FundingOpportunity)
+            .filter(FundingOpportunity.institution_id == professor.institution_id)
+            .limit(10)
+            .all()
+        )
+        for f in fundings:
+            funding_opportunities.append({
+                "id": str(f.id),
+                "name": f.name,
+                "type": f.funding_type,
+                "amount": f.amount,
+                "deadline": f.deadline.isoformat() if hasattr(f, "deadline") and f.deadline else None,
+            })
+
+    now = datetime.utcnow()
+    last_updated = professor.last_scraped_at or professor.last_enriched_at
+    is_stale = (now - last_updated > timedelta(days=30)) if last_updated else True
+
+    return {
+        "id": str(professor.id),
+        "full_name": professor.full_name,
+        "title": professor.title,
+        "institution": {
+            "id": str(institution.id) if institution else None,
+            "name": institution.name if institution else None,
+            "country": institution.country if institution else None,
+            "city": institution.city if institution else None,
+            "website_url": institution.website_url if institution else None,
+        },
+        "email": professor.email,
+        "personal_page_url": professor.personal_page_url,
+        "scholar_profile_url": professor.scholar_profile_url,
+        "openalex_id": professor.openalex_id,
+        "semantic_scholar_id": professor.semantic_scholar_id,
+        "orcid_id": professor.orcid_id,
+        "research_summary": professor.research_summary,
+        "tags": tags,
+        "is_accepting_students": professor.is_accepting_students,
+        "enrichment": {
+            "last_updated": last_updated.isoformat() if last_updated else None,
+            "is_stale": is_stale,
+            **enrichment_extra,
+        },
+        "funding_opportunities": funding_opportunities,
+        "funding_count": len(funding_opportunities),
     }
 
 

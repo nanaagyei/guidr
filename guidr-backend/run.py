@@ -1,6 +1,8 @@
 """Script to start the backend server."""
 
 import logging
+import os
+
 import uvicorn
 
 logger = logging.getLogger(__name__)
@@ -25,4 +27,6 @@ if __name__ == "__main__":
 
     from src.main import app
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Bind to the platform-provided port (Railway/Render set $PORT); default 8000 locally.
+    port = int(os.environ.get("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -141,12 +141,18 @@ async def get_recommended_professors(
                 name = prof.get("name", "")
                 if name and name not in seen_names:
                     seen_names.add(name)
+                    institution_name = prof.get("institution_name") or prof.get("affiliations", [None])[0]
                     professors.append({
+                        "id": prof.get("openalex_id") or prof.get("id", ""),
                         "name": name,
+                        "full_name": name,
                         "title": prof.get("title"),
-                        "institution_name": prof.get("institution_name") or prof.get("affiliations", [None])[0],
+                        "institution_name": institution_name,
+                        "school_name": institution_name,
                         "research_summary": prof.get("research_summary"),
+                        "research_area": prof.get("research_summary"),
                         "interests_tags": prof.get("topics") or prof.get("interests_tags") or [],
+                        "tags": prof.get("topics") or prof.get("interests_tags") or [],
                         "is_accepting_students": prof.get("is_likely_accepting") or prof.get("is_accepting_students"),
                         "personal_page_url": prof.get("personal_page_url") or prof.get("profile_url"),
                         "h_index": prof.get("h_index"),

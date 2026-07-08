@@ -10,31 +10,31 @@ import { useMotionValueEvent, useScroll } from 'framer-motion';
 
 const NAV_LINKS = [
   {
-    label: 'Products',
+    label: 'Product',
     href: '#',
     dropdown: [
       { label: 'School Search', href: '/schools', description: 'Find your perfect graduate program' },
-      { label: 'Application Tracker', href: '/dashboard', description: 'Manage your applications' },
       { label: 'AI Recommendations', href: '/recommendations', description: 'Get personalized suggestions' },
+      { label: 'Faculty Matching', href: '/professors', description: 'Find professors aligned to your research' },
+      { label: 'Fit Scores', href: '/professors', description: 'See how well each lab matches you' },
     ],
   },
-  {
-    label: 'For Students',
-    href: '#',
-    dropdown: [
-      { label: 'How It Works', href: '/#how-it-works', description: 'Learn about our platform' },
-      { label: 'Success Stories', href: '/#testimonials', description: 'Read student experiences' },
-      { label: 'Resources', href: '/#resources', description: 'Guides and tips' },
-    ],
-  },
-  { label: 'Pricing', href: '/#pricing' },
+  { label: 'How it works', href: '/#how-it-works' },
   {
     label: 'Resources',
     href: '#',
     dropdown: [
-      { label: 'Blog', href: '/blog', description: 'Latest insights and updates' },
-      { label: 'Documentation', href: '/docs', description: 'API and integration guides' },
-      { label: 'Help Center', href: '/help', description: 'FAQs and support' },
+      { label: 'Getting Started', href: '/help/getting-started', description: 'Set up your profile in minutes' },
+      { label: 'Help Center', href: '/help', description: 'Guides and support' },
+      { label: 'FAQ', href: '/help/faq', description: 'Answers to common questions' },
+    ],
+  },
+  {
+    label: 'Company',
+    href: '#',
+    dropdown: [
+      { label: 'About', href: '/about', description: 'Our mission and story' },
+      { label: 'Contact', href: '/contact', description: 'Get in touch with the team' },
     ],
   },
 ];
@@ -155,7 +155,7 @@ export function LandingHeader() {
               className="rounded-full px-5 text-[13px] uppercase tracking-wide font-medium border-text/20 hover:border-text/40"
               asChild
             >
-              <Link href="/#contact">Contact Us</Link>
+              <Link href="/contact">Contact Us</Link>
             </Button>
             {user ? (
               <Button
@@ -233,7 +233,7 @@ export function LandingHeader() {
               ))}
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
                 <Button variant="outline" size="sm" className="w-full rounded-full" asChild>
-                  <Link href="/#contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
+                  <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
                 </Button>
                 {user ? (
                   <Button size="sm" className="w-full rounded-full bg-text text-white" asChild>

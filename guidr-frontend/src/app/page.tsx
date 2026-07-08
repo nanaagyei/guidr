@@ -5,7 +5,6 @@ import {
   LandingHero,
   LandingLogoCloud,
   LandingFeatures,
-  LandingBlog,
   LandingCTA,
   LandingFooter,
 } from '@/components/landing';
@@ -18,7 +17,6 @@ export default function HomePage() {
         <LandingHero />
         <LandingLogoCloud />
         <LandingFeatures />
-        <LandingBlog />
         <LandingCTA />
       </main>
       <LandingFooter />

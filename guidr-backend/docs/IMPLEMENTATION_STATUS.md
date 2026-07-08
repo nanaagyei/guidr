@@ -1,6 +1,6 @@
 # Guidr Backend — Implementation Status
 
-> Last updated: 2026-04-07
+> Last updated: 2026-05-02
 > Covers Skills 17-29 + RFC Agentic Research Pivot (adopted + implemented)
 > Plus: Auth hardening, pipeline internal API key, DB bootstrap, user profile research fields, per-user dossiers, external funding, updated confidence thresholds
 
@@ -33,8 +33,11 @@
 | Redis cache for research results               | ✅      | 24h TTL, keyed by request hash                                                                                                                  |
 | `source_documents` persistence after discovery | 🔶     | Service stores results in cache; `source_documents` DB row written only if model + repo wired — nodes call this but table may not be fully used |
 | `OpenDeepResearchProvider`                     | ✅      | `src/pipeline/research_gateway/providers/open_deep_research.py` — OpenAI-compatible fallback with inline citation parsing                       |
-| `research_jobs` table                          | ❌      | Not created; pipeline_jobs used instead                                                                                                         |
-| `research_results` / `research_cache` tables   | ❌      | Not created; enrichment_cache + Redis used instead                                                                                              |
+| `research_cache` table (DB fallback)           | ✅      | Migration 020 — `research_cache` table with dedupe_key, entity tracking, JSONB results, cost metrics; `src/models/research_cache.py` |
+| DB cache fallback in gateway                   | ✅      | `_db_cache_get()` / `_db_cache_set()` in service.py — falls back to PostgreSQL when Redis misses |
+| URL ranking heuristics                         | ✅      | `src/pipeline/research_gateway/url_ranker.py` — HTTPS, .edu, allowlist, category keyword boosts  |
+| Cost budget enforcement                        | ✅      | `_check_budget()` in service.py — pre-flight cost estimation per provider tier; rejects over-budget requests |
+| `max_research_cost_usd` server-side hard cap   | ✅      | `src/config.py` — $5.00 default                                                                  |
 
 
 ---
@@ -139,7 +142,10 @@
 | `extraction_v1.txt` template            | ✅      | `src/pipeline/prompts/templates/extraction_v1.txt`                                                       |
 | `synthesis_v1.txt` template             | ✅      | `src/pipeline/prompts/templates/synthesis_v1.txt` — 120-word UI-safe summary with citations              |
 | `fill_missing_v1.txt` template          | ✅      | `src/pipeline/prompts/templates/fill_missing_v1.txt` — fills only missing fields from partial extraction |
-| Prompt versioning / A/B testing support | ❌      | Registry loads by name only; no version selection logic                                                  |
+| Prompt A/B variant selection             | ✅      | `get_with_variant()` + `render_with_variant()` — deterministic hash-based split using variant_seed       |
+| `list_variants()` method                | ✅      | Discovers `{name}_{version}_{variant}.txt` files; default = variant "a"                                  |
+| `prompt_variant` column on extraction_runs | ✅   | Migration 021 — records which variant was used per extraction                                            |
+| Prompt version recording in dossier pipeline | ✅ | `research_extract` node passes `prompt_version` + `prompt_variant` through state to `stage_dossier`      |
 
 
 ---
@@ -264,7 +270,12 @@
 | `test_maintenance_tasks.py`  | ✅      | 116 lines — purge, reset, cleanup tasks |
 
 
-> **Note:** All pipeline test files are now written with 2,053+ total lines of test coverage. Additional tests include `test_http_rate_limiter.py` (150 lines) and `test_inflight_cap.py` (160 lines).
+| `test_url_ranker.py` (11 tests)        | ✅      | URL ranking scoring + integration tests                  |
+| `test_prompt_registry_ab.py` (11 tests) | ✅      | A/B variant selection, deterministic seeding, rendering  |
+| `test_research_gateway.py` (10 tests)   | ✅      | Rewritten — cache, provider, source docs, DB fallback, cost budget |
+
+
+> **Note:** All pipeline test files are now written with 2,400+ total lines of test coverage. Additional tests include `test_http_rate_limiter.py` (150 lines), `test_inflight_cap.py` (160 lines), `test_url_ranker.py`, and `test_prompt_registry_ab.py`.
 
 ---
 
@@ -290,8 +301,6 @@
 ### Priority Next Steps
 
 1. **Run the data pipeline** — execute `scripts/reset_data.py` → load scorecard → `POST /ingestion/pipeline/bulk-enrich` to populate institutions + programs
-2. **Add research-specific DB tables** (Skill 17, low priority) — `research_jobs`, `research_results`, `research_cache` tables if needed beyond enrichment_cache
-3. **Add prompt A/B versioning** (Skill 22) — registry loads by name only; no version selection logic
 
 ---
 
@@ -478,12 +487,12 @@
 
 | Phase                                  | Status     | Notes                                                            |
 | -------------------------------------- | ---------- | ---------------------------------------------------------------- |
-| **Skill 17** — Research Gateway        | ✅ Complete | `OpenDeepResearchProvider` added as Perplexity fallback          |
+| **Skill 17** — Research Gateway        | ✅ Complete | DB cache fallback, URL ranking, cost budget enforcement added    |
 | **Skill 18** — LangGraph Orchestrator  | ✅ Complete | —                                                                |
 | **Skill 19** — Pipeline ORM Models     | ✅ Complete | `validation_reports` + `confidence_scores` tables (migration 019) |
 | **Skill 20** — Job Repository          | ✅ Complete | —                                                                |
 | **Skill 21** — Confidence Scoring      | ✅ Complete | Dedicated tables now persist validation and confidence data       |
-| **Skill 22** — Prompt Library          | ✅ Complete | All 5 templates + 7 dossier templates exist                      |
+| **Skill 22** — Prompt Library          | ✅ Complete | A/B variant selection + prompt version recording in dossier pipeline |
 | **Skill 23** — Enrichment API          | ✅ Complete | —                                                                |
 | **Skill 24** — Admin Endpoints         | ✅ Complete | Now accepts internal API key alongside admin session             |
 | **Skill 25** — Redis Keyspace          | ✅ Complete | HTTP rate limiter + global inflight cap both implemented         |

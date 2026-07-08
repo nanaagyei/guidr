@@ -11,13 +11,15 @@ export function LandingCTA() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Open the user's email client to subscribe (no backend list yet).
+    const subject = encodeURIComponent('Subscribe to Guidr updates');
+    const body = encodeURIComponent(`Please add ${email} to the Guidr updates list.`);
+    window.location.href = `mailto:hello@guidr.app?subject=${subject}&body=${body}`;
     setIsSubmitting(false);
     setIsSubmitted(true);
     setEmail('');
@@ -42,7 +44,7 @@ export function LandingCTA() {
           transition={{ duration: 0.5 }}
         >
           <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold uppercase tracking-widest-plus text-text bg-white/60 backdrop-blur-sm rounded-full">
-            Playground
+            Get Started
           </span>
 
           <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-display font-semibold text-text leading-tight mb-6">

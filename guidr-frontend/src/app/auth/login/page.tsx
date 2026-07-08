@@ -10,24 +10,24 @@ import { useToast } from "@/contexts/ToastContext";
 const sampleTestimonials: Testimonial[] = [
   {
     avatarSrc:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces",
-    name: "Sarah Chen",
-    handle: "@sarahdigital",
-    text: "Guidr helped me find the perfect graduate program. The recommendations were spot-on!",
+      "https://ui-avatars.com/api/?name=Sylvester&background=E8B4A0&color=1C2127&size=150&font-size=0.4&bold=true",
+    name: "Sylvester",
+    handle: "@geek_sly",
+    text: "Guidr's recommendations pointed me to programs I'd never have found on my own. Genuinely saved me weeks of searching.",
   },
   {
     avatarSrc:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces",
-    name: "Marcus Johnson",
-    handle: "@marcustech",
-    text: "The essay review feature is incredible. It helped me refine my application essays perfectly.",
+      "https://ui-avatars.com/api/?name=Derrick&background=4A7C74&color=ffffff&size=150&font-size=0.4&bold=true",
+    name: "Derrick",
+    handle: "@derrick",
+    text: "The faculty matching and fit scores made it obvious which labs actually aligned with my research. Huge time-saver.",
   },
   {
     avatarSrc:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces",
-    name: "David Martinez",
-    handle: "@davidcreates",
-    text: "Found my dream program through Guidr's personalized recommendations. Highly recommend!",
+      "https://ui-avatars.com/api/?name=Nana+Kwame&background=1C2127&color=ffffff&size=150&font-size=0.4&bold=true",
+    name: "Nana Kwame",
+    handle: "@nkay",
+    text: "Everything I needed in one place — schools, programs, and professors matched to my goals. This is how the search should feel.",
   },
 ];
 

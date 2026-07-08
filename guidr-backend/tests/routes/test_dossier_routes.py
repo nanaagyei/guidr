@@ -1,8 +1,9 @@
 """API tests for dossier routes."""
-import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
 import uuid
+from unittest.mock import patch, MagicMock
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -15,13 +16,25 @@ def mock_auth():
 
 @pytest.fixture
 def client(mock_auth):
-    """Create test client with mocked auth."""
-    with patch("src.routes.dossiers.get_current_user", return_value=mock_auth):
-        with patch("src.routes.dossiers.get_db") as mock_get_db:
-            mock_db = MagicMock()
-            mock_get_db.return_value = mock_db
-            from src.main import app
-            yield TestClient(app), mock_db
+    """Create test client with proper FastAPI dependency overrides."""
+    from src.db import get_db
+    from src.dependencies.auth import get_current_user
+    from src.main import app
+
+    mock_db = MagicMock()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_auth
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    with patch("src.dependencies.rate_limit._get_redis") as mock_redis_fn:
+        mock_redis = MagicMock()
+        # Simulate: allowed=1, count=1, ttl=59
+        mock_redis.eval.return_value = [1, 1, 59]
+        mock_redis_fn.return_value = mock_redis
+        yield TestClient(app), mock_db
+
+    app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_db, None)
 
 
 class TestSchoolDossierRoute:
@@ -64,8 +77,12 @@ class TestSchoolDossierRoute:
             mock_cache = MagicMock()
             mock_cache.value_json = {"name": "MIT"}
             mock_cache.confidence = 0.90
-            mock_cache.computed_at = MagicMock(isoformat=MagicMock(return_value="2026-03-01T00:00:00"))
-            mock_cache.expires_at = MagicMock(isoformat=MagicMock(return_value="2026-03-31T00:00:00"))
+            mock_cache.computed_at = MagicMock(
+                isoformat=MagicMock(return_value="2026-03-01T00:00:00")
+            )
+            mock_cache.expires_at = MagicMock(
+                isoformat=MagicMock(return_value="2026-03-31T00:00:00")
+            )
             mock_cache.citations_json = [{"id": "c1", "url": "https://mit.edu"}]
             mock_cache.evidence_map_json = {"name": ["c1"]}
 

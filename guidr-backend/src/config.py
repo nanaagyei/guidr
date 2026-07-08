@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     # Perplexity (Research Gateway)
     perplexity_api_key: Optional[str] = None
     research_max_concurrent: int = 3
+    max_research_cost_usd: float = 5.0  # Server-side hard cap per research request
 
     # Open Deep Research (OpenAI-compatible fallback for Research Gateway)
     open_deep_research_api_key: Optional[str] = None
@@ -124,7 +125,18 @@ class Settings(BaseSettings):
     scrape_off_peak_end_hour: int = 6
     pipeline_env: str = "development"
     use_scraping_orchestrator: bool = True  # Use centralized URL discovery
-    
+
+    # CORS — comma-separated origins, e.g. "http://localhost:3000,https://guidr.app"
+    allowed_origins: str = "http://localhost:3000"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def is_production(self) -> bool:
+        return self.env == "production"
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
 

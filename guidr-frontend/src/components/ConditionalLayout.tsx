@@ -20,12 +20,16 @@ export default function ConditionalLayout({
   const isAuthPage = pathname?.startsWith('/auth');
   const isOnboardingPage = pathname === '/onboarding';
   const isLandingPage = pathname === '/';
+  // Public marketing/legal pages render their own header + footer (no sidebar)
+  const MARKETING_ROUTES = ['/about', '/contact', '/terms', '/privacy'];
+  const isMarketingPage = MARKETING_ROUTES.includes(pathname ?? '');
 
-  // Show sidebar only if user is authenticated and not on auth/onboarding/landing pages
-  const showSidebar = !isAuthPage && !isOnboardingPage && !isLandingPage && !loading && user;
+  // Show sidebar only if user is authenticated and not on auth/onboarding/landing/marketing pages
+  const showSidebar =
+    !isAuthPage && !isOnboardingPage && !isLandingPage && !isMarketingPage && !loading && user;
 
-  if (isAuthPage || isOnboardingPage || isLandingPage) {
-    // Full screen layout for auth, onboarding, and landing pages
+  if (isAuthPage || isOnboardingPage || isLandingPage || isMarketingPage) {
+    // Full screen layout for auth, onboarding, landing, and marketing pages
     return <>{children}</>;
   }
 

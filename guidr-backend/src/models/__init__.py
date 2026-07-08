@@ -27,4 +27,5 @@ from src.models.enrichment_cache import EnrichmentCache
 from src.models.domain_health import DomainHealth
 from src.models.validation_report import ValidationReport
 from src.models.confidence_score import ConfidenceScore
+from src.models.research_cache import ResearchCache
 

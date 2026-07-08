@@ -24,7 +24,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend dev server
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,7 +82,19 @@ app.include_router(dossiers.router)
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize external services."""
+    """Initialize external services and validate configuration."""
+    # Validate critical API keys
+    missing = []
+    if not settings.perplexity_api_key:
+        missing.append("PERPLEXITY_API_KEY")
+    if not settings.internal_api_key:
+        missing.append("INTERNAL_API_KEY")
+    if missing:
+        logger.warning("Missing API keys (some features will be degraded): %s", ", ".join(missing))
+
+    if settings.is_production and not settings.jwt_secret:
+        logger.error("JWT_SECRET is not set — JWT tokens will be insecure in production")
+
     try:
         search_service.ensure_indexes()
     except Exception as exc:

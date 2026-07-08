@@ -1,0 +1,17 @@
+# Railway config for the Guidr API service.
+# Build is shared by all three services (api / worker / beat) via the Dockerfile.
+# The worker and beat services override [deploy].startCommand in the Railway
+# dashboard (see DEPLOY_RAILWAY.md). This file configures the API service.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# run.py applies Alembic migrations, then serves uvicorn on $PORT.
+startCommand = "python run.py"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1

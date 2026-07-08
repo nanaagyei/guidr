@@ -14,16 +14,16 @@ const faqs = [
     a: 'There are 3 levels. Level 1 (Basics) unlocks the dashboard by providing your degree and field of study. Level 2 (Targeting) unlocks recommendations by adding research areas and country preferences. Level 3 (Complete) unlocks professor matching by adding academic records.',
   },
   {
-    q: 'How do I upload a transcript?',
-    a: 'Go to Academic Records and click "Upload Transcript." We accept PDF, DOC, and DOCX files up to 10MB. Our AI will extract your GPA, institution, and degree information automatically.',
+    q: 'How do I add my academic records?',
+    a: 'Go to Academic Records and click "Add Manually" to enter your institution, degree, GPA, and dates. This information helps unlock professor matching and improves your recommendations.',
   },
   {
-    q: 'What happens if transcript parsing fails?',
-    a: 'If we can\'t extract data from your transcript, you\'ll see a "Failed" status. You can always add your academic records manually using the "Add Manually" button on the Academic Records page.',
+    q: 'Which features are coming soon?',
+    a: 'Automatic document parsing (auto-filling your profile from an uploaded CV or transcript), AI essay feedback, and funding discovery are in active development. You\'ll see a "Coming soon" label on these until they\'re ready.',
   },
   {
     q: 'How do I get better recommendations?',
-    a: 'Complete your profile to Level 2 or higher, add detailed academic records, specify your research interests, and set your country and funding preferences. The recommendation engine considers all of these factors.',
+    a: 'Complete your profile to Level 2 or higher, add your academic records, specify your research interests, and set your country and funding preferences. The recommendation engine considers all of these factors.',
   },
   {
     q: 'Can I save schools I\'m interested in?',
@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: 'Is my data secure?',
-    a: 'Yes. Uploaded documents are stored securely in private cloud storage. Your personal information is never shared with third parties. You can delete your documents and data at any time from the Settings page.',
+    a: 'Yes. Your information is stored securely, passwords are hashed, and we support two-factor authentication. Your personal information is never sold or shared with third parties, and you can delete your data at any time from the Settings page.',
   },
 ];
 
@@ -45,11 +45,11 @@ export default function FAQPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <Link
-        href="/dashboard"
+        href="/help"
         className="inline-flex items-center gap-2 text-sm text-textSecondary hover:text-text mb-6 transition"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
+        Back to Help Center
       </Link>
 
       <div className="flex items-center gap-3 mb-8">

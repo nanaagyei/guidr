@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from datetime import datetime, timedelta
+from src.config import settings
 from src.db import get_db
 from src.models.user import User
 from src.schemas.auth import (
@@ -175,7 +176,7 @@ async def register(
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.is_production,
         max_age=7 * 24 * 60 * 60,
     )
 
@@ -232,7 +233,7 @@ async def login(
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.is_production,
     )
     if user_data.remember_me:
         cookie_kwargs["max_age"] = 30 * 24 * 60 * 60

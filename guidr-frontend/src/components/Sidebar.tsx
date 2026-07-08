@@ -31,6 +31,8 @@ interface NavLink {
   icon: React.ReactNode;
   /** Minimum profile completion level required (0 = always accessible) */
   requiredLevel?: number;
+  /** Feature is built but gated pre-launch — shows a "Soon" badge */
+  comingSoon?: boolean;
 }
 
 interface AppSidebarProps {
@@ -79,13 +81,13 @@ export default function AppSidebar({ open: openProp, setOpen: setOpenProp, mobil
       label: 'Funding',
       href: '/funding',
       icon: <DollarSign className="h-5 w-5 shrink-0 text-gray-300" />,
-      requiredLevel: 2,
+      comingSoon: true,
     },
     {
       label: 'Documents',
       href: '/documents',
       icon: <FileText className="h-5 w-5 shrink-0 text-gray-300" />,
-      requiredLevel: 0,
+      comingSoon: true,
     },
     {
       label: 'Essays',
@@ -119,6 +121,9 @@ export default function AppSidebar({ open: openProp, setOpen: setOpenProp, mobil
           {/* Navigation links */}
           <div className="mt-2 flex flex-col gap-2">
             {links.map((link, idx) => {
+              if (link.comingSoon) {
+                return <ComingSoonSidebarLink key={idx} link={link} />;
+              }
               const locked = (link.requiredLevel ?? 0) > userLevel;
               if (locked) {
                 return (
@@ -209,6 +214,33 @@ const LockedSidebarLink = ({
         )}
       </AnimatePresence>
     </button>
+  );
+};
+
+/**
+ * A sidebar link for a feature that is built but gated pre-launch. Navigates to
+ * the page (which shows a "Coming soon" screen) and displays a "Soon" pill.
+ */
+const ComingSoonSidebarLink = ({ link }: { link: NavLink }) => {
+  const { open, isMobile } = useSidebar();
+  const showFull = open || isMobile;
+
+  return (
+    <SidebarLink
+      link={{
+        ...link,
+        label: (
+          <span className="flex items-center gap-2">
+            {link.label}
+            {showFull && (
+              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent">
+                Soon
+              </span>
+            )}
+          </span>
+        ) as unknown as string,
+      }}
+    />
   );
 };
 

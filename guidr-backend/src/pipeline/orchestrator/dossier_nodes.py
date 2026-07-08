@@ -181,7 +181,11 @@ def research_extract(state: DossierState) -> dict:
             "existing_data": json.dumps(existing_data, default=str),
         }
 
-    prompt = PromptRegistry.render(template_name, "v1", **template_vars)
+    # Use variant-aware prompt loading for A/B testing
+    variant_seed = state.get("entity_id") or state.get("user_id")
+    prompt, prompt_variant = PromptRegistry.render_with_variant(
+        template_name, "v1", variant_seed=variant_seed, **template_vars
+    )
 
     # Map job_type to gateway job_type
     gateway_job_type_map = {
@@ -217,6 +221,8 @@ def research_extract(state: DossierState) -> dict:
             "dossier_report": response.report_markdown,
             "dossier_metrics": response.metrics.model_dump(),
             "dossier_errors": response.errors,
+            "prompt_version": "v1",
+            "prompt_variant": prompt_variant,
             **_progress(state, "research_extract"),
         }
 
@@ -226,6 +232,8 @@ def research_extract(state: DossierState) -> dict:
         "dossier_citations": [],
         "dossier_evidence_map": {},
         "dossier_errors": response.errors if hasattr(response, "errors") else ["Unexpected response type"],
+        "prompt_version": "v1",
+        "prompt_variant": prompt_variant,
         **_progress(state, "research_extract"),
     }
 

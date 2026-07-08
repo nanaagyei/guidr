@@ -28,6 +28,7 @@ class ExtractionRun(Base):
     extractor_name = Column(String, nullable=False)
     model_name = Column(String, nullable=True)
     prompt_version = Column(String, nullable=False, default="v1")
+    prompt_variant = Column(String, nullable=True, default="a")
     schema_version = Column(String, nullable=False, default="v1")
 
     extracted_json = Column(JSON, nullable=False)

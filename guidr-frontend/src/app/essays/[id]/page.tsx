@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   getEssay,
   updateEssay,
-  requestEssayReview,
 } from '@/utils/api';
 import {
   ArrowLeft,
@@ -29,7 +28,6 @@ export default function EssayEditorPage() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [requestingReview, setRequestingReview] = useState(false);
   const [essay, setEssay] = useState<any>(null);
   const [versions, setVersions] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -128,26 +126,6 @@ export default function EssayEditorPage() {
     }
   }
 
-  async function handleRequestReview() {
-    if (!essay) return;
-
-    setRequestingReview(true);
-    setError('');
-
-    try {
-      await requestEssayReview(essayId);
-      setSuccess('Review request submitted! It may take a few minutes.');
-      setTimeout(() => {
-        setSuccess('');
-        loadEssay(); // Refresh to get new review
-      }, 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setRequestingReview(false);
-    }
-  }
-
   function loadVersion(versionNumber: number) {
     const version = versions.find(v => v.version_number === versionNumber);
     if (version) {
@@ -199,25 +177,21 @@ export default function EssayEditorPage() {
         </button>
         <div className="flex items-center gap-3">
           {essay && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleRequestReview}
-              disabled={requestingReview || !content.trim()}
-              className="px-4 py-2 bg-gray-700 text-eggshell font-semibold rounded-lg hover:bg-gray-700/90 transition disabled:opacity-50 flex items-center gap-2"
+            // Essay feedback is gated pre-launch. The review flow (handleRequestReview,
+            // ReviewDisplay) is preserved; re-enable once LLM feedback is wired.
+            // See launch plan Workstream C.
+            <button
+              type="button"
+              disabled
+              title="AI essay feedback is coming soon"
+              className="px-4 py-2 bg-gray-100 text-textMuted font-semibold rounded-lg cursor-not-allowed flex items-center gap-2"
             >
-              {requestingReview ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Requesting...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Request Review
-                </>
-              )}
-            </motion.button>
+              <Sparkles className="h-4 w-4" />
+              Review
+              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent">
+                Soon
+              </span>
+            </button>
           )}
           <motion.button
             whileHover={{ scale: 1.05 }}

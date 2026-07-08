@@ -4,102 +4,114 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ParallaxLayer } from '@/components/landing/ParallaxLayer';
+import { cn } from '@/lib/utils';
 
 const PARTNER_LOGOS = [
-  { name: 'Harvard University', domain: 'harvard.edu', initials: 'H' },
-  { name: 'Stanford University', domain: 'stanford.edu', initials: 'S' },
-  { name: 'MIT', domain: 'mit.edu', initials: 'MIT' },
-  { name: 'Yale University', domain: 'yale.edu', initials: 'Y' },
-  { name: 'Princeton University', domain: 'princeton.edu', initials: 'P' },
-  { name: 'Columbia University', domain: 'columbia.edu', initials: 'C' },
-  { name: 'UC Berkeley', domain: 'berkeley.edu', initials: 'UCB' },
-  { name: 'University of Chicago', domain: 'uchicago.edu', initials: 'UC' },
-];
+  { name: 'Harvard University', src: '/images/harvard.png', initials: 'H' },
+  { name: 'Stanford University', src: '/images/stanford.png', initials: 'S' },
+  { name: 'MIT', src: '/images/mit.png', initials: 'MIT' },
+  { name: 'Yale University', src: '/images/yale.webp', initials: 'Y' },
+  { name: 'Princeton University', src: '/images/princeton.png', initials: 'P' },
+  { name: 'Columbia University', src: '/images/columbia.png', initials: 'C' },
+  { name: 'UC Berkeley', src: '/images/ucb.png', initials: 'UCB' },
+  { name: 'University of Chicago', src: '/images/uchicago.png', initials: 'UC' },
+] as const;
 
-function LogoItem({ logo }: { logo: (typeof PARTNER_LOGOS)[0] }) {
+const LOGO_PX = 100;
+
+function LogoMarqueeItem({ logo }: { logo: (typeof PARTNER_LOGOS)[number] }) {
   const [hasError, setHasError] = useState(false);
-
-  if (hasError) {
-    return (
-      <div
-        className="flex items-center justify-center h-12 w-full grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
-        title={logo.name}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-            <span className="text-xs font-bold text-textSecondary">{logo.initials}</span>
-          </div>
-          <span className="text-sm font-medium text-textSecondary hidden lg:block">{logo.name.split(' ')[0]}</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
-      className="flex items-center justify-center gap-2 h-12 w-full grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+      className="flex shrink-0 items-center gap-3 sm:gap-4 pr-10 sm:pr-14 md:pr-16 grayscale opacity-[0.72] transition-all duration-300 motion-safe:hover:grayscale-0 motion-safe:hover:opacity-100"
       title={logo.name}
     >
-      <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
-        <Image
-          src={`https://logo.clearbit.com/${logo.domain}`}
-          alt={logo.name}
-          width={40}
-          height={40}
-          className="object-contain"
-          onError={() => setHasError(true)}
-          unoptimized
-        />
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center sm:h-16 sm:w-16 md:h-[4.5rem] md:w-[4.5rem]">
+        {hasError ? (
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
+            <span className="text-xs font-bold text-textSecondary sm:text-sm">{logo.initials}</span>
+          </div>
+        ) : (
+          <Image
+            src={logo.src}
+            alt=""
+            width={LOGO_PX}
+            height={LOGO_PX}
+            className="max-h-full max-w-full object-contain p-1"
+            onError={() => setHasError(true)}
+            unoptimized
+          />
+        )}
       </div>
-      <span className="text-sm font-medium text-textSecondary hidden lg:block">{logo.name.split(' ')[0]}</span>
+      <span className="whitespace-nowrap text-left text-xs font-medium text-textSecondary sm:text-sm md:text-base">
+        {logo.name}
+      </span>
+    </div>
+  );
+}
+
+function MarqueeStrip({
+  'aria-hidden': ariaHidden,
+  className,
+}: {
+  'aria-hidden'?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn('flex shrink-0 items-center', className)} aria-hidden={ariaHidden}>
+      {PARTNER_LOGOS.map((logo) => (
+        <LogoMarqueeItem key={logo.name} logo={logo} />
+      ))}
     </div>
   );
 }
 
 export function LandingLogoCloud() {
   return (
-    <section className="relative py-16 sm:py-20 bg-white border-y border-border/30 overflow-hidden">
+    <section
+      className="relative overflow-hidden border-y border-border/30 bg-white py-12 sm:py-16 md:py-20"
+      aria-label="Universities applicants use Guidr for"
+    >
       <ParallaxLayer
         scrollRange={[200, 800]}
         offsetRange={[0, 40]}
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-landingMint/20 to-transparent" />
       </ParallaxLayer>
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section label */}
-        <p className="text-center text-xs font-semibold uppercase tracking-widest-plus text-textMuted mb-10">
-          Trusted by applicants to
-        </p>
 
-        {/* Logo grid */}
-        <motion.div
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 items-center justify-items-center"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          variants={{
-            visible: {
-              transition: {
-                staggerChildren: 0.08,
-                delayChildren: 0.1,
-              },
-            },
-          }}
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.p
+          className="mb-8 text-center text-xs font-semibold uppercase tracking-widest-plus text-textMuted sm:mb-10"
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.45 }}
         >
-          {PARTNER_LOGOS.map((logo) => (
-            <motion.div
-              key={logo.name}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
-              transition={{ duration: 0.4 }}
+          Trusted by applicants to
+        </motion.p>
+
+        <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent sm:w-14 md:w-20"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent sm:w-14 md:w-20"
+            aria-hidden
+          />
+
+          <div className="overflow-hidden">
+            <div
+              className="flex w-max will-change-transform animate-logo-marquee-slow motion-reduce:mx-auto motion-reduce:animate-none"
+              style={{ backfaceVisibility: 'hidden' }}
             >
-              <LogoItem logo={logo} />
-            </motion.div>
-          ))}
-        </motion.div>
+              <MarqueeStrip />
+              <MarqueeStrip aria-hidden className="motion-reduce:hidden" />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

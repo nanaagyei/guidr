@@ -712,6 +712,34 @@ export async function getProfessor(id: string): Promise<any> {
 }
 
 /**
+ * Get extended professor detail with enrichment data and funding info.
+ */
+export async function getProfessorDetail(id: string): Promise<any> {
+  const response = await fetchWithCredentials(`/professors/${id}/detail`);
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to fetch professor detail');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get fit score between current user and a professor.
+ */
+export async function getProfessorFitScore(professorId: string): Promise<any> {
+  const response = await fetchWithCredentials(`/professors/${professorId}/fit-score`);
+
+  if (!response.ok) {
+    // Fit score may fail if profile is incomplete — return null rather than throwing
+    return null;
+  }
+
+  return response.json();
+}
+
+/**
  * Generate email draft for professor.
  */
 export async function generateProfessorEmail(professorId: string, programId?: string): Promise<any> {
@@ -1088,7 +1116,14 @@ function normalizeRecommendedProfessorsPayload(data: unknown): any[] {
         Array.isArray((data as { professors?: unknown }).professors)
       ? (data as { professors: unknown[] }).professors
       : [];
-  return raw;
+  return raw.map((item: any) => ({
+    ...item,
+    id: item.id || item.openalex_id || item.name,
+    full_name: item.full_name || item.name,
+    school_name: item.school_name || item.institution_name,
+    research_area: item.research_area || item.research_summary,
+    tags: item.tags || item.interests_tags || [],
+  }));
 }
 
 /**

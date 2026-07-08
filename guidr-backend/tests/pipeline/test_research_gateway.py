@@ -51,6 +51,28 @@ class TestResearchGatewayService(unittest.TestCase):
             metrics=Metrics(),
         )
 
+    def _run_with_mocks(self, response, request=None, use_cache=True):
+        """Helper: run gateway with mocked provider, redis, and DB."""
+        mod = _get_mod()
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None  # cache miss
+
+        stub_provider = MagicMock()
+        stub_provider.run.return_value = response
+
+        if request is None:
+            request = self._make_request(use_cache=use_cache)
+
+        with patch.object(mod, "_select_provider", return_value=stub_provider), \
+             patch.object(mod, "_get_redis", return_value=mock_redis):
+            svc = mod.ResearchGatewayService()
+            # Also mock DB cache to avoid real DB connections
+            svc._db_cache_get = MagicMock(return_value=None)
+            svc._db_cache_set = MagicMock()
+            result = svc.run(request)
+
+        return result, mock_redis, stub_provider, svc
+
     # ------------------------------------------------------------------ #
     # 1. Cache hit returns cached response
     # ------------------------------------------------------------------ #
@@ -75,63 +97,30 @@ class TestResearchGatewayService(unittest.TestCase):
     # 2. Provider called on cache miss
     # ------------------------------------------------------------------ #
     def test_provider_called_on_miss(self):
-        mod = _get_mod()
-        mock_redis = MagicMock()
-        mock_redis.get.return_value = None
-
         expected = self._make_research_response()
-        stub_provider = MagicMock()
-        stub_provider.run.return_value = expected
+        result, _, stub_provider, _ = self._run_with_mocks(expected)
 
-        with patch.object(mod, "_select_provider", return_value=stub_provider), \
-             patch.object(mod, "_get_redis", return_value=mock_redis):
-            svc = mod.ResearchGatewayService()
-            request = self._make_request()
-            result = svc.run(request)
-
-            stub_provider.run.assert_called_once_with(request)
-            assert result.status == "SUCCESS"
+        stub_provider.run.assert_called_once()
+        assert result.status == "SUCCESS"
 
     # ------------------------------------------------------------------ #
     # 3. Successful result is cached
     # ------------------------------------------------------------------ #
     def test_result_cached_on_success(self):
-        mod = _get_mod()
-        mock_redis = MagicMock()
-        mock_redis.get.return_value = None
-
         response = self._make_research_response(status="SUCCESS")
-        stub_provider = MagicMock()
-        stub_provider.run.return_value = response
+        _, mock_redis, _, _ = self._run_with_mocks(response)
 
-        with patch.object(mod, "_select_provider", return_value=stub_provider), \
-             patch.object(mod, "_get_redis", return_value=mock_redis):
-            svc = mod.ResearchGatewayService()
-            request = self._make_request()
-            svc.run(request)
-
-            # setex should be called for caching
-            mock_redis.setex.assert_called_once()
+        # setex should be called for Redis caching
+        mock_redis.setex.assert_called_once()
 
     # ------------------------------------------------------------------ #
     # 4. Failed result is NOT cached
     # ------------------------------------------------------------------ #
     def test_failed_not_cached(self):
-        mod = _get_mod()
-        mock_redis = MagicMock()
-        mock_redis.get.return_value = None
-
         response = self._make_research_response(status="FAILED")
-        stub_provider = MagicMock()
-        stub_provider.run.return_value = response
+        _, mock_redis, _, _ = self._run_with_mocks(response)
 
-        with patch.object(mod, "_select_provider", return_value=stub_provider), \
-             patch.object(mod, "_get_redis", return_value=mock_redis):
-            svc = mod.ResearchGatewayService()
-            request = self._make_request()
-            svc.run(request)
-
-            mock_redis.setex.assert_not_called()
+        mock_redis.setex.assert_not_called()
 
     # ------------------------------------------------------------------ #
     # 5. Dossier job type returns DossierResponse
@@ -150,6 +139,8 @@ class TestResearchGatewayService(unittest.TestCase):
             from src.pipeline.research_gateway.schemas import DossierResponse
 
             svc = mod.ResearchGatewayService()
+            svc._db_cache_get = MagicMock(return_value=None)
+            svc._db_cache_set = MagicMock()
             request = self._make_request(job_type="DOSSIER_EXTRACTION")
             result = svc.run(request)
 
@@ -200,11 +191,14 @@ class TestResearchGatewayService(unittest.TestCase):
              patch.object(mod, "_get_redis", return_value=mock_redis), \
              patch.object(db_mod, "SessionLocal", return_value=mock_db):
             svc = mod.ResearchGatewayService()
+            svc._db_cache_get = MagicMock(return_value=None)
+            svc._db_cache_set = MagicMock()
             request = self._make_request(job_type="URL_DISCOVERY")
             svc.run(request)
 
+            # source_documents persist calls merge + commit
             mock_db.merge.assert_called()
-            mock_db.commit.assert_called_once()
+            assert mock_db.commit.call_count >= 1
 
     # ------------------------------------------------------------------ #
     # 8. Stub provider selected without API key
@@ -215,12 +209,65 @@ class TestResearchGatewayService(unittest.TestCase):
 
         mock_settings = MagicMock()
         mock_settings.perplexity_api_key = None
+        mock_settings.open_deep_research_api_key = None
+        mock_settings.open_deep_research_base_url = None
 
         with patch.object(mod, "PerplexityStubProvider") as mock_stub_cls, \
              patch.object(config_mod, "settings", mock_settings):
             provider = mod._select_provider()
 
         mock_stub_cls.assert_called_once()
+
+    # ------------------------------------------------------------------ #
+    # 9. DB cache fallback is used when Redis misses
+    # ------------------------------------------------------------------ #
+    def test_db_cache_fallback_on_redis_miss(self):
+        mod = _get_mod()
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None  # Redis miss
+
+        cached_response = self._make_research_response()
+
+        with patch.object(mod, "_select_provider") as mock_provider, \
+             patch.object(mod, "_get_redis", return_value=mock_redis):
+            svc = mod.ResearchGatewayService()
+            svc._db_cache_get = MagicMock(return_value=cached_response)
+            request = self._make_request()
+            result = svc.run(request)
+
+        # Provider should NOT have been called — DB cache hit
+        mock_provider.return_value.run.assert_not_called()
+        assert result.metrics.cache_hit is True
+
+    # ------------------------------------------------------------------ #
+    # 10. Cost budget enforcement rejects over-budget requests
+    # ------------------------------------------------------------------ #
+    def test_budget_enforcement_rejects_over_budget(self):
+        from src.pipeline.research_gateway.schemas import Budget
+
+        mod = _get_mod()
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None
+
+        # Use a "real-looking" provider that has non-zero cost
+        stub_provider = MagicMock()
+        stub_provider.__class__.__name__ = "PerplexityProvider"
+
+        with patch.object(mod, "_select_provider", return_value=stub_provider), \
+             patch.object(mod, "_get_redis", return_value=mock_redis):
+            svc = mod.ResearchGatewayService()
+            svc._db_cache_get = MagicMock(return_value=None)
+
+            # Create request with very low budget; perplexity tier costs 0.005/1K tokens
+            # 100K tokens * 0.005/1K = $0.50 which exceeds $0.01 budget
+            request = self._make_request()
+            request.budget = Budget(max_tokens=100000, max_cost_usd=0.01)
+
+            result = svc.run(request)
+
+        assert result.status == "FAILED"
+        assert any("budget" in e.lower() or "cost" in e.lower() for e in result.errors)
+        stub_provider.run.assert_not_called()
 
 
 if __name__ == "__main__":

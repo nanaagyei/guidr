@@ -5,6 +5,44 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-07-08 UTC] feat(marketing): Public legal/marketing pages so no footer/nav link 404s
+  - New `/terms`, `/privacy`, `/contact`, `/about`, and `/help` (Help Center hub) pages
+  - Shared `MarketingPageShell` (landing header + footer + prose styling)
+  - `ConditionalLayout` now treats `/about`, `/contact`, `/terms`, `/privacy` as full-screen marketing pages
+  - Files: `src/components/marketing/MarketingPageShell.tsx`, `src/app/{terms,privacy,contact,about,help}/page.tsx`, `src/components/ConditionalLayout.tsx`
+
+- [2026-07-08 UTC] feat(ui): `ComingSoon` gate for pre-launch features
+  - Funding and Documents pages now render `ComingSoon`; essay "Request Review" replaced with a disabled "Soon" control
+  - Sidebar shows a "Soon" badge via new `comingSoon` NavLink flag; full implementations preserved in git history
+  - Files: `src/components/ComingSoon.tsx`, `src/app/funding/page.tsx`, `src/app/documents/page.tsx`, `src/app/essays/[id]/page.tsx`, `src/components/Sidebar.tsx`
+
+### Changed
+- [2026-07-08 UTC] feat(landing): Footer + navbar cleanup and enrichment for launch
+  - Footer: fixed broken logo sizing (`h-18` → `h-10`), removed dead links (API Docs, Careers, Press, Pricing), App Store badge, and placeholder social icons; fixed `/faculty` → `/professors`; added contact line + tagline
+  - Header: removed Pricing/Blog/Documentation dead links; expanded nav to Product / How it works / Resources / Company (all resolve to real routes); Contact CTA now points to `/contact`
+  - Hid `LandingBlog` (hardcoded posts); newsletter now opens a real mailto instead of a fake success
+  - Files: `src/components/landing/{LandingFooter,LandingHeader,LandingCTA}.tsx`, `src/app/page.tsx`
+
+- [2026-07-08 UTC] feat(auth): Real testimonials on sign-in/sign-up
+  - Replaced placeholder names with Sylvester (@geek_sly), Derrick (@derrick), Nana Kwame (@nkay); initials avatars; quotes scoped to shipped features
+  - Files: `src/app/auth/login/page.tsx`, `src/app/auth/register/page.tsx`
+
+### Fixed
+- [2026-07-08 UTC] fix(professors): Corrected `EmailDraftModal` props on professor detail page (`draft` → `isOpen`/`emailDraft`), unblocking the production build
+  - Files: `src/app/professors/[id]/page.tsx`
+
+### Changed
+- [2026-05-10] feat(landing): `LandingLogoCloud` infinite marquee, larger logos, full school names
+  - Horizontal loop with edge fades; `prefers-reduced-motion` shows a single static row
+  - Tailwind `logoMarquee` / `animate-logo-marquee-slow`
+  - Files: `src/components/landing/LandingLogoCloud.tsx`, `tailwind.config.js`
+
+- [2026-05-10] feat(landing): Partner university logos from `public/images`
+  - `LandingLogoCloud` uses bundled assets (`harvard.png`, `stanford.png`, `mit.png`, `yale.webp`, `princeton.png`, `columbia.png`, `ucb.png`, `uchicago.png`) instead of Clearbit
+  - Initials fallback remains when an image fails to load
+  - Files: `src/components/landing/LandingLogoCloud.tsx`
+
+### Added
 - [2026-03-26] feat(ui): TagInput chip component (`src/components/ui/tag-input.tsx`)
   - Renders existing values as removable pill/chip tags
   - Creates new tag on comma or Enter keydown; trims whitespace, ignores empty input

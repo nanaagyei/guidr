@@ -5,6 +5,98 @@ All notable changes to Guidr Backend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
+  - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)
+  - `.env.production.example` (env var names/grouping, no secrets)
+  - `DEPLOY_RAILWAY.md` runbook: Postgres/Redis plugins, 3 services, migrations, seeding, frontend/CORS wiring
+  - Files: `railway.toml`, `.env.production.example`, `DEPLOY_RAILWAY.md`
+
+### Fixed
+- [2026-07-08 UTC] fix(server): Bind uvicorn to platform `$PORT` (Railway/Render) instead of hardcoded 8000
+  - Files: `run.py`
+
+### Added
+- [2026-05-04 UTC] feat(professors): Fit score endpoint and extended detail endpoint
+  - `GET /professors/{id}/fit-score` — 5-dimension fit scoring (topic, activity, availability, funding, methods)
+  - `GET /professors/{id}/detail` — enriched professor detail with funding opportunities and enrichment cache data
+  - Weighted overall score: topic 30%, activity 20%, availability 20%, funding 15%, methods 15%
+  - Files: `src/routes/professors.py`
+
+- [2026-05-04 UTC] feat(frontend): Professor detail page with fit score visualization
+  - New route `/professors/[id]` with responsive two-column layout
+  - `FitScoreCard` component with animated SVG score ring and dimension breakdown
+  - `FitDimensionBar` component with animated fill bars and expandable explanations
+  - Auto-opens email draft modal when navigating with `?action=draft-email`
+  - Files: `src/app/professors/[id]/page.tsx`, `src/components/FitScoreCard.tsx`, `src/components/FitDimensionBar.tsx`
+
+- [2026-05-04 UTC] feat(frontend): Professor card badges and detail navigation
+  - "Accepting Students" and "Funding Available" badges on ProfessorCard
+  - Match score percentage badge (top-right)
+  - Clicking card navigates to professor detail page
+  - Files: `src/components/ProfessorCard.tsx`
+
+### Fixed
+- [2026-05-04 UTC] fix(dossiers): Professor names not displaying on dashboard
+  - Backend `/dossiers/professors/recommended` now returns `full_name`, `school_name`, `research_area`, `tags`, `id` fields
+  - Frontend normalizer maps enrichment cache field names to UI-expected field names
+  - Files: `src/routes/dossiers.py`, `src/utils/api.ts`
+
+### Changed
+- [2026-05-04 UTC] refactor(security): Production-aware cookie and CORS settings
+  - Cookie `secure` flag now dynamic: `True` in production, `False` in development
+  - CORS origins configurable via `ALLOWED_ORIGINS` env var (comma-separated)
+  - Startup validation warns about missing `PERPLEXITY_API_KEY`, `INTERNAL_API_KEY`, `JWT_SECRET`
+  - Files: `src/routes/auth.py`, `src/config.py`, `src/main.py`
+
+- [2026-05-02 UTC] feat(research-gateway): PostgreSQL research_cache table as Redis fallback
+  - Migration 020: `research_cache` table with dedupe_key, entity tracking, JSONB results, cost metrics
+  - `ResearchCache` SQLAlchemy model + `_db_cache_get()` / `_db_cache_set()` in gateway service
+  - Falls back to PostgreSQL when Redis misses; writes to both on cache set
+  - Files: `alembic/versions/020_research_cache_table.py`, `src/models/research_cache.py`,
+    `src/models/__init__.py`, `src/pipeline/research_gateway/service.py`
+
+- [2026-05-02 UTC] feat(research-gateway): URL ranking heuristics for discovery results
+  - Post-processes URL_DISCOVERY results with quality signals: HTTPS (+10), .edu (+5),
+    allowlist domain (+20), category keyword match (+15)
+  - Category-specific keyword lists for SCHOOL_OVERVIEW, PROGRAM_REQUIREMENTS, etc.
+  - Files: `src/pipeline/research_gateway/url_ranker.py`, `src/pipeline/research_gateway/service.py`
+
+- [2026-05-02 UTC] feat(research-gateway): Cost budget enforcement
+  - Pre-flight cost estimation per provider tier before calling provider
+  - Returns FAILED status if estimated cost exceeds request budget or server-side hard cap ($5.00)
+  - Cost-per-1K-tokens: Perplexity $0.005, OpenDeepResearch $0.003, Stub $0.00
+  - Files: `src/pipeline/research_gateway/service.py`, `src/config.py`
+
+- [2026-05-02 UTC] feat(prompts): A/B variant selection in PromptRegistry
+  - `list_variants()`, `get_with_variant()`, `render_with_variant()` methods
+  - Deterministic hash-based split using variant_seed (entity_id/user_id)
+  - Variant file convention: `{name}_{version}_{variant}.txt` (default = variant "a")
+  - Files: `src/pipeline/prompts/registry.py`
+
+- [2026-05-02 UTC] feat(pipeline): Prompt version + variant recording in dossier pipeline
+  - `research_extract` node passes `prompt_version` and `prompt_variant` through state
+  - `stage_dossier` node writes both fields to ExtractionRun rows
+  - Migration 021: adds `prompt_variant` column to `extraction_runs` table
+  - Files: `src/pipeline/orchestrator/dossier_nodes.py`, `src/models/extraction_run.py`,
+    `alembic/versions/021_prompt_variant_column.py`
+
+- [2026-05-02 UTC] test: New test suites for research gateway features
+  - `test_url_ranker.py` (11 tests): scoring function + integration ranking tests
+  - `test_prompt_registry_ab.py` (11 tests): variant listing, deterministic selection, rendering
+  - Files: `tests/pipeline/test_url_ranker.py`, `tests/pipeline/test_prompt_registry_ab.py`
+
+### Changed
+- [2026-05-02 UTC] fix(tests): Rewrite auth, dossier route, and research gateway tests
+  - Auth tests: mock DB via `app.dependency_overrides`, handle 2FA, fix password validation expectations
+  - Dossier route tests: use `app.dependency_overrides[get_current_user]` + mock rate limiter Redis
+  - Research gateway tests: mock `_db_cache_get`/`_db_cache_set`, add DB fallback + budget tests
+  - Files: `tests/test_auth.py`, `tests/routes/test_dossier_routes.py`,
+    `tests/pipeline/test_research_gateway.py`
+
+- [2026-05-02 UTC] chore(deps): Add pytest-asyncio to dev dependencies
+  - Fixes 5 async test failures in `test_http_rate_limiter.py`
+  - Files: `pyproject.toml`
+
 - [2026-03-30 00:20 UTC] chore(ci): Root GitHub Actions CI, pre-commit, and stricter frontend checks
   - Added `.github/workflows/ci.yml` at repo root (backend: Postgres+Redis, ruff, pytest;
     frontend: `next lint --max-warnings 0`, `tsc --noEmit`, `next build`; pre-commit all-files).

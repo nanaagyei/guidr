@@ -115,6 +115,7 @@ module.exports = {
         'shimmer': 'shimmer 2s infinite linear',
         'pulse-soft': 'pulseSoft 2s infinite',
         'float': 'float 3s ease-in-out infinite',
+        'logo-marquee-slow': 'logoMarquee 48s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -140,6 +141,10 @@ module.exports = {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-5px)' },
+        },
+        logoMarquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
       transitionTimingFunction: {

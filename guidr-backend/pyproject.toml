@@ -25,6 +25,13 @@ ignore = [
 "alembic/**" = ["E402", "F401"]
 "scripts/**" = ["E402", "F401"]
 
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.9.9",
+  "pytest>=8.0",
+  "pytest-asyncio>=0.24,<1.0",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
