@@ -36,7 +36,7 @@ scrapy>=2.11.2,<3.0
 # sentence-transformers 5.2+ has pre-built wheels for Python 3.13
 sentence-transformers>=5.2.0,<6.0.0
 sqlalchemy>=2.0.35,<2.1
-tqdm>=4.66.5,<5.0
+tqdm>=4.68.4,<5.0
 unstructured>=0.18.21,<1.0
 uvicorn[standard]>=0.30.6,<0.31
 PyPDF2>=3.0.1,<4.0
