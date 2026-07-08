@@ -175,8 +175,8 @@ async def register(
         key="session",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=settings.is_production,
+        samesite=settings.cookie_samesite,
+        secure=settings.cookie_secure,
         max_age=7 * 24 * 60 * 60,
     )
 
@@ -232,8 +232,8 @@ async def login(
         key="session",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=settings.is_production,
+        samesite=settings.cookie_samesite,
+        secure=settings.cookie_secure,
     )
     if user_data.remember_me:
         cookie_kwargs["max_age"] = 30 * 24 * 60 * 60
@@ -255,7 +255,11 @@ async def login(
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user by clearing session cookie."""
-    response.delete_cookie(key="session", samesite="lax")
+    response.delete_cookie(
+        key="session",
+        samesite=settings.cookie_samesite,
+        secure=settings.cookie_secure,
+    )
     return {"detail": "Logged out successfully"}
 
 
