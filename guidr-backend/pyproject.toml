@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
@@ -28,8 +28,8 @@ ignore = [
 [project.optional-dependencies]
 dev = [
   "ruff>=0.9.9",
-  "pytest>=8.0",
-  "pytest-asyncio>=0.24,<1.0",
+  "pytest>=9.1.1,<10.0",
+  "pytest-asyncio>=1.4.0,<2.0",
 ]
 
 [tool.pytest.ini_options]
