@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Backend Python dependencies
+  - package-ecosystem: pip
+    directory: /guidr-backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+      - backend
+
+  # Frontend Node dependencies
+  - package-ecosystem: npm
+    directory: /guidr-frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+      - frontend
+
+  # GitHub Actions used by the workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
+      - ci
