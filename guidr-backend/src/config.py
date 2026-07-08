@@ -137,6 +137,24 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.env == "production"
 
+    @property
+    def cookie_samesite(self) -> str:
+        """SameSite policy for the session cookie.
+
+        In production the frontend (e.g. *.vercel.app) and API (e.g.
+        *.railway.app) are different sites, so the session cookie must be
+        ``SameSite=None`` (with ``Secure``) to be sent on cross-site requests.
+        Locally, ``localhost:3000`` <-> ``localhost:8000`` are same-site, so
+        ``Lax`` works and avoids requiring HTTPS.
+        """
+        return "none" if self.is_production else "lax"
+
+    @property
+    def cookie_secure(self) -> bool:
+        """Session cookie ``Secure`` flag. Required by browsers when
+        ``SameSite=None``; always on in production (HTTPS)."""
+        return self.is_production
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
 
