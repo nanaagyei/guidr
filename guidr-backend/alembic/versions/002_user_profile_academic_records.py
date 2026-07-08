@@ -40,7 +40,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
     op.create_index('ix_user_profiles_user_id', 'user_profiles', ['user_id'])
-    
+
     # Create academic_records table
     op.create_table(
         'academic_records',
@@ -69,4 +69,3 @@ def downgrade() -> None:
     op.drop_table('academic_records')
     op.drop_index('ix_user_profiles_user_id', table_name='user_profiles')
     op.drop_table('user_profiles')
-

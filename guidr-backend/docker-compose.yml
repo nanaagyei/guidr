@@ -97,4 +97,3 @@ volumes:
   postgres_data:
   meilisearch_data:
   minio_data:
-

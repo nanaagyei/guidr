@@ -240,7 +240,7 @@ class DataIngestionService:
 
     def ingest_top_graduate_schools(self, limit: Optional[int] = None) -> Dict[str, int]:
         """Ingest curated list of top graduate schools.
-        
+
         This uses a built-in curated list of top universities known
         for their graduate programs - no external API required.
         """
@@ -288,16 +288,16 @@ class DataIngestionService:
         """Public method to ingest a single program from a seed."""
         from src.scrapers.base import ProgramSeed
         from uuid import UUID
-        
+
         if not isinstance(seed, ProgramSeed):
             raise ValueError("seed must be a ProgramSeed instance")
-        
+
         try:
             data_validator.validate_program(seed)
         except data_validator.ValidationError as exc:
             logger.warning("Validation failed for program %s: %s", seed.name, exc)
             raise
-        
+
         # Ensure institution_id is a UUID
         if isinstance(institution_id, str):
             institution_uuid = UUID(institution_id)
@@ -305,20 +305,20 @@ class DataIngestionService:
             institution_uuid = institution_id
         else:
             institution_uuid = UUID(str(institution_id))
-        
+
         institution = self.db.query(Institution).filter(
             Institution.id == institution_uuid
         ).first()
-        
+
         if not institution:
             raise ValueError(f"Institution {institution_id} not found")
-        
+
         # Check if program already exists - ensure we use the UUID properly
         existing = self.db.query(Program).filter(
             Program.institution_id == institution_uuid,
             Program.name == seed.name
         ).first()
-        
+
         if existing:
             # Update existing
             existing.degree_level = seed.degree_level or existing.degree_level
@@ -332,7 +332,7 @@ class DataIngestionService:
             existing.data_source = seed.data_source or existing.data_source
             existing.updated_at = datetime.utcnow()
             return existing
-        
+
         # Create new program - use institution_uuid to ensure consistency
         program = Program(
             institution_id=institution_uuid,
@@ -349,12 +349,12 @@ class DataIngestionService:
         )
         self.db.add(program)
         self.db.flush()
-        
+
         # Generate embedding
         embedding = embedding_service.embed_program(program)
         if embedding:
             program.embedding = embedding
-        
+
         logger.info("Created program: %s for %s", program.name, institution.name)
         return program
 
@@ -365,7 +365,7 @@ class DataIngestionService:
         max_programs: int = 20
     ) -> Dict[str, int]:
         """Scrape graduate programs using Firecrawl API.
-        
+
         Requires FIRECRAWL_API_KEY to be set.
         """
         import asyncio
@@ -374,7 +374,7 @@ class DataIngestionService:
         institution = self.db.query(Institution).filter(
             Institution.id == UUID(institution_id)
         ).first()
-        
+
         if not institution:
             logger.warning("Institution %s not found", institution_id)
             return {"error": "Institution not found", "programs": 0}
@@ -424,4 +424,3 @@ class DataIngestionService:
         self.db.commit()
         logger.info("Scraped %d programs for %s", inserted, institution.name)
         return {"institution": institution.name, "programs": inserted}
-

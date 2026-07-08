@@ -491,7 +491,7 @@ class FirecrawlScraper:
 
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
-            
+
             # Handle rate limiting (429) with exponential backoff
             if status_code == 429 and retry_count < self.MAX_RETRIES:
                 backoff_time = self.INITIAL_BACKOFF * (2 ** retry_count)
@@ -501,7 +501,7 @@ class FirecrawlScraper:
                 )
                 time.sleep(backoff_time)
                 return self.scrape_url(url, formats, retry_count + 1)
-            
+
             # Handle 403 Forbidden (site blocking)
             elif status_code == 403:
                 logger.warning(
@@ -510,12 +510,12 @@ class FirecrawlScraper:
                     url
                 )
                 return None
-            
+
             # Handle other HTTP errors
             else:
                 logger.error("Firecrawl HTTP error for %s: %s (status: %d)", url, e, status_code)
                 return None
-                
+
         except Exception as e:
             logger.error("Firecrawl error for %s: %s", url, e)
             return None
@@ -571,7 +571,7 @@ class FirecrawlScraper:
 
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
-            
+
             # Handle rate limiting (429) with exponential backoff
             if status_code == 429 and retry_count < self.MAX_RETRIES:
                 backoff_time = self.INITIAL_BACKOFF * (2 ** retry_count)
@@ -581,7 +581,7 @@ class FirecrawlScraper:
                 )
                 time.sleep(backoff_time)
                 return self.crawl_site(url, limit, include_paths, retry_count + 1)
-            
+
             # Handle 403 Forbidden
             elif status_code == 403:
                 logger.warning(
@@ -589,11 +589,11 @@ class FirecrawlScraper:
                     url
                 )
                 return []
-            
+
             else:
                 logger.error("Firecrawl crawl HTTP error for %s: %s (status: %d)", url, e, status_code)
                 return []
-                
+
         except Exception as e:
             logger.error("Firecrawl crawl error: %s", e)
             return []
@@ -628,7 +628,7 @@ class FirecrawlScraper:
 
         logger.warning("Crawl job %s timed out", job_id)
         return []
-    
+
     async def crawl_program_pages(
         self,
         base_url: str,
@@ -637,22 +637,22 @@ class FirecrawlScraper:
     ) -> List[Dict[str, Any]]:
         """
         Crawl program pages with path filters and rate limiting.
-        
+
         Args:
             base_url: Base URL of the institution
             include_paths: List of path patterns to include (e.g., ['/programs/*'])
             retry_count: Current retry attempt (for exponential backoff)
-            
+
         Returns:
             List of scraped page data
         """
         if not self.is_available():
             logger.warning("Firecrawl API key not configured")
             return []
-        
+
         # Rate limiting
         self._rate_limit()
-        
+
         try:
             payload = {
                 "url": base_url,
@@ -662,7 +662,7 @@ class FirecrawlScraper:
                     "formats": ["markdown", "links"],
                 },
             }
-            
+
             response = self._client.post(
                 f"{self.FIRECRAWL_API_URL}/crawl",
                 headers={
@@ -673,17 +673,17 @@ class FirecrawlScraper:
             )
             response.raise_for_status()
             data = response.json()
-            
+
             if data.get("success"):
                 job_id = data.get("id")
                 return self._poll_crawl_job(job_id)
             else:
                 logger.warning("Firecrawl crawl failed: %s", data.get("error"))
                 return []
-                
+
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
-            
+
             # Handle rate limiting (429) with exponential backoff
             if status_code == 429 and retry_count < self.MAX_RETRIES:
                 backoff_time = self.INITIAL_BACKOFF * (2 ** retry_count)
@@ -693,7 +693,7 @@ class FirecrawlScraper:
                 )
                 await asyncio.sleep(backoff_time)
                 return await self.crawl_program_pages(base_url, include_paths, retry_count + 1)
-            
+
             # Handle 403 Forbidden
             elif status_code == 403:
                 logger.warning(
@@ -701,15 +701,15 @@ class FirecrawlScraper:
                     base_url
                 )
                 return []
-            
+
             else:
                 logger.error("Firecrawl program crawl HTTP error for %s: %s (status: %d)", base_url, e, status_code)
                 return []
-                
+
         except Exception as e:
             logger.error("Firecrawl crawl error: %s", e)
             return []
-    
+
     async def extract_programs_structured(
         self,
         html_content: str,
@@ -717,11 +717,11 @@ class FirecrawlScraper:
     ) -> List[Dict[str, Any]]:
         """
         Use Firecrawl's structured extraction (if available).
-        
+
         Args:
             html_content: HTML content to extract from
             schema: Extraction schema definition
-            
+
         Returns:
             List of extracted program data
         """
@@ -729,7 +729,7 @@ class FirecrawlScraper:
         # For now, we'll use the standard scrape endpoint with LLM extraction
         if not self.is_available():
             return []
-        
+
         # This is a placeholder - actual implementation would depend on
         # Firecrawl's structured extraction API
         logger.debug("Structured extraction not yet fully implemented")
@@ -887,4 +887,3 @@ def get_school_info(name: str) -> Optional[Dict[str, Any]]:
             school.get("short_name", "").lower() == name_lower):
             return school
     return None
-

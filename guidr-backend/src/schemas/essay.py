@@ -31,7 +31,7 @@ class EssayResponse(EssayBase):
     word_count: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -42,7 +42,7 @@ class EssayVersionResponse(BaseModel):
     content: str
     word_count: int
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -59,6 +59,5 @@ class EssayReviewResponse(BaseModel):
     suggestions: Optional[str] = None
     detailed_feedback: Optional[str] = None
     created_at: datetime
-    
-    model_config = ConfigDict(from_attributes=True)
 
+    model_config = ConfigDict(from_attributes=True)

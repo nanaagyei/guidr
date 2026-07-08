@@ -18,7 +18,7 @@ export default function ProgramDetailPage() {
   const params = useParams();
   const toast = useToast();
   const programId = params.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [program, setProgram] = useState<any>(null);
   const [error, setError] = useState('');
@@ -68,7 +68,7 @@ export default function ProgramDetailPage() {
     );
   }
 
-  const deadlineInfo = program.application_deadline_primary 
+  const deadlineInfo = program.application_deadline_primary
     ? new Date(program.application_deadline_primary)
     : null;
   const isDeadlineSoon = deadlineInfo && deadlineInfo <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -97,7 +97,7 @@ export default function ProgramDetailPage() {
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-mesh-pattern opacity-30" />
-        
+
         <div className="relative">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Institution Avatar */}
@@ -106,7 +106,7 @@ export default function ProgramDetailPage() {
                 {program.institution?.name?.charAt(0) || 'U'}
               </span>
             </div>
-            
+
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className={`badge ${program.degree_level === 'phd' ? 'badge-accent' : 'badge-primary'}`}>
@@ -130,11 +130,11 @@ export default function ProgramDetailPage() {
                   onRefreshComplete={loadProgram}
                 />
               </div>
-              
+
               <h1 className="text-2xl md:text-3xl font-display font-semibold text-text mb-2">
                 {program.name}
               </h1>
-              
+
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-textSecondary">
                 <span className="font-medium">{program.institution?.name}</span>
                 <span className="text-border">|</span>
@@ -147,7 +147,7 @@ export default function ProgramDetailPage() {
                 </span>
               </div>
             </div>
-            
+
             {/* Actions */}
             <div className="flex gap-2 md:flex-col">
               <Button variant="outline" size="sm" onClick={handleCopyLink}>

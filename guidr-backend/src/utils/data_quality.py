@@ -34,11 +34,11 @@ class DataQualityMetrics:
 
 class DataQualityTracker:
     """Track data quality metrics for scraped data."""
-    
+
     def __init__(self):
         self.metrics: List[ExtractionMetrics] = []
         self.quality_metrics = DataQualityMetrics()
-    
+
     def record_extraction(
         self,
         method: str,
@@ -59,54 +59,54 @@ class DataQualityTracker:
         self.quality_metrics.total_extractions += 1
         if success:
             self.quality_metrics.successful_extractions += 1
-    
+
     def record_completeness_score(self, score: int):
         """Record a completeness score."""
         self.quality_metrics.completeness_scores.append(score)
-    
+
     def record_validation_failure(self, reason: str):
         """Record a validation failure."""
         self.quality_metrics.validation_failures[reason] = (
             self.quality_metrics.validation_failures.get(reason, 0) + 1
         )
-    
+
     def record_missing_field(self, field_name: str):
         """Record a missing field."""
         self.quality_metrics.missing_field_patterns[field_name] = (
             self.quality_metrics.missing_field_patterns.get(field_name, 0) + 1
         )
-    
+
     def calculate_success_rates(self) -> Dict[str, float]:
         """Calculate success rates per extraction method."""
         method_stats: Dict[str, Dict[str, int]] = defaultdict(lambda: {"success": 0, "total": 0})
-        
+
         for metric in self.metrics:
             method_stats[metric.method]["total"] += 1
             if metric.success:
                 method_stats[metric.method]["success"] += 1
-        
+
         success_rates = {}
         for method, stats in method_stats.items():
             if stats["total"] > 0:
                 success_rates[method] = stats["success"] / stats["total"]
-        
+
         self.quality_metrics.extraction_success_rate = success_rates
         return success_rates
-    
+
     def get_summary(self) -> Dict[str, any]:
         """Get summary of data quality metrics."""
         self.calculate_success_rates()
-        
+
         avg_completeness = (
             sum(self.quality_metrics.completeness_scores) / len(self.quality_metrics.completeness_scores)
             if self.quality_metrics.completeness_scores else 0
         )
-        
+
         overall_success_rate = (
             self.quality_metrics.successful_extractions / self.quality_metrics.total_extractions
             if self.quality_metrics.total_extractions > 0 else 0
         )
-        
+
         return {
             "overall_success_rate": overall_success_rate,
             "method_success_rates": self.quality_metrics.extraction_success_rate,
@@ -122,7 +122,7 @@ class DataQualityTracker:
                 )[:10]
             ),
         }
-    
+
     def reset(self):
         """Reset all metrics."""
         self.metrics = []
@@ -136,4 +136,3 @@ _global_tracker = DataQualityTracker()
 def get_tracker() -> DataQualityTracker:
     """Get the global data quality tracker."""
     return _global_tracker
-

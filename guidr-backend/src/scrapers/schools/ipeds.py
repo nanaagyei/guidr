@@ -106,4 +106,3 @@ class IPEDSScraper(BaseFetcher):
         if value.startswith("http"):
             return value
         return f"https://{value}"
-

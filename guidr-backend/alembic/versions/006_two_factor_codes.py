@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('used_at', sa.DateTime(), nullable=True),
     )
-    
+
     # Add foreign key
     op.create_foreign_key(
         'fk_two_factor_codes_user_id',
@@ -40,7 +40,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     # Create indexes
     op.create_index('ix_two_factor_codes_user_id', 'two_factor_codes', ['user_id'])
     op.create_index('ix_two_factor_codes_code', 'two_factor_codes', ['code'])
@@ -52,4 +52,3 @@ def downgrade() -> None:
     op.drop_index('ix_two_factor_codes_code', table_name='two_factor_codes')
     op.drop_index('ix_two_factor_codes_user_id', table_name='two_factor_codes')
     op.drop_table('two_factor_codes')
-

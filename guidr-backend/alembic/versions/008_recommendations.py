@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('completed_at', sa.DateTime(), nullable=True),
     )
-    
+
     # Create recommendation_results table
     op.create_table(
         'recommendation_results',
@@ -44,7 +44,7 @@ def upgrade() -> None:
         sa.Column('reason_features', postgresql.JSON, nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Add foreign keys
     op.create_foreign_key(
         'fk_recommendation_sessions_user_id',
@@ -54,7 +54,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_recommendation_results_session_id',
         'recommendation_results',
@@ -63,7 +63,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_recommendation_results_program_id',
         'recommendation_results',
@@ -72,7 +72,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     # Create indexes
     op.create_index('idx_recommendation_sessions_user_id', 'recommendation_sessions', ['user_id'])
     op.create_index('idx_recommendation_sessions_status', 'recommendation_sessions', ['status'])
@@ -86,12 +86,11 @@ def downgrade() -> None:
     op.drop_index('idx_recommendation_results_session_id', table_name='recommendation_results')
     op.drop_index('idx_recommendation_sessions_status', table_name='recommendation_sessions')
     op.drop_index('idx_recommendation_sessions_user_id', table_name='recommendation_sessions')
-    
+
     # Drop tables
     op.drop_table('recommendation_results')
     op.drop_table('recommendation_sessions')
-    
+
     # Drop enums
     sa.Enum(name='recommendationtier').drop(op.get_bind(), checkfirst=True)
     sa.Enum(name='recommendationstatus').drop(op.get_bind(), checkfirst=True)
-

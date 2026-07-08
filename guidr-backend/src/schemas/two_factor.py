@@ -25,4 +25,3 @@ class Verify2FACodeResponse(BaseModel):
     """Response after verifying 2FA code."""
     verified: bool
     message: str
-

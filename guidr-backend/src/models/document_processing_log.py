@@ -9,9 +9,9 @@ from src.models.base import Base
 
 class DocumentProcessingLog(Base):
     """Document processing log model for tracking worker jobs."""
-    
+
     __tablename__ = "document_processing_logs"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False, index=True)
     job_type = Column(String, nullable=False)  # 'ocr', 'transcript_extraction', 'resume_extraction', etc.
@@ -21,7 +21,6 @@ class DocumentProcessingLog(Base):
     finished_at = Column(DateTime, nullable=True)
     attempt_number = Column(Integer, default=1, nullable=False)
     worker_id = Column(String, nullable=True)
-    
+
     # Relationship
     document = relationship("Document", backref="processing_logs")
-

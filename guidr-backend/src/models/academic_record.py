@@ -9,12 +9,12 @@ from src.models.base import Base
 
 class AcademicRecord(Base):
     """Academic record model for storing user's academic history."""
-    
+
     __tablename__ = "academic_records"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    
+
     institution_name = Column(String, nullable=False)
     country = Column(String, nullable=False)
     degree_level = Column(String, nullable=False)  # 'bachelors', 'masters', 'phd', 'other'
@@ -27,10 +27,9 @@ class AcademicRecord(Base):
     is_current = Column(Boolean, default=False, nullable=False)
     source = Column(String, default="manual", nullable=False)  # 'manual' or 'transcript_extraction'
     notes = Column(String, nullable=True)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Relationship
     user = relationship("User", backref="academic_records")
-

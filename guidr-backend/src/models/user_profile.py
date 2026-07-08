@@ -9,12 +9,12 @@ from src.models.base import Base
 
 class UserProfile(Base):
     """User profile model for goals, preferences, and personalization data."""
-    
+
     __tablename__ = "user_profiles"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False, index=True)
-    
+
     # Goals & identity
     country_of_citizenship = Column(String, nullable=True)
     current_country = Column(String, nullable=True)
@@ -24,7 +24,7 @@ class UserProfile(Base):
     secondary_fields = Column(JSON, nullable=True)  # Array of strings
     preferred_start_term = Column(String, nullable=True)  # e.g., 'fall'
     preferred_start_year = Column(Integer, nullable=True)
-    
+
     # Preferences
     preferred_countries = Column(JSON, nullable=True)  # Array of country strings
     preferred_cities = Column(JSON, nullable=True)  # Array of city strings
@@ -38,10 +38,9 @@ class UserProfile(Base):
     # Completion & embeddings
     profile_completion_score = Column(Integer, default=0, nullable=False)  # 0-100
     profile_embedding = Column(JSON, nullable=True)  # Vector for semantic matching (future)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Relationship
     user = relationship("User", backref="profile")
-

@@ -53,8 +53,8 @@ guidr/
 └── README.md
 ```
 
-- **Backend:** API routes, models, pipeline (ingestion, scraping, extraction), enrichment, search indexing  
-- **Frontend:** App shell, auth flows, search UI, program/school detail pages, design system  
+- **Backend:** API routes, models, pipeline (ingestion, scraping, extraction), enrichment, search indexing
+- **Frontend:** App shell, auth flows, search UI, program/school detail pages, design system
 
 ## Getting Started
 

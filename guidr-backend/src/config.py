@@ -7,28 +7,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
-    
+
     # Database
     database_url: str
-    
+
     # JWT
     jwt_secret: str
-    
+
     # Internal API key for service-to-service / pipeline trigger auth
     internal_api_key: Optional[str] = None
-    
+
     # Redis
     redis_url: str = "redis://localhost:6379/0"
-    
+
     # Environment
     env: str = "development"
-    
+
     # Object Storage (for future use)
     r2_account_id: Optional[str] = None
     r2_access_key_id: Optional[str] = None
     r2_secret_access_key: Optional[str] = None
     r2_bucket_name: Optional[str] = None
-    
+
     # Email configuration (for 2FA)
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
@@ -63,18 +63,18 @@ class Settings(BaseSettings):
     embedding_provider: str = "sentence-transformers"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     openai_embedding_model: str = "text-embedding-3-small"
-    
+
     # Google Search (optional, for finding school websites)
     google_search_enabled: bool = True
     google_search_api_key: Optional[str] = None
-    
+
     # Playwright
     playwright_browser: str = "headless"  # headless, chromium, firefox
     playwright_timeout: int = 30000
-    
+
     # Firecrawl
     firecrawl_extraction_schema: bool = True  # Use structured extraction
-    
+
     # Perplexity (Research Gateway)
     perplexity_api_key: Optional[str] = None
     research_max_concurrent: int = 3
@@ -141,4 +141,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

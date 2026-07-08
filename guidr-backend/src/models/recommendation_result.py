@@ -47,4 +47,3 @@ class RecommendationResult(Base):
     # Relationships
     session = relationship("RecommendationSession", back_populates="results")
     program = relationship("Program", backref="recommendation_results")
-

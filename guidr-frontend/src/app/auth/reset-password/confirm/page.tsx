@@ -39,7 +39,7 @@ function ResetPasswordConfirmContent() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const email = searchParams.get('email');
   const token = searchParams.get('token');
 
@@ -169,7 +169,7 @@ function ResetPasswordConfirmContent() {
           >
             {loading ? 'Resetting password...' : 'Reset Password'}
           </button>
-          
+
           {password && confirmPassword && password === confirmPassword && !isPasswordValid && (
             <p className="text-yellow-700 text-xs mt-1 text-center">
               Password strength is weak. Consider adding uppercase, lowercase, numbers, and special characters.
@@ -194,4 +194,3 @@ export default function ResetPasswordConfirmPage() {
     </Suspense>
   );
 }
-

@@ -58,4 +58,3 @@ def downgrade() -> None:
     op.drop_column('institutions', 'average_cost')
     op.drop_column('institutions', 'scorecard_school_id')
     op.drop_column('institutions', 'ipeds_unit_id')
-

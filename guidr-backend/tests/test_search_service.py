@@ -19,4 +19,3 @@ def test_serialize_institution_contains_key_fields():
     payload = search_service.serialize_institution(inst)
     assert payload["name"] == "Sample U"
     assert payload["country"] == "USA"
-

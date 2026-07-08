@@ -14,4 +14,3 @@ __all__ = [
     "PROCESSED_DATA_DIR",
     "IPEDS_DATA_DIR",
 ]
-

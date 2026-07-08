@@ -51,4 +51,3 @@ export default function TranscriptStatus() {
     </div>
   );
 }
-

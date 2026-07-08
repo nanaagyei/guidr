@@ -208,4 +208,3 @@ export default function DocumentCard({ document, onDelete, index = 0 }: Document
     </motion.div>
   );
 }
-

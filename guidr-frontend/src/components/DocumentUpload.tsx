@@ -55,7 +55,7 @@ export default function DocumentUpload({ onUpload, onClose, uploading = false, e
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     const validExtensions = ['.pdf', '.doc', '.docx', '.txt'];
     const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
+
     return validTypes.includes(file.type) || validExtensions.includes(extension);
   };
 
@@ -255,4 +255,3 @@ export default function DocumentUpload({ onUpload, onClose, uploading = false, e
     </AnimatePresence>
   );
 }
-

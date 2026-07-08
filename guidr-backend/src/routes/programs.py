@@ -93,35 +93,35 @@ async def list_programs(
 
     if field_of_study:
         query = query.filter(Program.field_of_study.ilike(f"%{field_of_study}%"))
-    
+
     if country:
         query = query.filter(Institution.country.ilike(f"%{country}%"))
-    
+
     if min_tuition is not None:
         query = query.filter(Program.tuition_estimate_per_year >= min_tuition)
-    
+
     if max_tuition is not None:
         query = query.filter(Program.tuition_estimate_per_year <= max_tuition)
-    
+
     if deadline_before:
         query = query.filter(
             (Program.application_deadline_primary <= deadline_before) |
             (Program.application_deadline_secondary <= deadline_before)
         )
-    
+
     if keyword:
         query = query.filter(
             (Program.name.ilike(f"%{keyword}%")) |
             (Program.description.ilike(f"%{keyword}%"))
         )
-    
+
     # Get total count
     total_results = query.count()
-    
+
     # Apply pagination
     offset = (page - 1) * page_size
     programs = query.offset(offset).limit(page_size).all()
-    
+
     # Format results
     results = []
     for program in programs:
@@ -138,9 +138,9 @@ async def list_programs(
             "data_completeness_score": program.data_completeness_score,
             "last_enriched_at": program.last_enriched_at.isoformat() if getattr(program, "last_enriched_at", None) else None,
         })
-    
+
     total_pages = (total_results + page_size - 1) // page_size
-    
+
     return {
         "results": results,
         "page": page,
@@ -155,19 +155,19 @@ async def get_program(
     db: Session = Depends(get_db)
 ):
     """Get detailed program information.
-    
+
     Args:
         program_id: Program UUID
         db: Database session
-        
+
     Returns:
         Detailed program information
-        
+
     Raises:
         HTTPException: If program not found
     """
     from uuid import UUID
-    
+
     try:
         program_uuid = UUID(program_id)
     except ValueError:
@@ -175,15 +175,15 @@ async def get_program(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid program ID format"
         )
-    
+
     program = db.query(Program).filter(Program.id == program_uuid).first()
-    
+
     if not program:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Program not found"
         )
-    
+
     # Compute enrichment metadata
     from datetime import datetime, timedelta
     now = datetime.utcnow()
@@ -223,4 +223,3 @@ async def get_program(
     }
 
     return response_data
-

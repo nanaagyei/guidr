@@ -120,7 +120,7 @@ export default function PasswordStrengthMeter({ password, onStrengthChange }: Pa
           {getStrengthLabel()}
         </span>
       </div>
-      
+
       <div className="text-xs text-gray-700/70 space-y-1">
         <div className="font-medium mb-1">Requirements:</div>
         <div className="grid grid-cols-2 gap-1">
@@ -144,4 +144,3 @@ export default function PasswordStrengthMeter({ password, onStrengthChange }: Pa
     </div>
   );
 }
-

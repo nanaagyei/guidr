@@ -14,4 +14,3 @@ class UserAgentMiddleware:
 
     def process_request(self, request, spider):
         request.headers.setdefault(b"User-Agent", self.user_agent)
-

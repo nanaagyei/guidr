@@ -39,12 +39,12 @@ def clear_institutions_and_programs(db):
     program_count = db.query(Program).count()
     db.query(Program).delete()
     logger.info(f"  Deleted {program_count} programs")
-    
+
     logger.info("Clearing existing institutions...")
     institution_count = db.query(Institution).count()
     db.query(Institution).delete()
     logger.info(f"  Deleted {institution_count} institutions")
-    
+
     db.commit()
     logger.info("Database cleared successfully")
 
@@ -81,37 +81,36 @@ def main():
     parser = argparse.ArgumentParser(description="Clear and reseed database with curated graduate schools")
     parser.add_argument("--keep-users", action="store_true", help="Keep user-related data")
     parser.add_argument("--skip-clear", action="store_true", help="Skip clearing (just add new schools)")
-    
+
     args = parser.parse_args()
-    
+
     db = SessionLocal()
     try:
         if not args.skip_clear:
             # Clear old data
             clear_institutions_and_programs(db)
             clear_search_indexes()
-        
+
         # Seed new data
         seed_curated_schools(db)
-        
+
         # Reindex
         reindex_search(db)
-        
+
         # Show summary
         final_inst_count = db.query(Institution).count()
         final_prog_count = db.query(Program).count()
-        
+
         logger.info("\n" + "="*50)
         logger.info("RESEED COMPLETE")
         logger.info("="*50)
         logger.info(f"Institutions: {final_inst_count}")
         logger.info(f"Programs: {final_prog_count}")
         logger.info("="*50)
-        
+
     finally:
         db.close()
 
 
 if __name__ == "__main__":
     main()
-

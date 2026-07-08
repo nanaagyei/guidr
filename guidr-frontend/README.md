@@ -67,4 +67,3 @@ GitHub Actions workflow runs on push/PR to main/dev branches:
 - Build verification
 
 ![Frontend CI](https://github.com/your-org/guidr-frontend/actions/workflows/frontend-ci.yml/badge.svg)
-

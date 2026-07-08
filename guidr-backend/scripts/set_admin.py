@@ -15,7 +15,7 @@ def set_admin(email: str):
         )
         updated = result.fetchone()
         db.commit()
-        
+
         if updated:
             print(f"Successfully set user {updated.email} (id: {updated.id}) as admin")
         else:
@@ -29,4 +29,3 @@ def set_admin(email: str):
 if __name__ == "__main__":
     # Set the admin user
     set_admin("nanakwameagyeituffour@gmail.com")
-

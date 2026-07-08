@@ -37,12 +37,12 @@ export default function InstitutionsPage() {
   const { user } = useAuth();
   const router = useRouter();
   const toast = useToast();
-  
+
   const [loading, setLoading] = useState(true);
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [filteredInstitutions, setFilteredInstitutions] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  
+
   // Modal state
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function InstitutionsPage() {
   });
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
@@ -106,7 +106,7 @@ export default function InstitutionsPage() {
 
     if (debouncedSearch) {
       const searchLower = debouncedSearch.toLowerCase();
-      result = result.filter(inst => 
+      result = result.filter(inst =>
         inst.name?.toLowerCase().includes(searchLower) ||
         inst.city?.toLowerCase().includes(searchLower) ||
         inst.state_or_province?.toLowerCase().includes(searchLower)
@@ -114,19 +114,19 @@ export default function InstitutionsPage() {
     }
 
     if (filters.country) {
-      result = result.filter(inst => 
+      result = result.filter(inst =>
         inst.country?.toLowerCase().includes(filters.country.toLowerCase())
       );
     }
 
     if (filters.type) {
-      result = result.filter(inst => 
+      result = result.filter(inst =>
         inst.institution_type?.toLowerCase() === filters.type.toLowerCase()
       );
     }
 
     if (filters.control) {
-      result = result.filter(inst => 
+      result = result.filter(inst =>
         inst.public_private?.toLowerCase() === filters.control.toLowerCase()
       );
     }
@@ -207,11 +207,11 @@ export default function InstitutionsPage() {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <svg 
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor" 
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-textMuted"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
               strokeWidth={1.5}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -280,12 +280,12 @@ export default function InstitutionsPage() {
 
         {/* Results count */}
         {hasSearched && !loading && (
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-sm text-textSecondary mt-4 pt-4 border-t border-border/50"
           >
-            {filteredInstitutions.length > 0 
+            {filteredInstitutions.length > 0
               ? `Showing ${((currentPage - 1) * ITEMS_PER_PAGE) + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredInstitutions.length)} of ${filteredInstitutions.length.toLocaleString()} institution${filteredInstitutions.length !== 1 ? 's' : ''}`
               : 'No institutions found'
             }

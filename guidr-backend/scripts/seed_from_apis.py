@@ -34,4 +34,3 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int, default=None, help="Optional limit for test runs")
     args = parser.parse_args()
     run(year=args.year, limit=args.limit)
-

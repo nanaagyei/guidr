@@ -8,9 +8,9 @@ from src.models.base import Base
 
 class User(Base):
     """User model for authentication and basic account info."""
-    
+
     __tablename__ = "users"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=True)  # Nullable for future OAuth
@@ -21,4 +21,3 @@ class User(Base):
     deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-

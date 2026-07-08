@@ -50,14 +50,14 @@ export default function ResetPasswordRequestPage() {
 
     try {
       const response = await requestPasswordReset({ email: emailValue });
-      
+
       // Check if account exists based on message
       if (response.message.includes('No account found')) {
         setError(response.message + ' If you haven\'t registered yet, please create an account first.');
         setLoading(false);
         return;
       }
-      
+
       // Account exists and code was sent, show 2FA verification
       setShow2FA(true);
     } catch (err: any) {
@@ -128,8 +128,8 @@ export default function ResetPasswordRequestPage() {
         <div className="space-y-4">
           {error && error.includes('No account found') && (
             <div className="text-center">
-              <a 
-                href="/auth/register" 
+              <a
+                href="/auth/register"
                 className="inline-block px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition"
               >
                 Create Account
@@ -146,4 +146,3 @@ export default function ResetPasswordRequestPage() {
     />
   );
 }
-

@@ -21,18 +21,18 @@ async def list_academic_records(
     db: Session = Depends(get_db)
 ):
     """List all academic records for the current user.
-    
+
     Args:
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of academic records
     """
     records = db.query(AcademicRecord).filter(
         AcademicRecord.user_id == current_user.id
     ).all()
-    
+
     return records
 
 
@@ -43,15 +43,15 @@ async def create_academic_record(
     db: Session = Depends(get_db)
 ):
     """Create a new academic record.
-    
+
     Args:
         record_data: Academic record data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Created academic record
-        
+
     Raises:
         HTTPException: If validation fails
     """
@@ -62,7 +62,7 @@ async def create_academic_record(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"degree_level must be one of: {', '.join(valid_degree_levels)}"
         )
-    
+
     # Validate years
     if record_data.start_year and record_data.end_year:
         if record_data.start_year > record_data.end_year:
@@ -70,7 +70,7 @@ async def create_academic_record(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="start_year must be less than or equal to end_year"
             )
-    
+
     # Calculate normalized GPA if provided
     normalized_gpa = None
     if record_data.gpa_value and record_data.gpa_scale:
@@ -78,7 +78,7 @@ async def create_academic_record(
             float(record_data.gpa_value),
             float(record_data.gpa_scale)
         )
-    
+
     # Create record
     new_record = AcademicRecord(
         user_id=current_user.id,
@@ -95,11 +95,11 @@ async def create_academic_record(
         source="manual",
         notes=record_data.notes,
     )
-    
+
     db.add(new_record)
     db.commit()
     db.refresh(new_record)
-    
+
     # Update profile completion score and get full completion data
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
     completion_data = None
@@ -187,12 +187,12 @@ async def delete_academic_record(
     db: Session = Depends(get_db)
 ):
     """Delete an academic record.
-    
+
     Args:
         record_id: ID of the record to delete
         current_user: Current authenticated user
         db: Database session
-        
+
     Raises:
         HTTPException: If record not found or not owned by user
     """
@@ -200,19 +200,18 @@ async def delete_academic_record(
         AcademicRecord.id == record_id,
         AcademicRecord.user_id == current_user.id
     ).first()
-    
+
     if not record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Academic record not found"
         )
-    
+
     db.delete(record)
     db.commit()
-    
+
     # Update profile completion score
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
     if profile:
         profile.profile_completion_score = calculate_profile_completion_score(profile, db)
         db.commit()
-

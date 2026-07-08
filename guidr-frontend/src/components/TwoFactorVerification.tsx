@@ -39,11 +39,11 @@ export default function TwoFactorVerification({
     if (sending || hasSentRef.current) {
       return;
     }
-    
+
     setSending(true);
     setError('');
     hasSentRef.current = true;
-    
+
     try {
       await send2FACode({ email, purpose });
       setCodeSent(true);
@@ -189,4 +189,3 @@ export default function TwoFactorVerification({
     </div>
   );
 }
-

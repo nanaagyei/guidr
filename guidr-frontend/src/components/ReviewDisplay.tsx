@@ -207,4 +207,3 @@ export default function ReviewDisplay({ review }: ReviewDisplayProps) {
     </motion.div>
   );
 }
-

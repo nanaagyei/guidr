@@ -107,23 +107,23 @@ class LLMExtractor:
         # Build schema hint for the prompt
         schema_fields = list(schema.model_fields.keys())
         schema_hint = ", ".join(schema_fields)
-        
+
         # Limit HTML content to avoid token limits
         # Most models have context limits, so we'll use a conservative limit
         max_html_length = 4000  # Reduced from 6000 to avoid token limits
         html_truncated = html[:max_html_length]
         if len(html) > max_html_length:
             html_truncated += "\n\n[Content truncated...]"
-        
+
         # Create a more concise system message
         system_message = f"Extract data and return ONLY valid JSON with these fields: {schema_hint}. No markdown, no explanation, just JSON."
         user_message = f"{prompt}\n\nExtract from this HTML and return JSON only:\n\n{html_truncated}"
-        
+
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ]
-        
+
         try:
             if self._groq:
                 # Groq models may have different parameter support
@@ -148,7 +148,7 @@ class LLMExtractor:
                     except Exception as groq_error2:
                         logger.error(f"Groq API error (second attempt): {groq_error2}")
                         raise groq_error2
-                        
+
             elif self._openai:
                 response = await self._openai.chat.completions.create(
                     model=settings.llm_extraction_model,
@@ -160,20 +160,20 @@ class LLMExtractor:
                 content = response.choices[0].message.content or "{}"
             else:
                 raise RuntimeError("LLM provider not configured.")
-            
+
             # Clean up response - extract JSON if wrapped in markdown
             content = content.strip()
             if content.startswith("```"):
                 # Remove markdown code blocks
                 lines = content.split("\n")
                 content = "\n".join(lines[1:-1] if lines[-1].startswith("```") else lines[1:])
-            
+
             # Try to extract JSON if it's embedded in text
             import re
             json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
-            
+
             # Validate and parse JSON
             try:
                 parsed = schema.model_validate_json(content)
@@ -182,7 +182,7 @@ class LLMExtractor:
                 logger.warning(f"Failed to parse LLM response as JSON: {parse_error}. Content: {content[:200]}")
                 # Return empty dict instead of failing
                 return {}
-                
+
         except Exception as e:
             logger.error(f"LLM extraction error: {e}")
             # Return empty dict to allow fallback
@@ -225,4 +225,3 @@ def extract_program_sync(html_content: str, url: str) -> Dict[str, Any]:
     return asyncio.get_event_loop().run_until_complete(
         extractor.extract_program_data(html_content=html_content, url=url)
     )
-

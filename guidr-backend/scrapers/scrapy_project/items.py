@@ -16,4 +16,3 @@ class ProgramItem(scrapy.Item):
     degree_level = scrapy.Field()
     field_of_study = scrapy.Field()
     description = scrapy.Field()
-

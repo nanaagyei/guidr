@@ -33,7 +33,7 @@ These tokens are only required if you're using Cloudflare's REST API directly, n
 2. Click **Create API token**
 3. Configure the token:
    - **Token name**: `guidr-production` (or your preferred name)
-   - **Permissions**: 
+   - **Permissions**:
      - ✅ **Object Read & Write** (or **Admin Read & Write** if you need bucket management)
    - **TTL**: Optional expiration date (leave blank for no expiration)
    - **Allow List Operations**: ✅ (recommended)
@@ -174,4 +174,3 @@ This shouldn't happen with the current code, but if you see connection errors:
 - [Cloudflare R2 Documentation](https://developers.cloudflare.com/r2/)
 - [R2 S3 API Compatibility](https://developers.cloudflare.com/r2/api/s3/api/)
 - [Creating R2 API Tokens](https://developers.cloudflare.com/r2/api/s3/tokens/)
-

@@ -46,7 +46,7 @@ async def create_essay(
 ):
     """Create a new essay with initial version."""
     word_count = count_words(essay_data.content)
-    
+
     essay = Essay(
         user_id=current_user.id,
         title=essay_data.title,
@@ -54,10 +54,10 @@ async def create_essay(
         target_program_id=essay_data.target_program_id,
         word_count=word_count,
     )
-    
+
     db.add(essay)
     db.flush()
-    
+
     # Create version 1
     version = EssayVersion(
         essay_id=essay.id,
@@ -68,7 +68,7 @@ async def create_essay(
     db.add(version)
     db.commit()
     db.refresh(essay)
-    
+
     return essay
 
 
@@ -85,13 +85,13 @@ async def get_essay(
         Essay.id == essay_id,
         Essay.user_id == current_user.id
     ).first()
-    
+
     if not essay:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Essay not found"
         )
-    
+
     response = {
         "id": essay.id,
         "title": essay.title,
@@ -100,7 +100,7 @@ async def get_essay(
         "created_at": essay.created_at,
         "updated_at": essay.updated_at,
     }
-    
+
     if include_versions:
         versions = db.query(EssayVersion).filter(
             EssayVersion.essay_id == essay_id
@@ -115,7 +115,7 @@ async def get_essay(
             }
             for v in versions
         ]
-    
+
     if include_reviews:
         reviews = db.query(EssayReview).filter(
             EssayReview.essay_id == essay_id
@@ -136,7 +136,7 @@ async def get_essay(
             }
             for r in reviews
         ]
-    
+
     return response
 
 
@@ -152,29 +152,29 @@ async def update_essay(
         Essay.id == essay_id,
         Essay.user_id == current_user.id
     ).first()
-    
+
     if not essay:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Essay not found"
         )
-    
+
     # Update title if provided
     if essay_data.title:
         essay.title = essay_data.title
-    
+
     # If content changed, create new version
     if essay_data.content:
         # Get latest version
         latest_version = db.query(EssayVersion).filter(
             EssayVersion.essay_id == essay_id
         ).order_by(EssayVersion.version_number.desc()).first()
-        
+
         # Only create new version if content actually changed
         if not latest_version or latest_version.content != essay_data.content:
             word_count = count_words(essay_data.content)
             new_version_number = (latest_version.version_number + 1) if latest_version else 1
-            
+
             new_version = EssayVersion(
                 essay_id=essay_id,
                 version_number=new_version_number,
@@ -182,12 +182,12 @@ async def update_essay(
                 word_count=word_count,
             )
             db.add(new_version)
-            
+
             essay.word_count = word_count
-    
+
     db.commit()
     db.refresh(essay)
-    
+
     return essay
 
 
@@ -202,13 +202,13 @@ async def delete_essay(
         Essay.id == essay_id,
         Essay.user_id == current_user.id
     ).first()
-    
+
     if not essay:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Essay not found"
         )
-    
+
     db.delete(essay)
     db.commit()
 
@@ -224,30 +224,29 @@ async def request_review(
         Essay.id == essay_id,
         Essay.user_id == current_user.id
     ).first()
-    
+
     if not essay:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Essay not found"
         )
-    
+
     # Get latest version
     latest_version = db.query(EssayVersion).filter(
         EssayVersion.essay_id == essay_id
     ).order_by(EssayVersion.version_number.desc()).first()
-    
+
     if not latest_version:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Essay has no content to review"
         )
-    
+
     # TODO: Enqueue worker job `essay.review`
     # For now, return success
-    
+
     return {
         "status": "queued",
         "essay_id": str(essay_id),
         "message": "Review request queued"
     }
-

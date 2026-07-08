@@ -15,4 +15,3 @@ def test_scorecard_map_row_parses_numbers():
     assert metrics.unit_id == "999"
     assert metrics.average_cost == 25000
     assert metrics.graduation_rate == 0.8
-

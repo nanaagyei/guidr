@@ -56,4 +56,3 @@ export default function TierBadge({ tier, count }: TierBadgeProps) {
     </motion.div>
   );
 }
-

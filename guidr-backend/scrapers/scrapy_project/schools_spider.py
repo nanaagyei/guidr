@@ -22,4 +22,3 @@ class SchoolsSpider(scrapy.Spider):
             field_of_study=response.css(".field::text").get(),
             description=" ".join(response.css("p::text").getall()),
         )
-

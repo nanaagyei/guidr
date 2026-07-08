@@ -22,15 +22,15 @@ def _get_pwd_context():
 
 def hash_password(plain_password: str) -> str:
     """Hash a plain text password using bcrypt.
-    
+
     Uses bcrypt directly to avoid passlib initialization issues.
-    
+
     Args:
         plain_password: The plain text password to hash (max 72 bytes)
-        
+
     Returns:
         Hashed password string
-        
+
     Raises:
         ValueError: If password is longer than 72 bytes
     """
@@ -38,7 +38,7 @@ def hash_password(plain_password: str) -> str:
     password_bytes = plain_password.encode('utf-8')
     if len(password_bytes) > 72:
         raise ValueError("Password cannot be longer than 72 bytes")
-    
+
     # Hash using bcrypt directly
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)
@@ -47,11 +47,11 @@ def hash_password(plain_password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hash.
-    
+
     Args:
         plain_password: The plain text password to verify
         hashed_password: The hashed password to compare against
-        
+
     Returns:
         True if password matches, False otherwise
     """
@@ -66,36 +66,36 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def check_password_in_history(db: Session, user_id: str, plain_password: str, current_password_hash: str = None) -> bool:
     """Check if a password was previously used by the user (including current password).
-    
+
     Args:
         db: Database session
         user_id: User ID
         plain_password: Plain text password to check
         current_password_hash: Optional current password hash to also check against
-        
+
     Returns:
         True if password was previously used (including current), False otherwise
     """
     # Check against current password if provided
     if current_password_hash and verify_password(plain_password, current_password_hash):
         return True
-    
+
     # Get all password history for this user
     password_history = db.query(PasswordHistory).filter(
         PasswordHistory.user_id == user_id
     ).all()
-    
+
     # Check against all previous passwords
     for old_hash in password_history:
         if verify_password(plain_password, old_hash.password_hash):
             return True
-    
+
     return False
 
 
 def save_password_to_history(db: Session, user_id: str, password_hash: str) -> None:
     """Save a password hash to the user's password history.
-    
+
     Args:
         db: Database session
         user_id: User ID
@@ -107,13 +107,13 @@ def save_password_to_history(db: Session, user_id: str, password_hash: str) -> N
     )
     db.add(password_history)
     db.commit()
-    
+
     # Keep only last 5 passwords in history
     from sqlalchemy import desc
     all_history = db.query(PasswordHistory).filter(
         PasswordHistory.user_id == user_id
     ).order_by(desc(PasswordHistory.created_at)).all()
-    
+
     if len(all_history) > 5:
         for old_record in all_history[5:]:
             db.delete(old_record)

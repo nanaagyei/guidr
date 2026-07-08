@@ -45,7 +45,7 @@ export default function AcademicRecordsPage() {
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     institution_name: '',
     country: '',
@@ -499,10 +499,10 @@ export default function AcademicRecordsPage() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-2xl font-semibold mb-4 text-text">Upload Transcript</h2>
             <p className="text-gray-600 mb-6">
-              Upload your academic transcript and we{"\u2019"}ll automatically extract your GPA, 
+              Upload your academic transcript and we{"\u2019"}ll automatically extract your GPA,
               institution details, and other information using AI.
             </p>
-            
+
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary transition-colors">
               <input
                 ref={fileInputRef}
@@ -512,8 +512,8 @@ export default function AcademicRecordsPage() {
                 className="hidden"
                 id="transcript-upload"
               />
-              <label 
-                htmlFor="transcript-upload" 
+              <label
+                htmlFor="transcript-upload"
                 className="cursor-pointer flex flex-col items-center"
               >
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -583,4 +583,3 @@ export default function AcademicRecordsPage() {
     </div>
   );
 }
-

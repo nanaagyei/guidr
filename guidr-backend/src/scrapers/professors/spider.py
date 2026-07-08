@@ -7,4 +7,3 @@ class ProfessorDirectorySpider(scrapy.Spider):
 
     def parse(self, response):
         yield {"url": response.url}
-

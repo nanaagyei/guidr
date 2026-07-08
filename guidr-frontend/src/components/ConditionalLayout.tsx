@@ -15,7 +15,7 @@ export default function ConditionalLayout({
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  
+
   // Hide sidebar on auth pages, onboarding, and landing
   const isAuthPage = pathname?.startsWith('/auth');
   const isOnboardingPage = pathname === '/onboarding';
@@ -43,14 +43,14 @@ export default function ConditionalLayout({
             <AppSidebar />
           </div>
         )}
-        
+
         {/* Mobile Sidebar - Overlay drawer (only visible on mobile) */}
         {showSidebar && (
           <div className="lg:hidden">
             <AppSidebar open={mobileSidebarOpen} setOpen={setMobileSidebarOpen} mobile={true} />
           </div>
         )}
-        
+
         <main className={`${showSidebar ? 'flex-1 overflow-y-auto' : 'w-full'} bg-background relative`}>
           {/* Mobile Hamburger Button */}
           {showSidebar && (
@@ -75,4 +75,3 @@ export default function ConditionalLayout({
     </OnboardingGuard>
   );
 }
-

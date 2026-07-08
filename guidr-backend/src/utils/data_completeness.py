@@ -34,4 +34,3 @@ def calculate_program_completeness(data: dict) -> int:
         bool(data.get("program_features")),
     ]
     return calculate_score(required, optional, required_weight=50, optional_weight=50)
-
