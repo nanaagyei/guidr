@@ -4,6 +4,16 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
+  - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy
+  - `npm audit fix` cleared 3 additional HIGH picomatch (ReDoS) advisories
+  - React/react-dom/@types bumped to 19.x; eslint-config-next to 15.5.20
+  - No code changes required: dynamic routes already use the `useParams()` client hook
+    (not async `params`), no `cookies()`/`headers()`, simple `next.config.js`
+  - Verified: typecheck, lint, and production build all pass
+  - Files: `package.json`, `package-lock.json`
+
 ### Added
 - [2026-07-08 UTC] feat(marketing): Public legal/marketing pages so no footer/nav link 404s
   - New `/terms`, `/privacy`, `/contact`, `/about`, and `/help` (Help Center hub) pages
