@@ -34,7 +34,7 @@ async def list_professors(
     db: Session = Depends(get_db)
 ):
     """List professors with optional filters.
-    
+
     Query Parameters:
         institution_id: Filter by institution
         country: Filter by country (via institution)
@@ -43,7 +43,7 @@ async def list_professors(
         page_size: Results per page (default: 20, max: 100)
     """
     query = db.query(Professor).join(Institution)
-    
+
     # Filter by institution
     if institution_id:
         try:
@@ -53,20 +53,20 @@ async def list_professors(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid institution_id format"
             )
-    
+
     # Filter by country
     if country:
         query = query.filter(Institution.country.ilike(f'%{country}%'))
-    
+
     # Filter by research keyword
     if research_keyword:
         keyword_pattern = f'%{research_keyword}%'
         # Search in research summary
         summary_match = Professor.research_summary.ilike(keyword_pattern)
-        
+
         # Search in interests_tags (JSON array)
         tags_match = Professor.interests_tags.astext.ilike(keyword_pattern)
-        
+
         # Search in normalized research tags
         tag_join = db.query(ProfessorResearchTag).filter(
             ProfessorResearchTag.tag.ilike(keyword_pattern)
@@ -74,21 +74,21 @@ async def list_professors(
         tag_match = Professor.id.in_(
             db.query(tag_join.c.professor_id)
         )
-        
+
         query = query.filter(or_(summary_match, tags_match, tag_match))
-    
+
     # Get total count
     total_count = query.count()
-    
+
     # Pagination
     offset = (page - 1) * page_size
     professors = query.order_by(Institution.name, Professor.full_name).offset(offset).limit(page_size).all()
-    
+
     # Build response
     results = []
     for prof in professors:
         institution = prof.institution
-        
+
         # Get research tags
         tags = []
         if prof.interests_tags and isinstance(prof.interests_tags, list):
@@ -99,7 +99,7 @@ async def list_professors(
                 ProfessorResearchTag.professor_id == prof.id
             ).all()
             tags = [tag.tag for tag in research_tags]
-        
+
         results.append({
             "id": str(prof.id),
             "full_name": prof.full_name,
@@ -114,9 +114,9 @@ async def list_professors(
             "personal_page_url": prof.personal_page_url,
             "scholar_profile_url": prof.scholar_profile_url,
         })
-    
+
     total_pages = (total_count + page_size - 1) // page_size
-    
+
     return {
         "results": results,
         "page": page,
@@ -140,15 +140,15 @@ async def get_professor(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid professor_id format"
         )
-    
+
     if not professor:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Professor not found"
         )
-    
+
     institution = professor.institution
-    
+
     # Get research tags
     tags = []
     if professor.interests_tags and isinstance(professor.interests_tags, list):
@@ -158,7 +158,7 @@ async def get_professor(
             ProfessorResearchTag.professor_id == professor.id
         ).all()
         tags = [tag.tag for tag in research_tags]
-    
+
     # Compute enrichment metadata
     from datetime import datetime, timedelta
     now = datetime.utcnow()
@@ -484,7 +484,7 @@ async def generate_email_draft(
     db: Session = Depends(get_db)
 ):
     """Generate a cold email draft for a professor.
-    
+
     Args:
         professor_id: Professor to email
         program_id: Optional program context
@@ -496,13 +496,13 @@ async def generate_email_draft(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid professor_id format"
         )
-    
+
     if not professor:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Professor not found"
         )
-    
+
     # Load user profile
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
     if not profile:
@@ -510,12 +510,12 @@ async def generate_email_draft(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User profile not found"
         )
-    
+
     # Load academic record
     academic_record = db.query(AcademicRecord).filter(
         AcademicRecord.user_id == current_user.id
     ).order_by(AcademicRecord.end_year.desc().nullslast()).first()
-    
+
     # Load program if provided
     program = None
     if program_id:
@@ -523,7 +523,7 @@ async def generate_email_draft(
             program = db.query(Program).filter(Program.id == UUID(program_id)).first()
         except ValueError:
             pass  # Invalid program_id, just ignore
-    
+
     # Generate email
     try:
         # Update profile with user name for email generation
@@ -536,7 +536,7 @@ async def generate_email_draft(
         user_name = current_user.full_name or "Student"
         user_field = profile.primary_field_of_study or "my field"
         subject, body = generate_email_template_simple(professor, user_name, user_field)
-    
+
     # Store draft
     email_draft = OutreachEmail(
         user_id=current_user.id,
@@ -549,7 +549,7 @@ async def generate_email_draft(
     db.add(email_draft)
     db.commit()
     db.refresh(email_draft)
-    
+
     return {
         "id": str(email_draft.id),
         "professor_id": str(professor.id),
@@ -571,13 +571,13 @@ async def list_outreach_emails(
     emails = db.query(OutreachEmail).filter(
         OutreachEmail.user_id == current_user.id
     ).order_by(OutreachEmail.created_at.desc()).all()
-    
+
     results = []
     for email in emails:
         professor = email.professor
         institution = professor.institution if professor else None
         program = email.program
-        
+
         results.append({
             "id": str(email.id),
             "professor_id": str(email.professor_id) if email.professor_id else None,
@@ -589,7 +589,7 @@ async def list_outreach_emails(
             "created_at": email.created_at.isoformat(),
             "is_sent": email.is_sent,
         })
-    
+
     return results
 
 
@@ -610,17 +610,17 @@ async def get_outreach_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid email_id format"
         )
-    
+
     if not email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Email draft not found"
         )
-    
+
     professor = email.professor
     institution = professor.institution if professor else None
     program = email.program
-    
+
     return {
         "id": str(email.id),
         "professor_id": str(email.professor_id) if email.professor_id else None,
@@ -655,21 +655,21 @@ async def update_outreach_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid email_id format"
         )
-    
+
     if not email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Email draft not found"
         )
-    
+
     if subject:
         email.subject = subject
     if body:
         email.body = body
-    
+
     db.commit()
     db.refresh(email)
-    
+
     return {
         "id": str(email.id),
         "subject": email.subject,
@@ -695,15 +695,14 @@ async def delete_outreach_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid email_id format"
         )
-    
+
     if not email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Email draft not found"
         )
-    
+
     db.delete(email)
     db.commit()
-    
-    return {"message": "Email draft deleted"}
 
+    return {"message": "Email draft deleted"}

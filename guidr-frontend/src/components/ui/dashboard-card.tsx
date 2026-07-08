@@ -29,4 +29,3 @@ export function DashboardCard({ children, className, hover = true, index = 0 }: 
     </motion.div>
   );
 }
-

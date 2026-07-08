@@ -38,7 +38,7 @@ def upgrade() -> None:
     )
     op.create_index('ix_documents_user_id', 'documents', ['user_id'])
     op.create_index('ix_documents_processing_status', 'documents', ['processing_status'])
-    
+
     # Create document_processing_logs table
     op.create_table(
         'document_processing_logs',
@@ -61,4 +61,3 @@ def downgrade() -> None:
     op.drop_index('ix_documents_processing_status', table_name='documents')
     op.drop_index('ix_documents_user_id', table_name='documents')
     op.drop_table('documents')
-

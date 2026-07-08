@@ -500,5 +500,3 @@
 | **Skill 27** — Maintenance + Workers   | ✅ Complete | autoretry_for on all tasks; per-worker concurrency configured    |
 | **Skill 28** — Tests (Legacy Pipeline) | ✅ Complete | All 10 test files written (2,053+ lines)                         |
 | **Skill 29** — Agentic Dossier System  | ✅ Complete | All 9 phases implemented with 39 tests                           |
-
-

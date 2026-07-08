@@ -14,22 +14,22 @@ async def quick_test():
     logger.info("=" * 60)
     logger.info("Quick Start: Testing Comprehensive Data Collection")
     logger.info("=" * 60)
-    
+
     # Step 1: Fetch a few schools
     logger.info("\n1. Fetching top 3 schools...")
     fetcher = MultiSourceFetcher()
     schools = await fetcher.fetch_all_schools(limit=3)
-    
+
     for i, school in enumerate(schools, 1):
         logger.info(f"\n{'='*60}")
         logger.info(f"School {i}: {school.name}")
         logger.info(f"  Country: {school.country}")
         logger.info(f"  Website: {school.website_url}")
-        
+
         if not school.website_url:
             logger.warning("  No website URL - skipping collection")
             continue
-        
+
         # Step 2: Collect school data
         logger.info("\n2. Collecting comprehensive school data...")
         collector = ComprehensiveSchoolCollector()
@@ -38,16 +38,16 @@ async def quick_test():
                 school.name,
                 school.website_url
             )
-            
+
             logger.info(f"  Description: {school_data.get('description', 'N/A')[:100]}...")
             logger.info(f"  Acceptance Rate: {school_data.get('acceptance_rate', 'N/A')}")
             logger.info(f"  Tuition: {school_data.get('tuition', {})}")
-            
+
         except Exception as e:
             logger.error(f"  Error collecting school data: {e}")
         finally:
             await collector.close()
-        
+
         # Step 3: Discover programs
         logger.info("\n3. Discovering programs...")
         discovery = ProgramDiscoveryAgent()
@@ -65,7 +65,7 @@ async def quick_test():
             logger.error(f"  Error discovering programs: {e}")
         finally:
             await discovery.close()
-    
+
     logger.info("\n" + "=" * 60)
     logger.info("Quick test complete!")
     logger.info("=" * 60)
@@ -77,4 +77,3 @@ async def quick_test():
 
 if __name__ == "__main__":
     asyncio.run(quick_test())
-

@@ -154,4 +154,3 @@ All notable changes to Guidr Frontend will be documented in this file.
 - Created base layout with sidebar navigation
 - Set up GitHub Actions CI pipeline for linting and building
 - Created initial welcome page
-

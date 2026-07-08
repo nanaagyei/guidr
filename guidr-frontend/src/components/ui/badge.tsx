@@ -26,11 +26,11 @@ const sizeStyles = {
   lg: 'px-3 py-1.5 text-sm',
 };
 
-export function Badge({ 
-  children, 
-  variant = 'default', 
+export function Badge({
+  children,
+  variant = 'default',
   size = 'md',
-  className 
+  className
 }: BadgeProps) {
   return (
     <span
@@ -45,4 +45,3 @@ export function Badge({
     </span>
   );
 }
-

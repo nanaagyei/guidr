@@ -11,4 +11,3 @@ class NormalizeFieldsPipeline:
             if isinstance(value, str):
                 adapter[field_name] = value.strip()
         return item
-

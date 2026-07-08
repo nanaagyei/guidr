@@ -2,4 +2,3 @@
 from src.db import Base
 
 __all__ = ["Base"]
-

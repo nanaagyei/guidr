@@ -35,7 +35,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Create professor_research_tags table
     op.create_table(
         'professor_research_tags',
@@ -44,7 +44,7 @@ def upgrade() -> None:
         sa.Column('tag', sa.String(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Create outreach_emails table
     op.create_table(
         'outreach_emails',
@@ -60,7 +60,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Add foreign keys
     op.create_foreign_key(
         'fk_professors_institution_id',
@@ -70,7 +70,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_professor_research_tags_professor_id',
         'professor_research_tags',
@@ -79,7 +79,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_outreach_emails_user_id',
         'outreach_emails',
@@ -88,7 +88,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_outreach_emails_professor_id',
         'outreach_emails',
@@ -97,7 +97,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     op.create_foreign_key(
         'fk_outreach_emails_program_id',
         'outreach_emails',
@@ -106,7 +106,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='SET NULL'
     )
-    
+
     # Create indexes
     op.create_index('idx_professors_institution_id', 'professors', ['institution_id'])
     op.create_index('idx_professors_full_name', 'professors', ['full_name'])
@@ -126,9 +126,8 @@ def downgrade() -> None:
     op.drop_index('idx_professor_research_tags_professor_id', table_name='professor_research_tags')
     op.drop_index('idx_professors_full_name', table_name='professors')
     op.drop_index('idx_professors_institution_id', table_name='professors')
-    
+
     # Drop tables
     op.drop_table('outreach_emails')
     op.drop_table('professor_research_tags')
     op.drop_table('professors')
-

@@ -47,4 +47,3 @@ class AcademicRecordResponse(AcademicRecordBase):
     completion: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
-

@@ -115,4 +115,3 @@ export default function PrivacySettings() {
     </DashboardCard>
   );
 }
-

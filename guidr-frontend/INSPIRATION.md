@@ -72,4 +72,3 @@ We want to avoid the "generic AI app look" and instead create:
 - Prioritize usability over flashy animations
 - Ensure all components are accessible
 - Test on mobile devices
-

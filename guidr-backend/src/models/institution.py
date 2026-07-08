@@ -25,13 +25,13 @@ class Institution(Base):
     institution_type = Column(String, nullable=True)  # 'university', 'college', etc.
     public_private = Column(String, nullable=True)  # 'public', 'private'
     overall_rank = Column(Integer, nullable=True)
-    
+
     # World rankings from different sources
     qs_world_rank = Column(Integer, nullable=True, index=True)
     the_world_rank = Column(Integer, nullable=True, index=True)  # Times Higher Ed
     arwu_rank = Column(Integer, nullable=True)  # Shanghai Ranking
     usnews_rank = Column(Integer, nullable=True)  # US News
-    
+
     ipeds_unit_id = Column(String, nullable=True, unique=True, index=True)
     scorecard_school_id = Column(String, nullable=True, unique=True, index=True)
     average_cost = Column(Numeric(12, 2), nullable=True)
@@ -65,4 +65,3 @@ class Institution(Base):
 
     # Relationships
     programs = relationship("Program", back_populates="institution")
-

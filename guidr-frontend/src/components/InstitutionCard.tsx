@@ -51,7 +51,7 @@ export default function InstitutionCard({
   onClick,
 }: InstitutionCardProps) {
   const location = [city, state_or_province, country].filter(Boolean).join(', ');
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -69,7 +69,7 @@ export default function InstitutionCard({
             {name?.charAt(0) || 'U'}
           </span>
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-text line-clamp-2 leading-tight mb-1">
             {name}
@@ -78,7 +78,7 @@ export default function InstitutionCard({
             {location}
           </p>
         </div>
-        
+
         {/* External Link */}
         {website_url && (
           <a
@@ -94,7 +94,7 @@ export default function InstitutionCard({
           </a>
         )}
       </div>
-      
+
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {institution_type && (
@@ -122,14 +122,14 @@ export default function InstitutionCard({
           </span>
         )}
       </div>
-      
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 py-3 border-t border-border/50">
         <div className="text-center">
           <p className="text-2xs text-textMuted mb-0.5">In-State</p>
           <p className="text-sm font-medium text-text">
-            {in_state_tuition 
-              ? `$${Math.round(in_state_tuition / 1000)}k` 
+            {in_state_tuition
+              ? `$${Math.round(in_state_tuition / 1000)}k`
               : '-'
             }
           </p>
@@ -137,8 +137,8 @@ export default function InstitutionCard({
         <div className="text-center border-x border-border/50">
           <p className="text-2xs text-textMuted mb-0.5">Out-of-State</p>
           <p className="text-sm font-medium text-text">
-            {out_of_state_tuition 
-              ? `$${Math.round(out_of_state_tuition / 1000)}k` 
+            {out_of_state_tuition
+              ? `$${Math.round(out_of_state_tuition / 1000)}k`
               : '-'
             }
           </p>
@@ -146,14 +146,14 @@ export default function InstitutionCard({
         <div className="text-center">
           <p className="text-2xs text-textMuted mb-0.5">Grad Rate</p>
           <p className="text-sm font-medium text-text">
-            {graduation_rate 
-              ? `${Math.round(graduation_rate * 100)}%` 
+            {graduation_rate
+              ? `${Math.round(graduation_rate * 100)}%`
               : '-'
             }
           </p>
         </div>
       </div>
-      
+
       {/* Data Quality */}
       <div className="mt-3">
         <DataQualityBar score={data_completeness_score} size="sm" />
@@ -161,4 +161,3 @@ export default function InstitutionCard({
     </motion.div>
   );
 }
-

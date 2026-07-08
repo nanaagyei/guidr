@@ -469,10 +469,10 @@ export async function getEssay(id: string, includeVersions: boolean = false, inc
   const params = new URLSearchParams();
   if (includeVersions) params.append('include_versions', 'true');
   if (includeReviews) params.append('include_reviews', 'true');
-  
+
   const queryString = params.toString();
   const url = `/essays/${id}${queryString ? `?${queryString}` : ''}`;
-  
+
   const response = await fetchWithCredentials(url);
 
   if (!response.ok) {
@@ -683,10 +683,10 @@ export async function getProfessors(params?: {
       }
     });
   }
-  
+
   const queryString = queryParams.toString();
   const url = `/professors${queryString ? `?${queryString}` : ''}`;
-  
+
   const response = await fetchWithCredentials(url);
 
   if (!response.ok) {
@@ -791,7 +791,7 @@ export async function updateOutreachEmail(id: string, subject?: string, body?: s
   const params = new URLSearchParams();
   if (subject) params.append('subject', subject);
   if (body) params.append('body', body);
-  
+
   const queryString = params.toString();
   const response = await fetchWithCredentials(`/professors/outreach/emails/${id}?${queryString}`, {
     method: 'PUT',
@@ -835,10 +835,10 @@ export async function getInstitutions(params?: {
       }
     });
   }
-  
+
   const queryString = queryParams.toString();
   const url = `/schools${queryString ? `?${queryString}` : ''}`;
-  
+
   const response = await fetchWithCredentials(url);
 
   if (!response.ok) {

@@ -237,4 +237,3 @@ async def get_school(
             "is_stale": is_stale,
         },
     }
-

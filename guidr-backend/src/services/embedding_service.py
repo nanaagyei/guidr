@@ -73,4 +73,3 @@ class EmbeddingService:
 
 
 embedding_service = EmbeddingService()
-

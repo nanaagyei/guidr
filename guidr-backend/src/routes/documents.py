@@ -25,15 +25,15 @@ async def get_upload_url(
     db: Session = Depends(get_db)
 ):
     """Generate a presigned URL for uploading a document.
-    
+
     Args:
         request: Upload request with filename and document type
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Upload URL, document ID, and storage key
-        
+
     Raises:
         HTTPException: If storage not configured or invalid document type
     """
@@ -44,11 +44,11 @@ async def get_upload_url(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"document_type must be one of: {', '.join(valid_types)}"
         )
-    
+
     # Generate storage key
     document_id = uuid4()
     storage_key = f"user/{current_user.id}/documents/{document_id}-{request.filename}"
-    
+
     # Create document record
     document = Document(
         id=document_id,
@@ -59,20 +59,20 @@ async def get_upload_url(
         file_size_bytes=0,  # Will be updated after upload
         processing_status="pending",
     )
-    
+
     db.add(document)
     db.commit()
     db.refresh(document)
-    
+
     # Generate presigned URL
     upload_url = storage_service.generate_upload_url(storage_key)
-    
+
     if not upload_url:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Storage service not configured"
         )
-    
+
     return {
         "upload_url": upload_url,
         "document_id": document_id,
@@ -87,15 +87,15 @@ async def confirm_upload(
     db: Session = Depends(get_db)
 ):
     """Confirm document upload and enqueue processing.
-    
+
     Args:
         document_id: Document ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Confirmation response
-        
+
     Raises:
         HTTPException: If document not found or not owned by user
     """
@@ -103,17 +103,17 @@ async def confirm_upload(
         Document.id == document_id,
         Document.user_id == current_user.id
     ).first()
-    
+
     if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found"
         )
-    
+
     # Update status to processing (worker will handle actual processing)
     document.processing_status = "processing"
     db.commit()
-    
+
     # Enqueue background processing via Celery
     from src.workers.document_processor import process_document_task
     process_document_task.delay(str(document_id))
@@ -130,18 +130,18 @@ async def list_documents(
     db: Session = Depends(get_db)
 ):
     """List all documents for the current user.
-    
+
     Args:
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of documents
     """
     documents = db.query(Document).filter(
         Document.user_id == current_user.id
     ).order_by(Document.uploaded_at.desc()).all()
-    
+
     return documents
 
 
@@ -152,15 +152,15 @@ async def get_document(
     db: Session = Depends(get_db)
 ):
     """Get document details.
-    
+
     Args:
         document_id: Document ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Document details
-        
+
     Raises:
         HTTPException: If document not found or not owned by user
     """
@@ -168,17 +168,17 @@ async def get_document(
         Document.id == document_id,
         Document.user_id == current_user.id
     ).first()
-    
+
     if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found"
         )
-    
+
     # Update last accessed
     document.last_accessed_at = datetime.utcnow()
     db.commit()
-    
+
     return document
 
 
@@ -189,12 +189,12 @@ async def delete_document(
     db: Session = Depends(get_db)
 ):
     """Delete a document.
-    
+
     Args:
         document_id: Document ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Raises:
         HTTPException: If document not found or not owned by user
     """
@@ -202,17 +202,16 @@ async def delete_document(
         Document.id == document_id,
         Document.user_id == current_user.id
     ).first()
-    
+
     if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found"
         )
-    
+
     # Delete from storage
     storage_service.delete_file(document.storage_key)
-    
+
     # Delete from database
     db.delete(document)
     db.commit()
-

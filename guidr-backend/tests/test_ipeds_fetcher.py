@@ -20,4 +20,3 @@ def test_ipeds_row_to_institution():
     assert institution.name == "Sample University"
     assert institution.public_private == "public"
     assert institution.ipeds_unit_id == "123456"
-

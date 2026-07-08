@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 
 class StorageService:
     """Service for interacting with R2/S3 storage."""
-    
+
     def __init__(self):
         """Initialize storage client."""
         if not all([
@@ -20,7 +20,7 @@ class StorageService:
         ]):
             self.client = None
             return
-        
+
         # Configure boto3 for R2
         self.client = boto3.client(
             's3',
@@ -30,24 +30,24 @@ class StorageService:
             config=Config(signature_version='s3v4')
         )
         self.bucket_name = settings.r2_bucket_name
-    
+
     def generate_upload_url(
         self,
         storage_key: str,
         expiration_minutes: int = 15
     ) -> Optional[str]:
         """Generate a presigned URL for uploading a file.
-        
+
         Args:
             storage_key: The key/path where the file will be stored
             expiration_minutes: URL expiration time in minutes
-            
+
         Returns:
             Presigned upload URL or None if storage not configured
         """
         if not self.client:
             return None
-        
+
         try:
             url = self.client.generate_presigned_url(
                 'put_object',
@@ -58,19 +58,19 @@ class StorageService:
         except ClientError as e:
             print(f"Error generating upload URL: {e}")
             return None
-    
+
     def download_file(self, storage_key: str) -> Optional[bytes]:
         """Download a file from storage.
-        
+
         Args:
             storage_key: The key/path of the file to download
-            
+
         Returns:
             File contents as bytes or None if error
         """
         if not self.client:
             return None
-        
+
         try:
             response = self.client.get_object(
                 Bucket=self.bucket_name,
@@ -80,19 +80,19 @@ class StorageService:
         except ClientError as e:
             print(f"Error downloading file: {e}")
             return None
-    
+
     def delete_file(self, storage_key: str) -> bool:
         """Delete a file from storage.
-        
+
         Args:
             storage_key: The key/path of the file to delete
-            
+
         Returns:
             True if successful, False otherwise
         """
         if not self.client:
             return False
-        
+
         try:
             self.client.delete_object(
                 Bucket=self.bucket_name,
@@ -105,4 +105,3 @@ class StorageService:
 
 
 storage_service = StorageService()
-

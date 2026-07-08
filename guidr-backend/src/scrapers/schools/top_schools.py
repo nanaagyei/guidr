@@ -31,21 +31,21 @@ class TopSchoolData:
 class TopSchoolsFetcher(BaseFetcher):
     """
     Fetcher for top schools from various sources.
-    
+
     Sources:
     - Wikipedia lists (free, reliable)
     - QS World Rankings (limited free access)
     - Times Higher Education (limited free access)
     - US News (US schools)
     """
-    
+
     # Wikipedia list URLs
     WIKIPEDIA_SOURCES = [
         "https://en.wikipedia.org/wiki/QS_World_University_Rankings",
         "https://en.wikipedia.org/wiki/Times_Higher_Education_World_University_Rankings",
         "https://en.wikipedia.org/wiki/Academic_Ranking_of_World_Universities",
     ]
-    
+
     # Manual list of top 100 world universities (reliable fallback)
     TOP_WORLD_UNIVERSITIES = [
         # USA
@@ -79,7 +79,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("Purdue University", "USA", "West Lafayette"),
         ("University of California, Davis", "USA", "Davis"),
         ("Boston University", "USA", "Boston"),
-        
+
         # UK
         ("University of Oxford", "United Kingdom", "Oxford"),
         ("University of Cambridge", "United Kingdom", "Cambridge"),
@@ -89,7 +89,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("University of Manchester", "United Kingdom", "Manchester"),
         ("King's College London", "United Kingdom", "London"),
         ("London School of Economics", "United Kingdom", "London"),
-        
+
         # Canada
         ("University of Toronto", "Canada", "Toronto"),
         ("McGill University", "Canada", "Montreal"),
@@ -97,7 +97,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("University of Waterloo", "Canada", "Waterloo"),
         ("University of Alberta", "Canada", "Edmonton"),
         ("McMaster University", "Canada", "Hamilton"),
-        
+
         # Australia
         ("University of Melbourne", "Australia", "Melbourne"),
         ("University of Sydney", "Australia", "Sydney"),
@@ -105,7 +105,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("University of Queensland", "Australia", "Brisbane"),
         ("University of New South Wales", "Australia", "Sydney"),
         ("Monash University", "Australia", "Melbourne"),
-        
+
         # Europe
         ("ETH Zurich", "Switzerland", "Zurich"),
         ("EPFL", "Switzerland", "Lausanne"),
@@ -117,7 +117,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("KU Leuven", "Belgium", "Leuven"),
         ("Sorbonne University", "France", "Paris"),
         ("PSL University", "France", "Paris"),
-        
+
         # Asia
         ("National University of Singapore", "Singapore", "Singapore"),
         ("Nanyang Technological University", "Singapore", "Singapore"),
@@ -135,7 +135,7 @@ class TopSchoolsFetcher(BaseFetcher):
         ("Indian Institute of Technology Delhi", "India", "New Delhi"),
         ("Indian Institute of Science", "India", "Bangalore"),
     ]
-    
+
     # US News Top Graduate Schools (manually curated)
     US_TOP_GRAD_SCHOOLS = {
         "Computer Science": [
@@ -171,19 +171,19 @@ class TopSchoolsFetcher(BaseFetcher):
             "Duke University School of Law",
         ],
     }
-    
+
     def __init__(self, timeout: int = 60):
         super().__init__(timeout=timeout)
-    
+
     def fetch_all_top_schools(self) -> List[TopSchoolData]:
         """
         Fetch top schools from all available sources.
-        
+
         Returns:
             List of TopSchoolData objects
         """
         schools: Dict[str, TopSchoolData] = {}
-        
+
         # Start with curated list
         for i, (name, country, city) in enumerate(self.TOP_WORLD_UNIVERSITIES, 1):
             key = self._normalize_name(name)
@@ -193,7 +193,7 @@ class TopSchoolsFetcher(BaseFetcher):
                 city=city,
                 qs_rank=i if i <= 100 else None,  # Approximate rank
             )
-        
+
         # Try to fetch from Wikipedia for more data
         try:
             wiki_schools = self._fetch_from_wikipedia()
@@ -209,13 +209,13 @@ class TopSchoolsFetcher(BaseFetcher):
                     schools[key] = school
         except Exception as e:
             logger.warning(f"Failed to fetch from Wikipedia: {e}")
-        
+
         return list(schools.values())
-    
+
     def fetch_top_us_schools(self) -> List[TopSchoolData]:
         """Fetch top US schools specifically."""
         schools = []
-        
+
         # Filter from world list
         for name, country, city in self.TOP_WORLD_UNIVERSITIES:
             if country == "USA":
@@ -224,38 +224,38 @@ class TopSchoolsFetcher(BaseFetcher):
                     country=country,
                     city=city,
                 ))
-        
+
         return schools
-    
+
     def _fetch_from_wikipedia(self) -> List[TopSchoolData]:
         """
         Fetch school rankings from Wikipedia tables.
-        
+
         Returns:
             List of schools with ranking data
         """
         schools = []
-        
+
         for url in self.WIKIPEDIA_SOURCES[:1]:  # Just QS for now
             try:
                 response = self._get_client().get(url)
                 response.raise_for_status()
-                
+
                 soup = BeautifulSoup(response.text, "html.parser")
-                
+
                 # Find ranking tables
                 tables = soup.find_all("table", class_="wikitable")
-                
+
                 for table in tables[:2]:  # First 2 tables usually have rankings
                     rows = table.find_all("tr")[1:]  # Skip header
-                    
+
                     for row in rows[:100]:  # Top 100
                         cells = row.find_all(["td", "th"])
                         if len(cells) >= 2:
                             # Try to extract rank and name
                             rank_text = cells[0].get_text(strip=True)
                             name_text = cells[1].get_text(strip=True)
-                            
+
                             rank = self._parse_rank(rank_text)
                             if rank and name_text:
                                 schools.append(TopSchoolData(
@@ -265,9 +265,9 @@ class TopSchoolsFetcher(BaseFetcher):
                                 ))
             except Exception as e:
                 logger.warning(f"Failed to parse {url}: {e}")
-        
+
         return schools
-    
+
     def _normalize_name(self, name: str) -> str:
         """Normalize school name for matching."""
         # Remove common suffixes and normalize
@@ -276,14 +276,14 @@ class TopSchoolsFetcher(BaseFetcher):
         name = re.sub(r"university of", "u", name)
         name = re.sub(r"[^a-z0-9]", "", name)
         return name
-    
+
     def _clean_name(self, name: str) -> str:
         """Clean up school name from scraped data."""
         # Remove footnote markers
         name = re.sub(r"\[\d+\]", "", name)
         name = re.sub(r"\s+", " ", name)
         return name.strip()
-    
+
     def _parse_rank(self, text: str) -> Optional[int]:
         """Parse rank from text."""
         # Handle ranges like "1-5" or single numbers
@@ -291,14 +291,14 @@ class TopSchoolsFetcher(BaseFetcher):
         if match:
             return int(match.group(1))
         return None
-    
+
     def get_school_website(self, school_name: str) -> Optional[str]:
         """
         Try to find the official website for a school.
-        
+
         Args:
             school_name: Name of the school
-            
+
         Returns:
             Website URL or None
         """
@@ -311,13 +311,12 @@ class TopSchoolsFetcher(BaseFetcher):
             (r"oxford", "https://www.ox.ac.uk"),
             (r"cambridge", "https://www.cam.ac.uk"),
         ]
-        
+
         name_lower = school_name.lower()
         for pattern, url in patterns:
             if re.search(pattern, name_lower):
                 return url
-        
+
         # Try to construct from name
         # e.g., "University of Michigan" -> "umich.edu"
         return None
-

@@ -144,4 +144,3 @@ export default function EssayCard({ essay, onDelete, index = 0 }: EssayCardProps
     </motion.div>
   );
 }
-

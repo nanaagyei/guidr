@@ -29,4 +29,3 @@ class SemanticScholarClient:
 
     def __exit__(self, exc_type, exc, tb):
         self.close()
-

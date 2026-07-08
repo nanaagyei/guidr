@@ -3,4 +3,3 @@
 from .school_scraper_agent import SchoolScraperAgent
 
 __all__ = ["SchoolScraperAgent"]
-

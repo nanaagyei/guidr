@@ -25,7 +25,7 @@ export default function EssayEditorPage() {
   const router = useRouter();
   const params = useParams();
   const essayId = params.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [essay, setEssay] = useState<any>(null);
@@ -61,7 +61,7 @@ export default function EssayEditorPage() {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
-      
+
       autoSaveTimerRef.current = setTimeout(() => {
         handleSave(true); // Silent save
       }, 3000);
@@ -382,4 +382,3 @@ export default function EssayEditorPage() {
     </div>
   );
 }
-

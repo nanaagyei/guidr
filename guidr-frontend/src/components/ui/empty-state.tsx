@@ -32,13 +32,13 @@ export function EmptyState({
       <div className="flex items-center justify-center w-32 h-32 mb-2">
         {illustration || <EmptyStateIllustration variant={variant} />}
       </div>
-      
+
       <h3 className="empty-state-title">{title}</h3>
-      
+
       {description && (
         <p className="empty-state-description">{description}</p>
       )}
-      
+
       {action && (
         <div className="mt-6">
           {action}
@@ -51,7 +51,7 @@ export function EmptyState({
 // Default SVG illustrations when no Lottie is provided
 function EmptyStateIllustration({ variant }: { variant: string }) {
   const baseClasses = "w-24 h-24";
-  
+
   switch (variant) {
     case 'search':
       return (
@@ -62,7 +62,7 @@ function EmptyStateIllustration({ variant }: { variant: string }) {
           <circle cx="40" cy="40" r="4" fill="currentColor" className="text-primaryMuted" />
         </svg>
       );
-    
+
     case 'error':
       return (
         <svg className={baseClasses} viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -70,7 +70,7 @@ function EmptyStateIllustration({ variant }: { variant: string }) {
           <path d="M36 36L60 60M60 36L36 60" stroke="currentColor" className="text-error" strokeWidth="4" strokeLinecap="round" />
         </svg>
       );
-    
+
     case 'success':
       return (
         <svg className={baseClasses} viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +78,7 @@ function EmptyStateIllustration({ variant }: { variant: string }) {
           <path d="M32 48L44 60L64 36" stroke="currentColor" className="text-success" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
-    
+
     default:
       return (
         <svg className={baseClasses} viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -95,10 +95,10 @@ function EmptyStateIllustration({ variant }: { variant: string }) {
 }
 
 // Specific empty states for common scenarios
-export function NoResultsState({ 
+export function NoResultsState({
   query,
-  onClearFilters 
-}: { 
+  onClearFilters
+}: {
   query?: string;
   onClearFilters?: () => void;
 }) {
@@ -118,11 +118,11 @@ export function NoResultsState({
   );
 }
 
-export function NoDataState({ 
+export function NoDataState({
   entityName = 'items',
   actionLabel,
-  onAction 
-}: { 
+  onAction
+}: {
   entityName?: string;
   actionLabel?: string;
   onAction?: () => void;
@@ -142,11 +142,11 @@ export function NoDataState({
   );
 }
 
-export function ErrorState({ 
+export function ErrorState({
   title = 'Something went wrong',
   description = "We couldn't load this content. Please try again.",
-  onRetry 
-}: { 
+  onRetry
+}: {
   title?: string;
   description?: string;
   onRetry?: () => void;
@@ -167,11 +167,11 @@ export function ErrorState({
   );
 }
 
-export function SuccessState({ 
+export function SuccessState({
   title,
   description,
-  action 
-}: { 
+  action
+}: {
   title: string;
   description?: string;
   action?: ReactNode;

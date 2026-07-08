@@ -115,4 +115,3 @@ Guidr aims to feel:
 - Provide focus states for keyboard navigation
 - Include alt text for images
 - Test with screen readers
-

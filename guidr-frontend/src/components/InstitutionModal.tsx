@@ -86,7 +86,7 @@ export default function InstitutionModal({
                     {institution.name?.charAt(0) || 'U'}
                   </span>
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-display font-semibold text-text mb-1">
                     {institution.name}
@@ -98,7 +98,7 @@ export default function InstitutionModal({
                     </svg>
                     {location}
                   </p>
-                  
+
                   {/* Tags */}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     {institution.institution_type && (
@@ -117,7 +117,7 @@ export default function InstitutionModal({
                     />
                   </div>
                 </div>
-                
+
                 {/* Close button */}
                 <button
                   onClick={onClose}
@@ -129,7 +129,7 @@ export default function InstitutionModal({
                 </button>
               </div>
             </div>
-            
+
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {/* Stats Grid */}
@@ -137,7 +137,7 @@ export default function InstitutionModal({
                 <div className="card p-4 text-center">
                   <p className="text-2xs uppercase tracking-wider text-textMuted mb-1">In-State Tuition</p>
                   <p className="text-lg font-semibold text-text">
-                    {institution.in_state_tuition 
+                    {institution.in_state_tuition
                       ? `$${Math.round(institution.in_state_tuition).toLocaleString()}`
                       : '-'
                     }
@@ -146,7 +146,7 @@ export default function InstitutionModal({
                 <div className="card p-4 text-center">
                   <p className="text-2xs uppercase tracking-wider text-textMuted mb-1">Out-of-State</p>
                   <p className="text-lg font-semibold text-text">
-                    {institution.out_of_state_tuition 
+                    {institution.out_of_state_tuition
                       ? `$${Math.round(institution.out_of_state_tuition).toLocaleString()}`
                       : '-'
                     }
@@ -155,7 +155,7 @@ export default function InstitutionModal({
                 <div className="card p-4 text-center">
                   <p className="text-2xs uppercase tracking-wider text-textMuted mb-1">Graduation Rate</p>
                   <p className="text-lg font-semibold text-text">
-                    {institution.graduation_rate 
+                    {institution.graduation_rate
                       ? `${Math.round(institution.graduation_rate * 100)}%`
                       : '-'
                     }
@@ -164,14 +164,14 @@ export default function InstitutionModal({
                 <div className="card p-4 text-center">
                   <p className="text-2xs uppercase tracking-wider text-textMuted mb-1">Avg Cost</p>
                   <p className="text-lg font-semibold text-text">
-                    {institution.average_cost 
+                    {institution.average_cost
                       ? `$${Math.round(institution.average_cost).toLocaleString()}`
                       : '-'
                     }
                   </p>
                 </div>
               </div>
-              
+
               {/* Median Earnings */}
               {institution.median_earnings && (
                 <div className="card p-4 mb-6">
@@ -191,7 +191,7 @@ export default function InstitutionModal({
                   </div>
                 </div>
               )}
-              
+
               {/* Data Quality */}
               <div className="card p-4 mb-6">
                 <div className="flex items-center justify-between mb-3">
@@ -200,16 +200,16 @@ export default function InstitutionModal({
                     {institution.data_completeness_score || 0}%
                   </span>
                 </div>
-                <DataQualityBar 
-                  score={institution.data_completeness_score || 0} 
-                  showLabel={false} 
-                  size="lg" 
+                <DataQualityBar
+                  score={institution.data_completeness_score || 0}
+                  showLabel={false}
+                  size="lg"
                 />
                 <p className="text-xs text-textMuted mt-2">
                   Data sourced from IPEDS and College Scorecard
                 </p>
               </div>
-              
+
               {/* Info Message */}
               <div className="bg-muted rounded-xl p-4 text-center">
                 <p className="text-sm text-textSecondary">
@@ -217,7 +217,7 @@ export default function InstitutionModal({
                 </p>
               </div>
             </div>
-            
+
             {/* Footer Actions */}
             <div className="p-6 border-t border-border bg-card flex flex-col sm:flex-row gap-3">
               {institution.website_url && (
@@ -250,4 +250,3 @@ export default function InstitutionModal({
     </AnimatePresence>
   );
 }
-

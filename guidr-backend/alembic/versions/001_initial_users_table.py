@@ -1,7 +1,7 @@
 """Initial migration: create users table
 
 Revision ID: 001_initial_users
-Revises: 
+Revises:
 Create Date: 2024-01-01 00:00:00.000000
 
 """
@@ -31,7 +31,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Create index on email
     op.create_index('ix_users_email', 'users', ['email'])
 
@@ -40,4 +40,3 @@ def downgrade() -> None:
     op.drop_index('ix_users_email', table_name='users')
     op.drop_table('users')
     op.execute('DROP TYPE userrole')
-

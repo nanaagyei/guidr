@@ -23,7 +23,7 @@ export default function DocumentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const documentId = params.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<any>(null);
   const [error, setError] = useState('');
@@ -34,7 +34,7 @@ export default function DocumentDetailPage() {
       return;
     }
     loadDocument();
-    
+
     // Poll for status updates if processing
     const interval = setInterval(() => {
       if (document && (document.processing_status === 'pending' || document.processing_status === 'processing')) {
@@ -239,7 +239,7 @@ export default function DocumentDetailPage() {
             <FileText className="h-5 w-5" />
             Extracted Data
           </h2>
-          
+
           {document.document_type === 'transcript' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {document.extracted_summary.institution_name && (
@@ -322,4 +322,3 @@ export default function DocumentDetailPage() {
     </div>
   );
 }
-

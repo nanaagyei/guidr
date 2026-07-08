@@ -36,7 +36,7 @@ def upgrade() -> None:
     op.create_index('ix_institutions_name', 'institutions', ['name'])
     op.create_index('ix_institutions_country', 'institutions', ['country'])
     op.create_index('ix_institutions_city', 'institutions', ['city'])
-    
+
     # Create programs table
     op.create_table(
         'programs',
@@ -61,7 +61,7 @@ def upgrade() -> None:
     op.create_index('ix_programs_institution_id', 'programs', ['institution_id'])
     op.create_index('ix_programs_degree_level', 'programs', ['degree_level'])
     op.create_index('ix_programs_field_of_study', 'programs', ['field_of_study'])
-    
+
     # Create program_tags table
     op.create_table(
         'program_tags',
@@ -85,4 +85,3 @@ def downgrade() -> None:
     op.drop_index('ix_institutions_country', table_name='institutions')
     op.drop_index('ix_institutions_name', table_name='institutions')
     op.drop_table('institutions')
-

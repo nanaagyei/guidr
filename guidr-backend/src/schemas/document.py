@@ -29,6 +29,5 @@ class DocumentResponse(BaseModel):
     uploaded_at: datetime
     processed_at: Optional[datetime] = None
     extracted_summary: Optional[Dict[str, Any]] = None
-    
-    model_config = ConfigDict(from_attributes=True)
 
+    model_config = ConfigDict(from_attributes=True)

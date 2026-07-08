@@ -5,10 +5,10 @@ from typing import Dict, Tuple
 
 def check_password_strength(password: str) -> Dict[str, any]:
     """Check password strength and return detailed feedback.
-    
+
     Args:
         password: Password to check
-        
+
     Returns:
         Dictionary with:
             - score: 0-4 (0=very weak, 4=very strong)
@@ -25,7 +25,7 @@ def check_password_strength(password: str) -> Dict[str, any]:
         'number': bool(re.search(r'\d', password)),
         'special': bool(re.search(r'[!@#$%^&*(),.?":{}|<>]', password)),
     }
-    
+
     # Length check
     if len(password) < 8:
         feedback.append("Password must be at least 8 characters")
@@ -34,31 +34,31 @@ def check_password_strength(password: str) -> Dict[str, any]:
         feedback.append("Good length")
     else:
         score += 0.5
-    
+
     # Uppercase check
     if requirements['uppercase']:
         score += 1
     else:
         feedback.append("Add uppercase letters")
-    
+
     # Lowercase check
     if requirements['lowercase']:
         score += 1
     else:
         feedback.append("Add lowercase letters")
-    
+
     # Number check
     if requirements['number']:
         score += 1
     else:
         feedback.append("Add numbers")
-    
+
     # Special character check
     if requirements['special']:
         score += 1
     else:
         feedback.append("Add special characters (!@#$%^&*)")
-    
+
     # Determine strength level
     score = int(score)
     if score == 0:
@@ -71,11 +71,11 @@ def check_password_strength(password: str) -> Dict[str, any]:
         strength = 'good'
     else:  # score == 4
         strength = 'very_strong'
-    
+
     # Add positive feedback if all requirements met
     if all(requirements.values()):
         feedback = ["Strong password!"] if len(feedback) == 0 else feedback
-    
+
     return {
         'score': score,
         'strength': strength,
@@ -87,10 +87,10 @@ def check_password_strength(password: str) -> Dict[str, any]:
 
 def get_strength_color(strength: str) -> str:
     """Get color for password strength indicator.
-    
+
     Args:
         strength: Strength level ('very_weak', 'weak', 'fair', 'good', 'very_strong')
-        
+
     Returns:
         Tailwind CSS color class
     """
@@ -106,10 +106,10 @@ def get_strength_color(strength: str) -> str:
 
 def get_strength_label(strength: str) -> str:
     """Get human-readable label for password strength.
-    
+
     Args:
         strength: Strength level
-        
+
     Returns:
         Label string
     """
@@ -121,4 +121,3 @@ def get_strength_label(strength: str) -> str:
         'very_strong': 'Very Strong',
     }
     return labels.get(strength, 'Unknown')
-

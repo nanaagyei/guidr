@@ -50,11 +50,11 @@ const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
 
 const TestimonialCard = ({ testimonial, delay }: { testimonial: Testimonial, delay: string }) => (
   <div className={`animate-testimonial ${delay} flex items-start gap-3 rounded-3xl bg-card/60 backdrop-blur-xl border border-white/20 p-5 w-64 shadow-lg`}>
-    <Image 
-      src={testimonial.avatarSrc} 
-      width={40} 
-      height={40} 
-      className="h-10 w-10 object-cover rounded-2xl" 
+    <Image
+      src={testimonial.avatarSrc}
+      width={40}
+      height={40}
+      className="h-10 w-10 object-cover rounded-2xl"
       alt="avatar"
       unoptimized
     />
@@ -89,16 +89,16 @@ export const SignInPage: React.FC<SignInPageProps> = ({
     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw] bg-background">
       {/* Logo at top left */}
       <div className="absolute top-6 left-6 z-10">
-        <Image 
-          src="/images/guidr-logo.png" 
-          alt="Guidr Logo" 
-          width={350} 
+        <Image
+          src="/images/guidr-logo.png"
+          alt="Guidr Logo"
+          width={350}
           height={140}
           className="h-24 w-auto"
           priority
         />
       </div>
-      
+
       {/* Left column: sign-in form */}
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -158,13 +158,13 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   )}
 
                   <button type="submit" disabled={loading} className="animate-element animate-delay-600 w-full rounded-2xl bg-primary text-white py-4 font-semibold hover:bg-primaryHover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    {loading 
-                      ? (isRegister ? 'Registering...' : isResetPassword ? 'Sending code...' : 'Signing in...') 
+                    {loading
+                      ? (isRegister ? 'Registering...' : isResetPassword ? 'Sending code...' : 'Signing in...')
                       : (isRegister ? 'Create Account' : isResetPassword ? 'Send Verification Code' : 'Sign In')
                     }
                   </button>
                 </form>
-                
+
                 {isResetPassword && customContent && (
                   customContent
                 )}
@@ -216,4 +216,3 @@ export const SignInPage: React.FC<SignInPageProps> = ({
     </div>
   );
 };
-

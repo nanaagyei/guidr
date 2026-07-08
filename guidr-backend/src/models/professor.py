@@ -9,12 +9,12 @@ from src.models.base import Base
 
 class Professor(Base):
     """Professor model for storing faculty information."""
-    
+
     __tablename__ = "professors"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     institution_id = Column(UUID(as_uuid=True), ForeignKey("institutions.id"), nullable=False, index=True)
-    
+
     full_name = Column(String, nullable=False, index=True)
     title = Column(String, nullable=True)  # "Assistant Professor", "Associate Professor", etc.
     email = Column(String, nullable=True)
@@ -36,9 +36,8 @@ class Professor(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     institution = relationship("Institution", backref="professors")
     research_tags = relationship("ProfessorResearchTag", back_populates="professor", cascade="all, delete-orphan")
     outreach_emails = relationship("OutreachEmail", back_populates="professor")
-

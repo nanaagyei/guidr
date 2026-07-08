@@ -689,4 +689,3 @@ All notable changes to Guidr Backend will be documented in this file.
 - Created initial health check endpoint
 - Set up GitHub Actions CI pipeline for linting and testing
 - Added initial Alembic migration for users table
-

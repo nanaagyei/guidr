@@ -30,17 +30,17 @@ def seed_institutions(db: Session, data_dir: Path):
     """Seed institutions from JSON file."""
     institutions_data = load_json(data_dir / "seed_institutions.json")
     institutions_map = {}
-    
+
     for inst_data in institutions_data:
         # Check if institution already exists
         existing = db.query(Institution).filter(
             Institution.name == inst_data["name"]
         ).first()
-        
+
         if existing:
             institutions_map[inst_data["name"]] = existing
             continue
-        
+
         institution = Institution(
             name=inst_data["name"],
             short_name=inst_data.get("short_name"),
@@ -55,7 +55,7 @@ def seed_institutions(db: Session, data_dir: Path):
         db.add(institution)
         db.flush()
         institutions_map[inst_data["name"]] = institution
-    
+
     db.commit()
     return institutions_map
 
@@ -63,25 +63,25 @@ def seed_institutions(db: Session, data_dir: Path):
 def seed_programs(db: Session, data_dir: Path, institutions_map: dict):
     """Seed programs from JSON file."""
     programs_data = load_json(data_dir / "seed_programs.json")
-    
+
     for prog_data in programs_data:
         institution = institutions_map.get(prog_data["institution_name"])
         if not institution:
             print(f"Warning: Institution '{prog_data['institution_name']}' not found, skipping program")
             continue
-        
+
         # Check if program already exists
         existing = db.query(Program).filter(
             Program.name == prog_data["name"],
             Program.institution_id == institution.id
         ).first()
-        
+
         if existing:
             continue
-        
+
         from decimal import Decimal
         from datetime import datetime as dt
-        
+
         program = Program(
             institution_id=institution.id,
             name=prog_data["name"],
@@ -110,7 +110,7 @@ def seed_programs(db: Session, data_dir: Path, institutions_map: dict):
                 "program_features": program.program_features,
             }
         )
-        
+
         # Add tags from program_features
         if prog_data.get("program_features"):
             for feature in prog_data["program_features"]:
@@ -120,28 +120,28 @@ def seed_programs(db: Session, data_dir: Path, institutions_map: dict):
                     value=feature
                 )
                 db.add(tag)
-    
+
     db.commit()
 
 
 def main():
     """Main seeding function."""
     data_dir = Path(__file__).parent.parent / "data"
-    
+
     if not data_dir.exists():
         print(f"Error: Data directory not found: {data_dir}")
         sys.exit(1)
-    
+
     db = SessionLocal()
     try:
         print("Seeding institutions...")
         institutions_map = seed_institutions(db, data_dir)
         print(f"Seeded {len(institutions_map)} institutions")
-        
+
         print("Seeding programs...")
         seed_programs(db, data_dir, institutions_map)
         print("Seeded programs")
-        
+
         print("Seeding complete!")
     except Exception as e:
         print(f"Error seeding data: {e}")
@@ -153,4 +153,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

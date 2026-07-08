@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
     op.create_index('ix_essays_user_id', 'essays', ['user_id'])
-    
+
     # Create essay_versions table
     op.create_table(
         'essay_versions',
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
     op.create_index('ix_essay_versions_essay_id', 'essay_versions', ['essay_id'])
-    
+
     # Create essay_reviews table
     op.create_table(
         'essay_reviews',
@@ -71,4 +71,3 @@ def downgrade() -> None:
     op.drop_table('essay_versions')
     op.drop_index('ix_essays_user_id', table_name='essays')
     op.drop_table('essays')
-

@@ -14,13 +14,13 @@ interface TileHeaderProps {
   className?: string;
 }
 
-export function TileHeader({ 
-  title, 
-  actionLabel, 
-  actionHref, 
+export function TileHeader({
+  title,
+  actionLabel,
+  actionHref,
   onActionClick,
   icon,
-  className 
+  className
 }: TileHeaderProps) {
   return (
     <div className={cn('flex items-center justify-between mb-4', className)}>
@@ -62,4 +62,3 @@ export function TileHeader({
     </div>
   );
 }
-

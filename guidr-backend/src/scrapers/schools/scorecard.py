@@ -216,4 +216,3 @@ class CollegeScorecardClient(BaseFetcher):
                 break
             params["page"] = str(int(params["page"]) + 1)
             logger.info("Scorecard page %s, fetched %s/%s", params["page"], total_fetched, total)
-

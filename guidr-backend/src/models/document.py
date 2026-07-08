@@ -9,9 +9,9 @@ from src.models.base import Base
 
 class Document(Base):
     """Document model for uploaded files."""
-    
+
     __tablename__ = "documents"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     document_type = Column(String, nullable=False)  # 'transcript', 'resume', 'essay', 'other'
@@ -27,7 +27,6 @@ class Document(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     processed_at = Column(DateTime, nullable=True)
     last_accessed_at = Column(DateTime, nullable=True)
-    
+
     # Relationship
     user = relationship("User", backref="documents")
-

@@ -23,11 +23,11 @@ def upgrade() -> None:
     op.add_column('institutions', sa.Column('arwu_rank', sa.Integer(), nullable=True))
     op.add_column('institutions', sa.Column('usnews_rank', sa.Integer(), nullable=True))
     op.add_column('institutions', sa.Column('is_deleted', sa.Boolean(), nullable=False, server_default='false'))
-    
+
     # Create indexes for ranking columns
     op.create_index('ix_institutions_qs_world_rank', 'institutions', ['qs_world_rank'])
     op.create_index('ix_institutions_the_world_rank', 'institutions', ['the_world_rank'])
-    
+
     # Remove server default after column is created
     op.alter_column('institutions', 'is_deleted', server_default=None)
 
@@ -40,4 +40,3 @@ def downgrade() -> None:
     op.drop_column('institutions', 'arwu_rank')
     op.drop_column('institutions', 'the_world_rank')
     op.drop_column('institutions', 'qs_world_rank')
-

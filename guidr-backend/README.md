@@ -39,13 +39,13 @@ Backend API for Guidr - A graduate school application platform.
    cp .env.example .env
    ```
    Generate a JWT secret: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
-   
+
    **Note:** For Gmail, you need to create an App Password:
    1. Go to your Google Account settings
    2. Enable 2-Step Verification
    3. Go to App Passwords and generate one for "Mail"
    4. Use that password as `SMTP_PASSWORD`
-   
+
    **Note:** For Cloudflare R2 setup, see [R2 Setup Guide](./docs/R2_SETUP.md) for detailed instructions. You only need S3 API credentials (Access Key ID and Secret Access Key) - no Account API Token or User API Token required.
 
 4. **Run database migrations:**
@@ -184,4 +184,3 @@ GitHub Actions workflow runs on push/PR to main/dev branches:
 - Tests (pytest)
 
 ![Backend CI](https://github.com/nanaagyei/guidr-backend/actions/workflows/backend-ci.yml/badge.svg)
-

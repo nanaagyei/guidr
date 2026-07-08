@@ -25,7 +25,7 @@ def upgrade() -> None:
         sa.Column('password_hash', sa.String(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
     )
-    
+
     # Add foreign key
     op.create_foreign_key(
         'fk_password_history_user_id',
@@ -35,7 +35,7 @@ def upgrade() -> None:
         ['id'],
         ondelete='CASCADE'
     )
-    
+
     # Create index
     op.create_index('ix_password_history_user_id', 'password_history', ['user_id'])
 
@@ -43,4 +43,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index('ix_password_history_user_id', table_name='password_history')
     op.drop_table('password_history')
-

@@ -28,7 +28,7 @@ class ProgramResponse(ProgramBase):
     institution_id: UUID
     data_completeness_score: int
     data_source: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -36,4 +36,3 @@ class ProgramDetailResponse(ProgramResponse):
     """Schema for detailed program response with institution info."""
     institution: Optional[dict] = None
     tags: Optional[List[dict]] = None
-

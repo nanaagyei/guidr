@@ -9,11 +9,11 @@ interface DataQualityBarProps {
   className?: string;
 }
 
-export function DataQualityBar({ 
-  score, 
-  showLabel = true, 
+export function DataQualityBar({
+  score,
+  showLabel = true,
   size = 'md',
-  className = '' 
+  className = ''
 }: DataQualityBarProps) {
   const getColor = (score: number) => {
     if (score >= 80) return 'bg-success';
@@ -58,10 +58,10 @@ interface DataQualityDotProps {
   className?: string;
 }
 
-export function DataQualityDot({ 
-  score, 
+export function DataQualityDot({
+  score,
   showTooltip = false,
-  className = '' 
+  className = ''
 }: DataQualityDotProps) {
   const getColorClass = (score: number) => {
     if (score >= 80) return 'quality-dot-high';
@@ -117,12 +117,12 @@ interface StatsCardProps {
   className?: string;
 }
 
-export function StatsCard({ 
-  label, 
-  value, 
-  subValue, 
+export function StatsCard({
+  label,
+  value,
+  subValue,
   trend,
-  className = '' 
+  className = ''
 }: StatsCardProps) {
   const trendColors = {
     up: 'text-success',
@@ -142,4 +142,3 @@ export function StatsCard({
     </div>
   );
 }
-

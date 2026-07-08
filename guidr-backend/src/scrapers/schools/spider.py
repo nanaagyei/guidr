@@ -42,4 +42,3 @@ class SchoolProgramsSpider(scrapy.Spider):
         file_path = RAW_DATA_DIR / f"{slug}.html"
         file_path.write_bytes(response.body)
         return str(file_path)
-

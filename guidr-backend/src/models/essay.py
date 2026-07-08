@@ -9,9 +9,9 @@ from src.models.base import Base
 
 class Essay(Base):
     """Essay model for user essays."""
-    
+
     __tablename__ = "essays"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String, nullable=False)
@@ -20,9 +20,8 @@ class Essay(Base):
     word_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     user = relationship("User", backref="essays")
     versions = relationship("EssayVersion", back_populates="essay", order_by="EssayVersion.version_number")
     reviews = relationship("EssayReview", back_populates="essay")
-
