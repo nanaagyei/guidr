@@ -21,7 +21,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Gitleaks
@@ -33,7 +33,7 @@ jobs:
     name: Vulnerability scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Report HIGH + CRITICAL for visibility (does not fail the build).
       - name: Trivy scan (report HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@0.35.0
@@ -62,7 +62,7 @@ jobs:
       run:
         working-directory: guidr-backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -80,7 +80,7 @@ jobs:
       run:
         working-directory: guidr-frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
