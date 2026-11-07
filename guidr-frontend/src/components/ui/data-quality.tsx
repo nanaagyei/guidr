@@ -2,8 +2,23 @@
 
 import { motion } from 'framer-motion';
 
+// These components describe how many fields a record has filled
+// (`data_completeness_score`), not whether a person checked it. Never label them
+// "verified": that word is reserved for human verification (VERIFICATION_POLICY.md).
+
+/** A score of null, undefined or 0 means the record has not been assessed. */
+function isAssessed(score: number | null | undefined): score is number {
+  return typeof score === 'number' && score > 0;
+}
+
+function NotAssessed({ className = '' }: { className?: string }) {
+  return (
+    <span className={`text-2xs font-medium text-textMuted ${className}`}>Not assessed</span>
+  );
+}
+
 interface DataQualityBarProps {
-  score: number; // 0-100
+  score: number | null | undefined; // 0-100
   showLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -15,6 +30,10 @@ export function DataQualityBar({
   size = 'md',
   className = ''
 }: DataQualityBarProps) {
+  if (!isAssessed(score)) {
+    return <NotAssessed className={className} />;
+  }
+
   const getColor = (score: number) => {
     if (score >= 80) return 'bg-success';
     if (score >= 50) return 'bg-warning';
@@ -53,7 +72,7 @@ export function DataQualityBar({
 }
 
 interface DataQualityDotProps {
-  score: number;
+  score: number | null | undefined;
   showTooltip?: boolean;
   className?: string;
 }
@@ -63,6 +82,10 @@ export function DataQualityDot({
   showTooltip = false,
   className = ''
 }: DataQualityDotProps) {
+  if (!isAssessed(score)) {
+    return <NotAssessed className={className} />;
+  }
+
   const getColorClass = (score: number) => {
     if (score >= 80) return 'quality-dot-high';
     if (score >= 50) return 'quality-dot-medium';
@@ -70,9 +93,9 @@ export function DataQualityDot({
   };
 
   const getLabel = (score: number) => {
-    if (score >= 80) return 'High data quality';
-    if (score >= 50) return 'Partial data';
-    return 'Limited data';
+    if (score >= 80) return 'Most fields filled';
+    if (score >= 50) return 'Some fields filled';
+    return 'Few fields filled';
   };
 
   return (
@@ -88,13 +111,17 @@ export function DataQualityDot({
 }
 
 interface DataQualityBadgeProps {
-  score: number;
+  score: number | null | undefined;
   className?: string;
 }
 
 export function DataQualityBadge({ score, className = '' }: DataQualityBadgeProps) {
+  if (!isAssessed(score)) {
+    return <span className={`badge text-textMuted ${className}`}>Not assessed</span>;
+  }
+
   const getConfig = (score: number) => {
-    if (score >= 80) return { label: 'Verified', className: 'badge-success' };
+    if (score >= 80) return { label: 'Complete', className: 'badge-success' };
     if (score >= 50) return { label: 'Partial', className: 'badge-warning' };
     return { label: 'Limited', className: 'badge-error' };
   };

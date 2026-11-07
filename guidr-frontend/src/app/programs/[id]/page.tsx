@@ -122,7 +122,7 @@ export default function ProgramDetailPage() {
                     {program.delivery_mode}
                   </span>
                 )}
-                <DataQualityBadge score={program.data_completeness_score || 60} />
+                <DataQualityBadge score={program.data_completeness_score} />
                 <EnrichmentBadge
                   entityKind="program"
                   entityId={programId}

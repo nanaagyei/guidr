@@ -197,11 +197,13 @@ export default function InstitutionModal({
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-text">Data Completeness</p>
                   <span className="text-sm text-textSecondary">
-                    {institution.data_completeness_score || 0}%
+                    {institution.data_completeness_score
+                      ? `${institution.data_completeness_score}%`
+                      : 'Not assessed'}
                   </span>
                 </div>
                 <DataQualityBar
-                  score={institution.data_completeness_score || 0}
+                  score={institution.data_completeness_score}
                   showLabel={false}
                   size="lg"
                 />

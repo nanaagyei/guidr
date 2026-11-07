@@ -4,6 +4,19 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- [2026-11-07 UTC] fix(frontend): Stop labelling machine signals as "Verified" (#44)
+  - `DataQualityBadge` shows "Complete" (not "Verified") at 80+; dot tooltips now say
+    "Most/Some/Few fields filled": the score counts filled fields, not human checks
+  - Bar, dot and badge accept `null`/`undefined`; a missing or 0 score renders "Not assessed"
+    with no bar, colour or number
+  - Removed invented defaults (`|| 60` on program detail, `= 50` on program and institution cards,
+    `|| 0` → "Not assessed" in the institution modal)
+  - Calendar tile shows "Found automatically. Confirm on the program's website." on every deadline
+  - Files: `src/components/ui/data-quality.tsx`, `src/app/programs/[id]/page.tsx`,
+    `src/components/{ProgramCard,InstitutionCard,InstitutionModal}.tsx`,
+    `src/components/dashboard/CalendarTile.tsx`
+
 ### Security
 - [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
   - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy
