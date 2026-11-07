@@ -8,9 +8,6 @@ import {
   postAcademicRecord,
   putAcademicRecord,
   deleteAcademicRecord,
-  getDocumentUploadUrl,
-  confirmDocumentUpload,
-  getDocuments
 } from '@/utils/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useProfileCompletion } from '@/contexts/ProfileCompletionContext';
@@ -20,7 +17,6 @@ export default function AcademicRecordsPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const { completion, refresh: refreshCompletion } = useProfileCompletion();
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const prevLevelRef = useRef<number>(completion?.level ?? 0);
 
   // Toast when profile level increases
@@ -29,7 +25,7 @@ export default function AcademicRecordsPage() {
     if (currentLevel > prevLevelRef.current && prevLevelRef.current >= 0) {
       const unlockMessages: Record<number, string> = {
         1: 'Level 1 unlocked! Dashboard is now available.',
-        2: 'Level 2 unlocked! Recommendations, Funding, and Professors are now available.',
+        2: 'Level 2 unlocked! Recommendations and Professors are now available.',
         3: 'Level 3 unlocked! Professor matching and email generation are now available.',
       };
       addToast(unlockMessages[currentLevel] || `Level ${currentLevel} unlocked!`, 'success');
@@ -38,13 +34,9 @@ export default function AcademicRecordsPage() {
   }, [completion?.level, addToast]);
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [error, setError] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     institution_name: '',
@@ -65,10 +57,6 @@ export default function AcademicRecordsPage() {
       return;
     }
     loadRecords();
-    loadDocuments();
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
   }, [user, router]);
 
   async function loadRecords() {
@@ -79,97 +67,6 @@ export default function AcademicRecordsPage() {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function loadDocuments() {
-    try {
-      const data = await getDocuments();
-      setDocuments(data.filter((d: any) => d.document_type === 'transcript'));
-    } catch (err: any) {
-      // Silently fail - documents are optional
-    }
-  }
-
-  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(file.type)) {
-      addToast('Please upload a PDF or Word document', 'error');
-      return;
-    }
-
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      addToast('File size must be less than 10MB', 'error');
-      return;
-    }
-
-    setUploading(true);
-    setError('');
-
-    try {
-      // Get upload URL
-      const uploadData = await getDocumentUploadUrl({
-        filename: file.name,
-        document_type: 'transcript',
-      });
-
-      // Upload to storage
-      const uploadResponse = await fetch(uploadData.upload_url, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to storage');
-      }
-
-      // Confirm upload
-      await confirmDocumentUpload(uploadData.document_id);
-
-      addToast('Transcript uploaded! Processing will begin shortly.', 'success');
-      setShowUploadModal(false);
-      loadDocuments();
-
-      // Poll for processing completion (every 3s, max 60s)
-      let elapsed = 0;
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = setInterval(async () => {
-        elapsed += 3000;
-        try {
-          const docs = await getDocuments();
-          const transcripts = docs.filter((d: any) => d.document_type === 'transcript');
-          setDocuments(transcripts);
-          const stillProcessing = transcripts.some((d: any) =>
-            d.processing_status === 'pending' || d.processing_status === 'processing'
-          );
-          if (!stillProcessing || elapsed >= 60000) {
-            if (pollingRef.current) clearInterval(pollingRef.current);
-            pollingRef.current = null;
-            await loadRecords();
-            await refreshCompletion();
-          }
-        } catch {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.message);
-      addToast('Failed to upload transcript', 'error');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   }
 
@@ -256,12 +153,6 @@ export default function AcademicRecordsPage() {
         <h1 className="text-3xl font-semibold text-text">Academic Records</h1>
         <div className="flex gap-3">
           <button
-            onClick={() => setShowUploadModal(true)}
-            className="px-6 py-3 bg-card border border-border text-text font-semibold rounded-lg hover:bg-muted transition"
-          >
-            Upload Transcript
-          </button>
-          <button
             onClick={() => { setEditingId(null); resetForm(); setShowModal(true); }}
             className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primaryHover transition"
           >
@@ -269,14 +160,6 @@ export default function AcademicRecordsPage() {
           </button>
         </div>
       </div>
-
-      {/* Processing documents notification */}
-      {documents.some(d => d.processing_status === 'processing') && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
-          <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-          <span>Processing your transcript... This may take a minute.</span>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -489,94 +372,6 @@ export default function AcademicRecordsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Transcript Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-semibold mb-4 text-text">Upload Transcript</h2>
-            <p className="text-gray-600 mb-6">
-              Upload your academic transcript and we{"\u2019"}ll automatically extract your GPA,
-              institution details, and other information using AI.
-            </p>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary transition-colors">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="transcript-upload"
-              />
-              <label
-                htmlFor="transcript-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                {uploading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                    <span className="text-gray-600">Uploading...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="text-primary font-medium">Click to upload</span>
-                    <span className="text-gray-500 text-sm mt-1">PDF, DOC, or DOCX (max 10MB)</span>
-                  </>
-                )}
-              </label>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setShowUploadModal(false)}
-                disabled={uploading}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-
-            {/* Uploaded transcripts list */}
-            {documents.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Uploaded Transcripts</h3>
-                <div className="space-y-2">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
-                          <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">{doc.original_filename}</p>
-                          <p className="text-xs text-gray-500 capitalize">{doc.processing_status}</p>
-                        </div>
-                      </div>
-                      {doc.processing_status === 'completed' && (
-                        <span className="text-xs text-green-600 font-medium">Processed</span>
-                      )}
-                      {doc.processing_status === 'processing' && (
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                      )}
-                      {doc.processing_status === 'failed' && (
-                        <span className="text-xs text-red-600 font-medium">Failed</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from src.config import settings
 from src.models.academic_record import AcademicRecord
 from src.models.user_profile import UserProfile
 
@@ -139,7 +140,7 @@ def calculate_profile_completion(
     unlocks = {
         "dashboard": level >= 1,
         "recommendations": level >= 2,
-        "funding": level >= 2,
+        "funding": settings.enable_funding_api and level >= 2,
         "professors": level >= 3,
     }
 

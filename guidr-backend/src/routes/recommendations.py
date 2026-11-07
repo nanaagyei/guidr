@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
+from src.config import settings
 from src.db import get_db
 from src.models.recommendation_session import RecommendationSession, RecommendationStatus
 from src.models.recommendation_result import RecommendationResult
@@ -573,18 +574,19 @@ async def save_recommendation(
         except Exception as e:
             logger.warning("Failed to dispatch professor matching: %s", e)
 
-        # Funding dossier
-        try:
-            funding_result = service.request_funding_dossier(
-                school_id=str(institution.id),
-                user_id=str(current_user.id),
-                program_id=str(program.id) if program else None,
-            )
-            if funding_result.job:
-                saved.funding_dossier_job_id = funding_result.job.id
-                job_ids["funding_dossier"] = str(funding_result.job.id)
-        except Exception as e:
-            logger.warning("Failed to dispatch funding dossier: %s", e)
+        # Funding dossier (funding discovery is gated; leave funding_dossier_job_id null)
+        if settings.enable_funding_api:
+            try:
+                funding_result = service.request_funding_dossier(
+                    school_id=str(institution.id),
+                    user_id=str(current_user.id),
+                    program_id=str(program.id) if program else None,
+                )
+                if funding_result.job:
+                    saved.funding_dossier_job_id = funding_result.job.id
+                    job_ids["funding_dossier"] = str(funding_result.job.id)
+            except Exception as e:
+                logger.warning("Failed to dispatch funding dossier: %s", e)
 
     db.commit()
 

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from src.db import get_db
 from src.dependencies.auth import get_current_user
+from src.dependencies.feature_flags import require_funding_api
 from src.dependencies.rate_limit import endpoint_rate_limit
 from src.dependencies.research import require_research_provider
 from src.models.user import User
@@ -83,7 +84,10 @@ async def request_professor_match(
     return _build_response(result)
 
 
-@router.post("/schools/{school_id}/funding/research", dependencies=[Depends(require_research_provider)])
+@router.post(
+    "/schools/{school_id}/funding/research",
+    dependencies=[Depends(require_funding_api), Depends(require_research_provider)],
+)
 async def request_funding_dossier(
     school_id: UUID,
     body: FundingDossierRequest = FundingDossierRequest(),

@@ -135,10 +135,13 @@ class TestFundingDossierRoute:
     """Tests for POST /dossiers/schools/{id}/funding/research."""
 
     def test_returns_enqueued(self, client, mock_auth):
+        from src.config import settings
+
         test_client, mock_db = client
         school_id = uuid.uuid4()
 
-        with patch("src.routes.dossiers.DossierService") as MockService:
+        with patch("src.routes.dossiers.DossierService") as MockService, \
+             patch.object(settings, "enable_funding_api", True):
             mock_svc = MagicMock()
             MockService.return_value = mock_svc
 

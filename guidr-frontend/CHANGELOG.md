@@ -5,6 +5,13 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- [2026-11-07 UTC] fix(frontend): Remove the last entry points into gated document features (#69)
+  - Academic Records: removed "Upload Transcript", its modal, upload handler, polling and the
+    transcript list; manual entry stays. Level-2 unlock toast no longer mentions Funding
+  - `/documents/[id]` renders the same `ComingSoon` screen as `/documents`
+  - Files: `src/app/academic-records/page.tsx`, `src/app/documents/[id]/page.tsx`
+
+### Fixed
 - [2026-11-07 UTC] fix(api): Show the server's message for object-shaped error details (#43)
   - `requestRecommendations` and `saveRecommendation` now surface "Research is temporarily
     unavailable. Nothing was generated." on 503 instead of `[object Object]`
