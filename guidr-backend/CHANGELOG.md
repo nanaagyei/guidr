@@ -4,6 +4,40 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- [2026-11-07 UTC] fix(pipeline): Make the standard enrichment graph run end to end; one source of confidence thresholds (#57, option B: fix)
+  - `score_confidence` no longer calls the removed `should_repair()` (it raised `AttributeError`);
+    repair runs only when `repair_requested` is set, as the scorer's on-demand policy says
+  - Extractor output is normalised: the overview extractor was called with an unsupported
+    argument, and the program/faculty/funding extractors return lists that every later node
+    treated as a dict; only the record matching the entity is kept. A failed extraction yields no
+    data instead of the first 500 characters of the page (which could be promoted as a description)
+  - Routing: every result with data is staged (low-confidence results were never recorded); a
+    failed fetch or empty extraction retries
+  - `store_raw` reuses an artifact with the same content hash (the unique constraint made repeat
+    fetches fail and produced a fake artifact id) and links it to its `source_documents` row
+  - `confidence_scores` rows carry all four sub-scores (`ConfidenceScorer.compute_breakdown`)
+  - Dossier graph uses `AUTO_PROMOTE_THRESHOLD` / `STAGE_THRESHOLD` instead of 0.85 / 0.70;
+    `promote_after_stage()` applies one rule before and after the scrape fallback (the post-fallback
+    path previously required 0.85)
+  - School dossiers: nested `overview` fields are mapped to canonical fields for completeness and
+    promotion (they were never found, capping confidence and promoting nothing); staging records
+    the research response as a raw artifact + extraction run so promotions write `entity_promotions`;
+    non-school dossiers no longer touch institution rows
+  - `SourceDocument.url_hash` / `host` mapped as `Computed` (GENERATED ALWAYS; every ORM insert
+    failed); `discovered_by` values normalised to the `research_provider` enum (Perplexity URLs were
+    never saved)
+  - `/pipeline/cache/value` also reads the school dossier bucket, and only returns shared rows or
+    the caller's own per-user rows (previously any user's per-user row could be returned)
+  - `DossierState` declares `prompt_version` / `prompt_variant` (LangGraph was dropping them)
+  - Tests: new `tests/pipeline/test_orchestrator_unmocked.py` runs the real graph against a migrated
+    Postgres with only the network mocked; `should_repair` mocks removed
+  - Files: `src/pipeline/orchestrator/{nodes,graph,dossier_graph,dossier_nodes,state,dossier_state}.py`,
+    `src/pipeline/processors/confidence_scorer.py`, `src/models/source_document.py`,
+    `src/pipeline/research_gateway/service.py`, `src/services/enrichment_service.py`,
+    `src/routes/pipeline.py`, `docs/IMPLEMENTATION_STATUS.md`,
+    `tests/pipeline/{test_orchestrator_unmocked,test_orchestrator_nodes,test_dossier_nodes}.py`
+
 ### Changed
 - [2026-11-07 UTC] docs: Record the repositioning and correct stale project documentation (#54)
   - New `docs/POSITIONING.md` and `docs/ARCHITECTURE.md` at the repo root

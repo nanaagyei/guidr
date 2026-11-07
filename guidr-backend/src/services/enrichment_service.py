@@ -34,6 +34,11 @@ FRESHNESS_BUCKETS = {
     "funding": "14d",
 }
 
+# Dossier bucket holding canonical-entity research for each entity kind
+DOSSIER_BUCKET_FOR_ENTITY_KIND = {
+    "school": "school_dossier:30d",
+}
+
 # Dossier freshness buckets
 DOSSIER_FRESHNESS_BUCKETS = {
     "recommendation_run": "recommendation_run:7d",
@@ -189,10 +194,20 @@ class EnrichmentService:
         self,
         entity_kind: str,
         entity_id: str,
+        user_id: Optional[str] = None,
     ) -> Optional[dict]:
-        """Return cached enrichment value if available."""
-        freshness_bucket = FRESHNESS_BUCKETS.get(entity_kind, "30d")
-        cache = self._get_cache_entry(entity_kind, entity_id, freshness_bucket)
+        """Return the cached value for an entity, as seen by ``user_id``.
+
+        Looks in the standard enrichment bucket first, then in the dossier bucket for
+        that entity kind (dossiers are stored under e.g. ``school_dossier:30d``). Rows
+        scoped to another user are never returned.
+        """
+        cache = self._get_cache_entry(
+            entity_kind, entity_id, FRESHNESS_BUCKETS.get(entity_kind, "30d"), user_id=user_id
+        )
+        dossier_bucket = DOSSIER_BUCKET_FOR_ENTITY_KIND.get(entity_kind)
+        if cache is None and dossier_bucket:
+            cache = self._get_cache_entry(entity_kind, entity_id, dossier_bucket, user_id=user_id)
         if cache:
             cache.hit_count += 1
             cache.last_hit_at = datetime.utcnow()
@@ -210,16 +225,33 @@ class EnrichmentService:
         return None
 
     def _get_cache_entry(
-        self, entity_kind: str, entity_id: str, freshness_bucket: str
+        self,
+        entity_kind: str,
+        entity_id: str,
+        freshness_bucket: str,
+        user_id: Optional[str] = None,
     ) -> Optional[EnrichmentCache]:
-        """Get cache entry regardless of expiry."""
+        """Get a cache entry regardless of expiry.
+
+        Shared entries (``user_id IS NULL``) are visible to everyone. Per-user entries are
+        visible only to their owner, and are preferred over the shared entry for them.
+        """
+        base = [
+            EnrichmentCache.entity_kind == entity_kind,
+            EnrichmentCache.entity_id == uuid.UUID(entity_id),
+            EnrichmentCache.freshness_bucket == freshness_bucket,
+        ]
+        if user_id:
+            own = (
+                self.db.query(EnrichmentCache)
+                .filter(*base, EnrichmentCache.user_id == uuid.UUID(str(user_id)))
+                .first()
+            )
+            if own is not None:
+                return own
         return (
             self.db.query(EnrichmentCache)
-            .filter(
-                EnrichmentCache.entity_kind == entity_kind,
-                EnrichmentCache.entity_id == uuid.UUID(entity_id),
-                EnrichmentCache.freshness_bucket == freshness_bucket,
-            )
+            .filter(*base, EnrichmentCache.user_id.is_(None))
             .first()
         )
 

@@ -1,12 +1,34 @@
 """SourceDocument model for canonical URLs per entity."""
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy import Boolean, Column, Computed, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from src.models.base import Base
+
+
+# Values of the Postgres enum `research_provider` used by `discovered_by`.
+RESEARCH_PROVIDERS = frozenset({"perplexity", "open_deep_research", "langchain_custom", "manual"})
+
+
+def research_provider_label(source: str | None) -> str:
+    """Map a provider's free-form result ``source`` onto the ``research_provider`` enum.
+
+    Providers label results ``perplexity_sonar``, ``perplexity_citation``,
+    ``open_deep_research`` and so on; inserting those raw values fails the enum.
+    """
+    value = (source or "").lower()
+    if value in RESEARCH_PROVIDERS:
+        return value
+    if value.startswith("open_deep_research"):
+        return "open_deep_research"
+    if value.startswith("perplexity") and value != "perplexity_stub":
+        return "perplexity"
+    return "manual"
 
 
 class SourceDocument(Base):
@@ -24,9 +46,21 @@ class SourceDocument(Base):
     entity_id = Column(UUID(as_uuid=True), nullable=True)
     canonical_url = Column(Text, nullable=False)
 
-    # Generated columns in PostgreSQL -- read-only from ORM perspective
-    url_hash = Column(String, nullable=True)
-    host = Column(String, nullable=True)
+    # GENERATED ALWAYS in PostgreSQL. Declared as Computed so the ORM never sends a value
+    # for them (an explicit NULL makes Postgres reject every insert).
+    url_hash = Column(
+        String,
+        Computed("encode(digest(lower(canonical_url), 'sha256'), 'hex')", persisted=True),
+        nullable=True,
+    )
+    host = Column(
+        String,
+        Computed(
+            "split_part(replace(replace(canonical_url, 'https://', ''), 'http://', ''), '/', 1)",
+            persisted=True,
+        ),
+        nullable=True,
+    )
 
     purpose = Column(Text, nullable=True)
     discovered_by = Column(String, default="manual")  # perplexity, manual, etc.

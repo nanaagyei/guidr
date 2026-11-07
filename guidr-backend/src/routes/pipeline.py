@@ -135,7 +135,7 @@ async def get_cache_value(
 ):
     """Get the cached enrichment value for an entity."""
     service = EnrichmentService(db)
-    value = service.get_cache_value(entity_kind, entity_id)
+    value = service.get_cache_value(entity_kind, entity_id, user_id=str(current_user.id))
     if value is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -28,6 +28,8 @@ class DossierState(TypedDict, total=False):
     dossier_citations: list[dict]
     dossier_evidence_map: dict[str, list[str]]
     dossier_report: Optional[str]
+    prompt_version: Optional[str]
+    prompt_variant: Optional[str]
     dossier_metrics: dict[str, Any]
     dossier_errors: list[str]
 
@@ -37,8 +39,13 @@ class DossierState(TypedDict, total=False):
 
     # Scoring
     confidence: float
+    # Sub-scores behind `confidence` (citation_quality, citation_coverage, extraction)
+    confidence_breakdown: dict
     promote: bool
     needs_fallback: bool
+    # Provenance written by stage_dossier: research response stored as a raw artifact
+    raw_artifact_id: Optional[str]
+    extraction_run_id: Optional[str]
 
     # Fallback
     fallback_used: bool
