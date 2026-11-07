@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { DashboardCard } from '../ui/dashboard-card';
 import { Shield, Key, Download, Trash2, Lock } from 'lucide-react';
 import { Input } from '../ui/input';
+import AiResearchConsent from './AiResearchConsent';
 
 export default function PrivacySettings() {
   const [passwordForm, setPasswordForm] = useState({
@@ -82,6 +83,8 @@ export default function PrivacySettings() {
             </button>
           </div>
         </div>
+
+        <AiResearchConsent />
 
         {/* Data Management */}
         <div className="pt-6 border-t border-border">

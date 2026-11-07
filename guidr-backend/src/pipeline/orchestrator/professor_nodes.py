@@ -28,13 +28,22 @@ def _get_db():
 # ------------------------------------------------------------------
 
 def load_professor_context(state: ProfessorMatchState) -> dict:
-    """Load institution info and user research interests."""
+    """Load institution info and the research keywords the applicant consented to share.
+
+    Research interests leave the process (OpenAlex search, provider synthesis prompt),
+    so they are kept only when the applicant has recorded AI research consent, whether
+    they came from the job input or the profile. Without consent the match runs on the
+    institution and department only.
+    """
+    from src.pipeline.prompts.personal_fields import minimised_profile, research_keywords
+
     entity_id = state.get("entity_id")
     user_id = state.get("user_id")
 
     institution_name = state.get("institution_name", "Unknown")
     department = state.get("department")
-    user_interests: list[str] = list(state.get("user_interests", []))
+    requested_interests: list[str] = list(state.get("user_interests", []))
+    user_interests: list[str] = []
 
     db = _get_db()
     try:
@@ -46,25 +55,20 @@ def load_professor_context(state: ProfessorMatchState) -> dict:
             if inst:
                 institution_name = inst.name
 
-        # Load user interests from profile
-        if user_id and not user_interests:
+        if user_id:
             from src.models.user_profile import UserProfile
             profile = db.query(UserProfile).filter(
                 UserProfile.user_id == uuid.UUID(user_id)
             ).first()
             if profile:
-                # research_areas is the most specific signal — use it first
-                if profile.research_areas:
-                    user_interests.extend(profile.research_areas)
-                if profile.primary_field_of_study:
-                    user_interests.append(profile.primary_field_of_study)
-                if profile.secondary_fields:
-                    user_interests.extend(profile.secondary_fields)
+                minimal = minimised_profile(profile)
+                if requested_interests:
+                    minimal["research_areas"] = requested_interests
                 # De-duplicate while preserving order
                 seen: set[str] = set()
                 user_interests = [
-                    x for x in user_interests
-                    if x and not (x in seen or seen.add(x))  # type: ignore[func-returns-value]
+                    x for x in research_keywords(minimal, minimal["ai_research_consent"])
+                    if not (x.lower() in seen or seen.add(x.lower()))  # type: ignore[func-returns-value]
                 ]
 
     except Exception as exc:
@@ -210,12 +214,19 @@ def synthesize_rank(state: ProfessorMatchState) -> dict:
         ResearchRequest, EntityContext, Budget, CacheConfig,
     )
 
+    from src.pipeline.prompts.personal_fields import personal_template_vars
+
+    # user_interests were consent-checked in load_professor_context.
     prompt = PromptRegistry.render(
         "professor_synthesis", "v1",
         school_name=institution_name,
         department=department or "Not specified",
-        user_interests=", ".join(user_interests),
         candidates_json=json.dumps(candidates, indent=2, default=str),
+        **personal_template_vars(
+            "professor_synthesis",
+            {"research_areas": user_interests},
+            consented=bool(user_interests),
+        ),
     )
 
     req = ResearchRequest(

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'How Guidr collects, uses, and protects your information.',
 };
 
-const LAST_UPDATED = 'July 7, 2026';
+const LAST_UPDATED = 'November 7, 2026';
 const CONTACT_EMAIL = 'hello@guidr.app';
 
 export default function PrivacyPage() {
@@ -52,10 +52,32 @@ export default function PrivacyPage() {
         analytics), under appropriate confidentiality obligations, or when
         required by law.
       </p>
+      <h3>AI research providers</h3>
       <p>
-        Some features rely on third-party APIs (for example, academic and
-        research data providers). When those features run, limited, relevant
-        query information may be sent to those providers to return results.
+        Program, funding and faculty research is done by an AI research provider
+        (Perplexity, or an OpenAI-compatible research service we configure). Research
+        is about programs, not about you. Exactly this is sent:
+      </p>
+      <ul>
+        <li>
+          Always: the school or program being researched, and your intended degree
+          level and field of study.
+        </li>
+        <li>
+          Only if you turn on <strong>AI research</strong> in Settings, Privacy &amp;
+          Security: your research areas (as keywords), your preferred countries, and
+          your funding priority as high, medium or low. Research areas are also sent
+          as search keywords to OpenAlex, an academic database, to find faculty. You
+          can turn this off at any time.
+        </li>
+        <li>
+          Never: your name, email address, account ID, GPA, test scores, citizenship,
+          or anything you typed as free text (such as career goals).
+        </li>
+      </ul>
+      <p>
+        Funding eligibility that depends on citizenship is checked by a person against
+        the funder&rsquo;s own source, not inferred by a model.
       </p>
 
       <h2>Data retention</h2>

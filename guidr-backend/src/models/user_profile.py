@@ -35,6 +35,11 @@ class UserProfile(Base):
     research_areas = Column(JSON, nullable=True)   # Array of research interest strings
     career_goals = Column(String, nullable=True)    # Free-text career goals
 
+    # When the user agreed to send research areas, preferred countries and funding
+    # priority to research model providers (null = no consent). See
+    # src/pipeline/prompts/personal_fields.py.
+    ai_research_consent_at = Column(DateTime, nullable=True)
+
     # Completion & embeddings
     profile_completion_score = Column(Integer, default=0, nullable=False)  # 0-100
     profile_embedding = Column(JSON, nullable=True)  # Vector for semantic matching (future)

@@ -1,5 +1,6 @@
 """Unit tests for professor match graph nodes with mocked APIs."""
 import pytest
+from datetime import datetime
 from unittest.mock import patch, MagicMock
 
 
@@ -25,21 +26,26 @@ class TestLoadProfessorContext:
         result = load_professor_context(state)
 
         assert result["institution_name"] == "Stanford University"
-        assert "machine learning" in result["user_interests"]
+        # No user, so no recorded consent: requested interests are not kept.
+        assert result["user_interests"] == []
+
+    @staticmethod
+    def _profile(consented: bool) -> MagicMock:
+        profile = MagicMock()
+        profile.primary_field_of_study = "Computer Science"
+        profile.secondary_fields = ["Robotics"]
+        profile.research_areas = ["machine learning", "AI"]
+        profile.ai_research_consent_at = datetime(2026, 11, 7) if consented else None
+        return profile
 
     @patch("src.pipeline.orchestrator.professor_nodes._get_db")
-    def test_loads_user_interests_from_profile(self, mock_get_db):
+    def test_loads_research_areas_with_consent(self, mock_get_db):
         mock_db = MagicMock()
         mock_get_db.return_value = mock_db
-
         mock_inst = MagicMock()
         mock_inst.name = "MIT"
-        mock_profile = MagicMock()
-        mock_profile.primary_field_of_study = "Computer Science"
-        mock_profile.secondary_fields = ["AI", "Robotics"]
-
         mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_inst, mock_profile
+            mock_inst, self._profile(consented=True)
         ]
 
         from src.pipeline.orchestrator.professor_nodes import load_professor_context
@@ -52,8 +58,31 @@ class TestLoadProfessorContext:
         }
         result = load_professor_context(state)
 
-        assert "Computer Science" in result["user_interests"]
-        assert "AI" in result["user_interests"]
+        assert result["user_interests"] == ["machine learning", "AI"]
+        # Only research areas are allow-listed, not secondary fields.
+        assert "Robotics" not in result["user_interests"]
+
+    @patch("src.pipeline.orchestrator.professor_nodes._get_db")
+    def test_drops_interests_without_consent(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_inst = MagicMock()
+        mock_inst.name = "MIT"
+        mock_db.query.return_value.filter.return_value.first.side_effect = [
+            mock_inst, self._profile(consented=False)
+        ]
+
+        from src.pipeline.orchestrator.professor_nodes import load_professor_context
+
+        state = {
+            "entity_id": "550e8400-e29b-41d4-a716-446655440000",
+            "user_id": "550e8400-e29b-41d4-a716-446655440001",
+            "user_interests": ["requested via job input"],
+            "progress": [],
+        }
+        result = load_professor_context(state)
+
+        assert result["user_interests"] == []
 
 
 class TestQueryOpenAlex:
