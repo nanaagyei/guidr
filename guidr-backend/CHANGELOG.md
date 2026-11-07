@@ -5,6 +5,15 @@ All notable changes to Guidr Backend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-11-07 UTC] docs(policy): Critical-fact verification and incident policy v0 (#38)
+  - Defines the seven critical fact types and the four stored states plus computed `stale`,
+    using the exact keys later code will use
+  - Covers primary sources, maximum age per type, the second checker, display rules,
+    incident response, 20% sampling and change control
+  - Reserves "verified" for human verification against a primary source
+  - Files: `docs/VERIFICATION_POLICY.md`
+
+### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)
   - `.env.production.example` (env var names/grouping, no secrets)
