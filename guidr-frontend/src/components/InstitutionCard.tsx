@@ -41,7 +41,7 @@ export default function InstitutionCard({
   institution_type,
   public_private,
   website_url,
-  data_completeness_score = 50,
+  data_completeness_score,
   in_state_tuition,
   out_of_state_tuition,
   graduation_rate,

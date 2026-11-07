@@ -100,9 +100,9 @@ export default function CalendarTile() {
                     })()}
                   </span>
                 </div>
-                {deadline.is_verified === false && (
-                  <p className="text-xs text-amber-500 mt-1">Data may be incomplete — verify with school</p>
-                )}
+                <p className="text-xs text-amber-500 mt-1">
+                  Found automatically. Confirm on the program&apos;s website.
+                </p>
               </div>
             ))}
           </div>

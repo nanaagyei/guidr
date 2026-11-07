@@ -38,7 +38,7 @@ export default function ProgramCard({
   field_of_study,
   tuition,
   deadline,
-  data_completeness_score = 50,
+  data_completeness_score,
   last_enriched_at,
   index = 0,
 }: ProgramCardProps) {
