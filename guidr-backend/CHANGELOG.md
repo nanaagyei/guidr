@@ -5,6 +5,21 @@ All notable changes to Guidr Backend will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- [2026-11-07 UTC] fix(backend): Close the backend routes of features gated as "Coming soon" (#69)
+  - New settings `enable_funding_api` and `enable_documents_api` (default `False`); `funding` and
+    `documents` routers are mounted only when enabled, so their paths return 404 by default
+  - `POST /dossiers/schools/{id}/funding/research` returns 404 when funding is off (checked before
+    the research-provider guard)
+  - Saving a recommendation no longer starts the funding research job when funding is off
+    (`funding_dossier_job_id` stays null; saved-list job statuses already skip null jobs)
+  - Profile `unlocks.funding` is false while the flag is off
+  - Flags documented in `.env.example` and `.env.production.example`
+  - Files: `src/config.py`, `src/main.py`, `src/dependencies/feature_flags.py`,
+    `src/routes/{dossiers,recommendations}.py`, `src/utils/profile_completion.py`,
+    `.env.example`, `.env.production.example`, `tests/routes/test_feature_flags.py`,
+    `tests/routes/{test_dossier_routes,test_research_guard}.py`
+
+### Fixed
 - [2026-11-07 UTC] fix(research): Fail closed when no real research provider is configured (#43)
   - `_select_provider()` raises `ResearchProviderUnavailable` in production instead of returning
     the stub (hard-coded programs, deadlines, funding); dev/test still use the stub

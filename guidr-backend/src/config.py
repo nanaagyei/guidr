@@ -89,6 +89,10 @@ class Settings(BaseSettings):
     enable_scrape_fallback: bool = False
     enable_bulk_scrape: bool = False
 
+    # Features gated as "Coming soon" in the UI: their routers are not mounted unless enabled
+    enable_funding_api: bool = False
+    enable_documents_api: bool = False
+
     # Inflight concurrency cap for dossier/professor pipeline jobs
     max_concurrent_dossier_jobs: int = 10
 

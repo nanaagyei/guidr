@@ -57,7 +57,9 @@ def production_without_provider():
     """Patch settings to production with no research provider keys."""
     from src.config import settings
 
+    # enable_funding_api is on so the funding endpoint reaches the research guard.
     with patch.object(settings, "env", "production"), \
+         patch.object(settings, "enable_funding_api", True), \
          patch.object(settings, "perplexity_api_key", None), \
          patch.object(settings, "open_deep_research_api_key", None), \
          patch.object(settings, "open_deep_research_base_url", None):
