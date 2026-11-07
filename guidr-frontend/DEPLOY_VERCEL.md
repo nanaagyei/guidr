@@ -1,6 +1,6 @@
 # Deploying the Guidr frontend to Vercel
 
-The frontend is a Next.js 14 App Router app in `guidr-frontend/`. It talks to the
+The frontend is a Next.js 15 App Router app in `guidr-frontend/`. It talks to the
 Railway-hosted API via a single env var, `NEXT_PUBLIC_API_URL`.
 
 > Deploy the backend first (see `guidr-backend/DEPLOY_RAILWAY.md`) so you have the

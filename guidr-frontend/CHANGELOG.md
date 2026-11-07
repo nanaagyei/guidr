@@ -4,6 +4,18 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- [2026-11-07 UTC] docs: Correct stale frontend documentation (#54)
+  - `ROADMAP.md` now points to `docs/POSITIONING.md` and the issue backlog; completed milestones
+    kept as history
+  - README and `DEPLOY_VERCEL.md` say Next.js 15; CI section describes the root workflow; removed
+    the `your-org` badge; deleted the nested `.github/workflows/frontend-ci.yml`, which never ran
+  - Files: `ROADMAP.md`, `README.md`, `DEPLOY_VERCEL.md`, `.github/workflows/frontend-ci.yml` (deleted)
+
+### Backfilled (entries missing at the time of the change)
+- [2026-07-08 UTC] chore(deps): lucide-react 1.x (PR #18, `8b19b64`)
+  - Files: `package.json`, `package-lock.json`
+
 ### Security
 - [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
   - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy

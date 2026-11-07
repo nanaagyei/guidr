@@ -370,6 +370,5 @@ All dashboard tiles load **independently in parallel** with skeleton loaders —
 
 - **[Pipeline Guide](PIPELINE_GUIDE.md)** — Full architecture, all endpoints, DossierGraph internals, confidence scoring
 - **[Integration Summary](INTEGRATION_SUMMARY.md)** — How all components work together
-- **[Enrichment Verification](ENRICHMENT_PIPELINE_VERIFICATION.md)** — End-to-end smoke tests
 - **[R2 Setup](R2_SETUP.md)** — Cloudflare R2 for production document storage
 - MinIO console: http://localhost:9001

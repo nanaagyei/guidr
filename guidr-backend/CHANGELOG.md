@@ -4,6 +4,46 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- [2026-11-07 UTC] docs: Record the repositioning and correct stale project documentation (#54)
+  - New `docs/POSITIONING.md` and `docs/ARCHITECTURE.md` at the repo root
+  - `IMPLEMENTATION_STATUS.md`: dossier routing really uses 0.85 / 0.70; `should_repair()` is
+    still called but no longer defined (#57); confidence sub-scores are not tracked
+  - `PIPELINE_GUIDE.md`: per-category cache TTLs, `is_verified` described as machine confidence,
+    worker queues match `celery_app.py`, stub is development-only
+  - Deleted `ENRICHMENT_PIPELINE_VERIFICATION.md` (it described a task, state keys and an
+    endpoint that do not exist) and its links; RFC marked as partly superseded
+  - README: research pipeline as the primary path, scraping off by default, ruff not flake8,
+    CI from the root workflow; deleted the nested `.github/workflows/backend-ci.yml`, which never ran
+  - Files: `README.md`, `docs/{IMPLEMENTATION_STATUS,PIPELINE_GUIDE,RFC_AGENTIC_RESEARCH_PIVOT,QUICK_START,INTEGRATION_SUMMARY,COMPREHENSIVE_DATA_COLLECTION_GUIDE}.md`,
+    `docs/ENRICHMENT_PIPELINE_VERIFICATION.md` (deleted), `.github/workflows/backend-ci.yml` (deleted)
+
+### Backfilled (entries missing at the time of the change)
+- [2026-07-08 UTC] fix(auth): SameSite=None, Secure session cookie in production for cross-site auth (PR #19, `fdc7dc9`)
+  - `settings.cookie_samesite` / `cookie_secure`: `none` + Secure in production, `lax` locally
+  - Files: `src/config.py`, `src/routes/auth.py`
+- [2026-07-08 UTC] chore(deps): pytest 9, setuptools 83 (PR #18, `8b19b64`)
+  - Files: `pyproject.toml`, `requirements-dev.txt`
+- [2026-07-08 UTC] ci: Security scanning, CodeQL, Dependabot and release-please automation (`6c0306c`)
+  - Files: `../.github/{dependabot.yml,pull_request_template.md}`,
+    `../.github/workflows/{ci,codeql,release-please,security}.yml`,
+    `../release-please-config.json`, `../.release-please-manifest.json`
+- [2026-04-08 UTC] feat(workers): Celery priority-within-queue ordering via Redis priority steps (`ca89078`)
+  - Files: `src/workers/celery_app.py`
+- [2026-04-08 UTC] feat(pipeline): Write `validation_reports` and `confidence_scores` from the orchestrator and dossier nodes (`12024d2`, test `fec9722`)
+  - Files: `src/pipeline/orchestrator/{nodes,dossier_nodes,state}.py`, `src/models/{confidence_score,validation_report}.py`,
+    `alembic/versions/019_validation_confidence_tables.py`, `tests/pipeline/test_dossier_nodes.py`
+- [2026-04-08 UTC] feat(research): OpenDeepResearchProvider as the Perplexity fallback (`01a3fd3`)
+  - Files: `src/config.py`, `src/pipeline/research_gateway/{service.py,providers/__init__.py,providers/open_deep_research.py}`
+- [2026-04-08 UTC] feat(models): `validation_reports` and `confidence_scores` tables, migration 019 (`9a33d76`)
+  - Files: `alembic/versions/019_validation_confidence_tables.py`, `src/models/{__init__,confidence_score,validation_report,extraction_run,pipeline_job}.py`
+- [2026-04-08 UTC] feat(workers): Per-worker concurrency and prefork pool in docker-compose (`375559b`)
+  - Files: `docker-compose.yml`
+- [2026-04-08 UTC] feat(pipeline): `autoretry_for` on all Celery tasks for transient failures (`ede2f7b`)
+  - Files: `src/pipeline/tasks/{maintenance_tasks,orchestrator_tasks,pipeline_tasks,scrape_tasks}.py`
+- [2026-04-08 UTC] docs: IMPLEMENTATION_STATUS updates (`d70c27e`, `dbc68c0`)
+  - Files: `docs/IMPLEMENTATION_STATUS.md`
+
 ### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)

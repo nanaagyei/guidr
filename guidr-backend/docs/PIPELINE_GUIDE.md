@@ -318,9 +318,9 @@ Returns:
 ]
 ```
 
-`is_verified: false` means confidence < 0.78 — the frontend shows a "verify with school" warning.
+`is_verified` is a **machine-confidence flag** (`confidence >= 0.78`), not human verification. "Verified" is reserved for a person checking a primary source (`VERIFICATION_POLICY.md`); the field keeps its name until #45 decides the API contract.
 
-**Frontend display**: The `CalendarTile` reads from this endpoint and computes urgency client-side.
+**Frontend display**: none at present (the dashboard calendar tile was removed in #55).
 
 ---
 
@@ -333,9 +333,9 @@ Unified provider abstraction for all external research calls.
 | Mode | Behavior |
 |------|----------|
 | **Perplexity** (`PERPLEXITY_API_KEY` set) | Real Sonar API: deep research with web access |
-| **Stub** (no key) | Heuristic paths; for local development and testing |
+| **Stub** (no key) | Hard-coded synthetic data; development and test only. In production the gateway fails closed with 503 `RESEARCH_UNAVAILABLE` (#43) |
 
-Results cached in Redis (24h TTL, keyed by request hash).
+Results cached in Redis and Postgres (`research_cache`), keyed by request hash, with per-category TTLs from `CATEGORY_TTL` in `src/pipeline/research_gateway/service.py`: `recommendation_run` 7 days, `school_dossier` 30 days, `professor_matches` 30 days, `funding_dossier` 14 days, anything else 7 days.
 
 ### 2. DossierGraph (Primary enrichment)
 
@@ -473,7 +473,7 @@ Manual refresh is available via `POST /pipeline/admin/refresh` or `POST /pipelin
 
 Start workers:
 ```bash
-celery -A src.workers.celery_app worker -l info -Q default,pipeline,pipeline.heavy,scholarly_api
+celery -A src.workers.celery_app worker -l info -Q default,scraping,processing,pipeline
 ```
 
 ---

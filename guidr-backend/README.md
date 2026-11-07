@@ -1,6 +1,13 @@
 # Guidr Backend
 
-Backend API for Guidr - A graduate school application platform.
+Backend API for Guidr: program, institution and faculty data plus the research pipeline.
+
+What runs today: the FastAPI app (auth, profile, catalog search, recommendations, professors,
+essays, outreach drafts), catalog seeding from College Scorecard / IPEDS, and the agentic research
+pipeline (Research Gateway → LangGraph dossier and professor-match graphs on Celery). Bulk web
+scraping and the scrape fallback are **off by default** (`ENABLE_BULK_SCRAPE`,
+`ENABLE_SCRAPE_FALLBACK`); the scraping code below is retained but is not the primary path.
+See `../docs/ARCHITECTURE.md` for the layout and `../docs/POSITIONING.md` for product scope.
 
 ## Tech Stack
 
@@ -12,7 +19,8 @@ Backend API for Guidr - A graduate school application platform.
 - **Queue:** Redis (for async workers)
 - **Background jobs:** Celery
 - **Search:** Meilisearch
-- **Scraping/LLM:** Scrapy, Playwright, LangChain/Groq/OpenAI
+- **Research/LLM:** Perplexity or an OpenAI-compatible deep-research provider, LangGraph, Groq/OpenAI
+- **Scraping (off by default):** Scrapy, Playwright, Firecrawl
 
 ## Setup
 
@@ -87,7 +95,7 @@ Backend API for Guidr - A graduate school application platform.
   ```bash
   curl -X POST http://localhost:8000/ingestion/schools/scorecard -H "Authorization: Bearer <token>"
   ```
-- **Scraping pipeline** (overview, programs, faculty, funding):
+- **Scraping pipeline** (legacy; off by default — overview, programs, faculty, funding):
   ```bash
   curl -X POST http://localhost:8000/ingestion/pipeline/run -H "Authorization: Bearer <token>" -d '{"institution_id": "<uuid>"}'
   ```
@@ -103,7 +111,7 @@ Backend API for Guidr - A graduate school application platform.
 
 ### Comprehensive Data Collection System
 
-We now have a robust, multi-layered data collection system that combines:
+A legacy multi-layered scraping system is retained (not the primary path; off by default). It combines:
 - **Firecrawl API** for structured web scraping
 - **LLM-powered agents** for intelligent navigation and extraction
 - **Playwright** for dynamic content and JavaScript-rendered pages
@@ -173,14 +181,14 @@ guidr-backend/
 
 ## Development
 
-- **Linting:** `flake8 src`
+- **Linting:** `ruff check src tests`
 - **Tests:** `pytest`
 - **Migrations:** `alembic revision --autogenerate -m "description"`
 
 ## CI/CD
 
-GitHub Actions workflow runs on push/PR to main/dev branches:
-- Linting (flake8)
-- Tests (pytest)
-
-![Backend CI](https://github.com/nanaagyei/guidr-backend/actions/workflows/backend-ci.yml/badge.svg)
+The root workflow `.github/workflows/ci.yml` runs on pull requests and pushes to `main` and
+`release/**`:
+- `pre-commit run --all-files`
+- Linting (`ruff check src tests`)
+- Tests (`pytest`, with Postgres 15 and Redis 7 services)
