@@ -1,0 +1,9 @@
+# Historic gitleaks findings allowlisted by exact fingerprint (see issue #80).
+# gitleaks reads fingerprints from this file; .gitleaks.toml has no fingerprint allowlist.
+#
+# Example R2_SECRET_ACCESS_KEY value in the "Initial commit" copy of R2_SETUP.md.
+# The owner confirmed on 2026-11-07 that it was an example value, never a real credential.
+c22616546d17c099e26dbdce5c8ea937c8d234b9:guidr-backend/docs/R2_SETUP.md:generic-api-key:81
+# Example Authorization header in a curl snippet in the same commit (a "YOUR_JWT..." placeholder).
+# The owner confirmed on 2026-11-07 that it was an example value, never a real credential.
+c22616546d17c099e26dbdce5c8ea937c8d234b9:guidr-backend/docs/R2_SETUP.md:curl-auth-header:119

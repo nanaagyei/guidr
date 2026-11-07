@@ -5,6 +5,15 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Security
+- [2026-11-07 UTC] fix(security): Patch critical Next.js CVEs flagged by the Trivy gate (#80)
+  - `next` and `eslint-config-next` 15.5.20 → 15.5.29 (stays on 15.x; fixes CVE-2026-75604 and
+    GHSA-2xp9-vwfh-vxw4 RCEs plus the HIGH DoS/SSRF advisories)
+  - `npm update` lifted `nanoid` to 3.3.20 and `sharp` to 0.35.5
+  - `overrides.next.postcss` = `^8.5.18`: `next` pins `postcss` to exactly 8.4.31, so the
+    override is required to reach 8.5.x (resolves 8.5.32)
+  - Release notes 15.5.21–15.5.29 are security fixes only; 15.5.22 rejects TypeScript >= 7 (we use 5.9)
+  - Files: `package.json`, `package-lock.json`
+
 - [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
   - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy
   - `npm audit fix` cleared 3 additional HIGH picomatch (ReDoS) advisories

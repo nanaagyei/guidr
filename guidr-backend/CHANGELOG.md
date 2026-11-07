@@ -4,6 +4,13 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- [2026-11-07 UTC] fix(security): Clear gitleaks findings without weakening the scan (#80)
+  - Replaced credential-shaped example values in the R2 setup guide with `<placeholder>` text
+  - Root `.gitleaksignore` allowlists exactly the two historic fingerprints from the initial
+    commit, which the owner confirmed were example values (no rotation needed)
+  - Files: `docs/R2_SETUP.md`, `../.gitleaksignore`
+
 ### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)
