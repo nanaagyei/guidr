@@ -71,7 +71,7 @@ export default function FAQPage() {
             >
               <span className="font-medium text-text pr-4">{faq.q}</span>
               <ChevronDown
-                className={`h-5 w-5 text-textSecondary flex-shrink-0 transition-transform ${
+                className={`h-5 w-5 text-textSecondary shrink-0 transition-transform ${
                   openIndex === index ? 'rotate-180' : ''
                 }`}
               />

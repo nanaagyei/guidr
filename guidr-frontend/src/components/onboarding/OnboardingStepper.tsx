@@ -82,7 +82,7 @@ export default function OnboardingStepper({
 
               {/* Connecting line */}
               {idx < STEPS.length - 1 && (
-                <div className="w-8 h-0.5 mx-1 mt-[-1rem] relative overflow-hidden bg-border rounded-full">
+                <div className="w-8 h-0.5 mx-1 -mt-4 relative overflow-hidden bg-border rounded-full">
                   <motion.div
                     className="absolute inset-y-0 left-0 bg-success rounded-full"
                     initial={{ width: '0%' }}

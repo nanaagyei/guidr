@@ -68,7 +68,7 @@ export default function GettingStartedPage() {
             className="bg-card rounded-xl p-6 border border-border hover:border-primary/30 transition"
           >
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-primaryLight rounded-lg flex-shrink-0">{step.icon}</div>
+              <div className="p-2 bg-primaryLight rounded-lg shrink-0">{step.icon}</div>
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-text mb-2">{step.title}</h2>
                 <p className="text-textSecondary text-sm mb-4">{step.description}</p>

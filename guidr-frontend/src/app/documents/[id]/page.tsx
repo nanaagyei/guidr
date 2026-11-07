@@ -140,7 +140,7 @@ export default function DocumentDetailPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-xl p-6 mb-6 shadow-sm border border-primary/10"
+        className="bg-card rounded-xl p-6 mb-6 shadow-xs border border-primary/10"
       >
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-start gap-4 flex-1">
@@ -217,7 +217,7 @@ export default function DocumentDetailPage() {
             className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg"
           >
             <div className="flex items-start gap-2">
-              <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-red-800 mb-1">Processing Error</p>
                 <p className="text-sm text-red-700">{document.processing_error_message}</p>
@@ -233,7 +233,7 @@ export default function DocumentDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-card rounded-xl p-6 mb-6 shadow-sm border border-primary/10"
+          className="bg-card rounded-xl p-6 mb-6 shadow-xs border border-primary/10"
         >
           <h2 className="text-xl font-semibold mb-4 text-text flex items-center gap-2">
             <FileText className="h-5 w-5" />

@@ -84,7 +84,7 @@ export function Toast({ id, message, type, duration = 4000, onClose }: ToastProp
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={`${bg} ${border} border rounded-xl p-4 shadow-soft-lg flex items-start gap-3 max-w-sm backdrop-blur-safe`}
     >
-      <div className={`${iconBg} ${iconColor} p-1.5 rounded-lg flex-shrink-0`}>
+      <div className={`${iconBg} ${iconColor} p-1.5 rounded-lg shrink-0`}>
         {icon}
       </div>
       <p className={`flex-1 text-sm ${text}`}>{message}</p>

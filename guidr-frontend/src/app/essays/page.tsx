@@ -93,7 +93,7 @@ export default function EssaysPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-errorLight border border-error/30 text-error px-4 py-3 rounded-xl mb-6 flex items-start gap-3"
         >
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </motion.div>
       )}

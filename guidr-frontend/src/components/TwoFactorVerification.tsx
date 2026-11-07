@@ -149,7 +149,7 @@ export default function TwoFactorVerification({
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={index === 0 ? handlePaste : undefined}
                 disabled={loading}
-                className="w-12 h-14 text-center text-2xl font-semibold border-2 border-border/30 rounded-lg focus:border-primary focus:outline-none bg-card/50 text-text disabled:opacity-50"
+                className="w-12 h-14 text-center text-2xl font-semibold border-2 border-border/30 rounded-lg focus:border-primary focus:outline-hidden bg-card/50 text-text disabled:opacity-50"
               />
             ))}
           </div>

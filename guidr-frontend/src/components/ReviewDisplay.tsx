@@ -53,7 +53,7 @@ export default function ReviewDisplay({ review }: ReviewDisplayProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-xl p-6 shadow-sm border border-border"
+      className="bg-card rounded-xl p-6 shadow-xs border border-border"
     >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary/10 rounded-lg">
@@ -130,7 +130,7 @@ export default function ReviewDisplay({ review }: ReviewDisplayProps) {
                 transition={{ delay: index * 0.1 }}
                 className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg"
               >
-                <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
                 <span className="text-sm text-gray-700">{strength}</span>
               </motion.li>
             ))}
@@ -154,7 +154,7 @@ export default function ReviewDisplay({ review }: ReviewDisplayProps) {
                 transition={{ delay: index * 0.1 }}
                 className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg"
               >
-                <XCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                 <span className="text-sm text-gray-700">{weakness}</span>
               </motion.li>
             ))}

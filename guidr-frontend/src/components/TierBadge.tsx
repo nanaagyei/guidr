@@ -49,7 +49,7 @@ export default function TierBadge({ tier, count }: TierBadgeProps) {
       <span>{config.icon}</span>
       <span>{label}</span>
       {count !== undefined && (
-        <span className="px-2 py-0.5 bg-white/50 rounded text-xs">
+        <span className="px-2 py-0.5 bg-white/50 rounded-sm text-xs">
           {count}
         </span>
       )}

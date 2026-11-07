@@ -75,7 +75,7 @@ export function LandingBlog() {
                 className="group block"
               >
               {/* Stock image */}
-              <div className="relative rounded-2xl aspect-[4/3] overflow-hidden mb-4 transition-all duration-300 group-hover:shadow-soft-lg">
+              <div className="relative rounded-2xl aspect-4/3 overflow-hidden mb-4 transition-all duration-300 group-hover:shadow-soft-lg">
                 <Image
                   src={post.image}
                   alt={post.title}

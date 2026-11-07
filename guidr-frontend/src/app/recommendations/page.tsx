@@ -239,7 +239,7 @@ export default function RecommendationsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-warningLight border border-warning/30 rounded-xl p-4 mb-6 flex items-start gap-3"
         >
-          <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-text mb-1">Profile Incomplete</p>
             <p className="text-sm text-textSecondary">
@@ -263,7 +263,7 @@ export default function RecommendationsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-errorLight border border-error/30 text-error px-4 py-3 rounded-xl mb-6 flex items-start gap-3"
         >
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <div className="flex-1">
             <p>{error}</p>
           </div>

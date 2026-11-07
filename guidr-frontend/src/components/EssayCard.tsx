@@ -65,7 +65,7 @@ export default function EssayCard({ essay, onDelete, index = 0 }: EssayCardProps
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ scale: 1.02, y: -4 }}
-      className="bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/30 group"
+      className="bg-card rounded-xl p-6 shadow-xs hover:shadow-md transition-all border border-border hover:border-primary/30 group"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">

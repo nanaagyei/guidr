@@ -188,7 +188,7 @@ export default function EssayEditorPage() {
             >
               <Sparkles className="h-4 w-4" />
               Review
-              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent">
+              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] leading-5 font-semibold uppercase tracking-wide text-accent">
                 Soon
               </span>
             </button>
@@ -244,13 +244,13 @@ export default function EssayEditorPage() {
         {/* Main Editor */}
         <div className="lg:col-span-2 space-y-4">
           {/* Title */}
-          <div className="bg-card rounded-xl p-6 shadow-sm">
+          <div className="bg-card rounded-xl p-6 shadow-xs">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Essay title..."
-              className="w-full text-2xl font-semibold text-text bg-transparent border-none outline-none placeholder-gray-400"
+              className="w-full text-2xl font-semibold text-text bg-transparent border-none outline-hidden placeholder-gray-400"
             />
             {essay && (
               <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
@@ -267,7 +267,7 @@ export default function EssayEditorPage() {
           </div>
 
           {/* Editor */}
-          <div className="bg-card rounded-xl p-6 shadow-sm">
+          <div className="bg-card rounded-xl p-6 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-text">Content</h3>
               <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -285,7 +285,7 @@ export default function EssayEditorPage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Start writing your essay..."
-              className="w-full h-[600px] p-4 bg-background rounded-lg border border-primary/20 focus:border-primary focus:ring-2 focus:ring-mustard/20 outline-none resize-none text-gray-700 leading-relaxed"
+              className="w-full h-[600px] p-4 bg-background rounded-lg border border-primary/20 focus:border-primary focus:ring-2 focus:ring-mustard/20 outline-hidden resize-none text-gray-700 leading-relaxed"
               disabled={!isEditing}
             />
           </div>
@@ -300,7 +300,7 @@ export default function EssayEditorPage() {
         <div className="space-y-4">
           {/* Version History */}
           {versions.length > 0 && (
-            <div className="bg-card rounded-xl p-6 shadow-sm">
+            <div className="bg-card rounded-xl p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-text flex items-center gap-2">
                   <History className="h-5 w-5" />
@@ -349,7 +349,7 @@ export default function EssayEditorPage() {
 
           {/* All Reviews */}
           {reviews.length > 1 && (
-            <div className="bg-card rounded-xl p-6 shadow-sm">
+            <div className="bg-card rounded-xl p-6 shadow-xs">
               <h3 className="font-semibold text-text mb-4 flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 All Reviews ({reviews.length})

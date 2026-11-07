@@ -94,7 +94,7 @@ export default function DocumentCard({ document, onDelete, index = 0 }: Document
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ scale: 1.02 }}
-      className="bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/30"
+      className="bg-card rounded-xl p-6 shadow-xs hover:shadow-md transition-all border border-border hover:border-primary/30"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -163,7 +163,7 @@ export default function DocumentCard({ document, onDelete, index = 0 }: Document
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700"
+              className="mt-3 p-2 bg-red-50 border border-red-200 rounded-sm text-xs text-red-700"
             >
               <p className="font-medium">Error:</p>
               <p>{document.processing_error_message}</p>

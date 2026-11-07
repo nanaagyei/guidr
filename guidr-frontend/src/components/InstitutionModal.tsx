@@ -78,10 +78,10 @@ export default function InstitutionModal({
               className="w-full max-w-2xl bg-card rounded-2xl shadow-soft-lg overflow-hidden flex flex-col max-h-[85vh]"
             >
             {/* Header */}
-            <div className="p-6 border-b border-border bg-gradient-to-br from-primaryLight/30 to-transparent">
+            <div className="p-6 border-b border-border bg-linear-to-br from-primaryLight/30 to-transparent">
               <div className="flex items-start gap-4">
                 {/* Avatar */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0 border border-border/50">
+                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 border border-border/50">
                   <span className="text-2xl font-display font-semibold text-primary">
                     {institution.name?.charAt(0) || 'U'}
                   </span>

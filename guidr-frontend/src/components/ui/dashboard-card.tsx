@@ -19,7 +19,7 @@ export function DashboardCard({ children, className, hover = true, index = 0 }: 
       transition={{ delay: index * 0.05, duration: 0.3 }}
       whileHover={hover ? { scale: 1.02, y: -4 } : undefined}
       className={cn(
-        'bg-card rounded-xl p-6 shadow-sm border border-border',
+        'bg-card rounded-xl p-6 shadow-xs border border-border',
         'transition-all duration-200',
         hover && 'hover:shadow-md hover:border-primary/30',
         className

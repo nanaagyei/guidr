@@ -27,7 +27,7 @@ function LogoMarqueeItem({ logo }: { logo: (typeof PARTNER_LOGOS)[number] }) {
       className="flex shrink-0 items-center gap-3 sm:gap-4 pr-10 sm:pr-14 md:pr-16 grayscale opacity-[0.72] transition-all duration-300 motion-safe:hover:grayscale-0 motion-safe:hover:opacity-100"
       title={logo.name}
     >
-      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center sm:h-16 sm:w-16 md:h-[4.5rem] md:w-[4.5rem]">
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center sm:h-16 sm:w-16 md:h-18 md:w-18">
         {hasError ? (
           <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
             <span className="text-xs font-bold text-textSecondary sm:text-sm">{logo.initials}</span>
@@ -78,7 +78,7 @@ export function LandingLogoCloud() {
         offsetRange={[0, 40]}
         className="pointer-events-none absolute inset-0"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-landingMint/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-transparent via-landingMint/20 to-transparent" />
       </ParallaxLayer>
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -94,11 +94,11 @@ export function LandingLogoCloud() {
 
         <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent sm:w-14 md:w-20"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-white to-transparent sm:w-14 md:w-20"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent sm:w-14 md:w-20"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-white to-transparent sm:w-14 md:w-20"
             aria-hidden
           />
 

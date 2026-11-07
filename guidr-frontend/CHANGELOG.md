@@ -4,6 +4,29 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- [2026-11-07 UTC] chore(deps): Tailwind CSS 3.4 → 4.3 (replaces Dependabot #26)
+  - Migrated with `@tailwindcss/upgrade`: config moved into `@theme` in `globals.css`
+    (`tailwind.config.js` deleted), `@tailwindcss/postcss` replaces the PostCSS plugin and
+    `autoprefixer`, renamed utilities across 53 files (`shadow-sm`→`shadow-xs`,
+    `outline-none`→`outline-hidden`, `bg-gradient-*`→`bg-linear-*`, …)
+  - Fixed the tool's mistakes: it renamed the `Badge` variant type `'outline'` to
+    `'outline-solid'` (broke `tsc`)
+  - v3 compatibility kept where v4 changed defaults: `space-y-*` (v4 moved it to
+    `margin-bottom` inside `:where`, which changed prose heading and sidebar spacing), input
+    placeholder colour, default border colour; `leading-5` on the 9px "Soon" badges, which
+    inherited v4's unitless line-height and shrank
+  - **Fonts now load.** The Google Fonts `@import`s sat after other rules, so browsers dropped
+    them and the site rendered in system fonts (Georgia for display headings). They now come
+    first, so Outfit and Fraunces load as designed
+  - Headings that declare `leading-tight` now get it: in v3 a later responsive `text-4xl`/`text-5xl`
+    overrode it (42px text on 40px lines)
+  - Verified by comparing production builds of v3 and v4 on 23 pages at 375px and 1280px
+    (screenshots, pixel diffs, per-element computed line-heights)
+  - Files: `package.json`, `package-lock.json`, `postcss.config.js`, `tailwind.config.js` (deleted),
+    `src/styles/globals.css`, `src/components/ui/badge.tsx`, `src/components/Sidebar.tsx`,
+    and class renames in 53 files under `src/`
+
 ### Security
 - [2026-11-07 UTC] fix(security): Patch critical Next.js CVEs flagged by the Trivy gate (#80)
   - `next` and `eslint-config-next` 15.5.20 → 15.5.29 (stays on 15.x; fixes CVE-2026-75604 and

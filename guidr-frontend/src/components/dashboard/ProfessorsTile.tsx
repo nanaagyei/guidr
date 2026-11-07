@@ -64,7 +64,7 @@ export default function ProfessorsTile() {
                 className="p-3 rounded-xl border border-border hover:border-primary/30 transition-colors bg-muted/30"
               >
                 <div className="flex items-start gap-3 mb-2">
-                  <div className="p-2 bg-primary/10 rounded-xl flex-shrink-0">
+                  <div className="p-2 bg-primary/10 rounded-xl shrink-0">
                     <GraduationCap className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">

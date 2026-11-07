@@ -103,7 +103,7 @@ export default function NewEssayPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-xl p-8 shadow-sm"
+        className="bg-card rounded-xl p-8 shadow-xs"
       >
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-primary/20 rounded-lg">

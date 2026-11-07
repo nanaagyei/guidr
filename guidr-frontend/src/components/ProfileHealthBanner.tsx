@@ -40,7 +40,7 @@ export default function ProfileHealthBanner({ requiredLevel, featureName }: Prof
   return (
     <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
       <div className="flex items-start gap-3">
-        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="flex-1">
           <h3 className="font-semibold text-amber-900 text-sm">
             {featureName

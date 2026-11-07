@@ -98,7 +98,7 @@ export default function SavedSchoolsTile() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 mb-1">
-                      <School className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <School className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <h3 className="font-semibold text-text text-sm truncate">
                         {school.school_name || school.institution_name || 'Unknown School'}
                       </h3>

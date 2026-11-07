@@ -1,12 +1,405 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Google Fonts - Using Outfit (similar to Söhne) and Fraunces for display */
+/* Google Fonts first: @import rules must precede every other rule, and Tailwind's
+   import expands into rules. Outfit (similar to Söhne), Fraunces for display,
+   DM Sans for uppercase nav text. */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* Additional font for uppercase nav text - DM Sans works well for all-caps */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #ffffff;
+  --color-card: #ffffff;
+  --color-cardAlt: #fffcf9;
+  --color-sidebar: #f8f6f3;
+  --color-sidebarHover: #e8e4de;
+  --color-primary: #1c2127;
+  --color-primaryHover: #2d3640;
+  --color-primaryLight: #f5f5f5;
+  --color-primaryMuted: #9099a4;
+  --color-accent: #e8b4a0;
+  --color-accentHover: #d9a08c;
+  --color-accentLight: #fff5ed;
+  --color-secondary: #4a7c74;
+  --color-secondaryHover: #3d6860;
+  --color-secondaryLight: #e8f0ee;
+  --color-text: #1c2127;
+  --color-textSecondary: #5d6470;
+  --color-textMuted: #9099a4;
+  --color-border: #e8e4de;
+  --color-borderHover: #d4cec5;
+  --color-muted: #f7f7f7;
+  --color-mutedAlt: #f2f2f2;
+  --color-success: #4a9d6e;
+  --color-successLight: #e8f5ed;
+  --color-warning: #d4a34e;
+  --color-warningLight: #fdf6e8;
+  --color-error: #c75b5b;
+  --color-errorLight: #fbeaea;
+  --color-info: #5b8dc7;
+  --color-infoLight: #eaf2fb;
+  --color-dream: #7b68a8;
+  --color-dreamLight: #f3f0f9;
+  --color-reach: #c75b5b;
+  --color-reachLight: #fbeaea;
+  --color-target: #4a9d6e;
+  --color-targetLight: #e8f5ed;
+  --color-safety: #5b8dc7;
+  --color-safetyLight: #eaf2fb;
+  --color-landingLavender: #ede4ff;
+  --color-landingPeach: #ffecd9;
+  --color-landingCream: #fff8e7;
+  --color-landingMint: #e4f5f0;
+  --color-landingPink: #ffe4ec;
+  --color-landingGray: #f5f5f5;
+  --color-heroPeach: #ffd4c4;
+  --color-heroPeachLight: #fff0e8;
+  --color-heroGreen: #d4e8d9;
+  --color-heroGreenLight: #e8f5ec;
+
+  --font-sans: Söhne, Outfit, system-ui, -apple-system, sans-serif;
+  --font-display: Fraunces, Georgia, serif;
+  --font-mono: Söhne Mono, JetBrains Mono, monospace;
+
+  --tracking-widest-plus: 0.15em;
+
+  --text-2xs: 0.65rem;
+  --text-2xs--line-height: 1rem;
+
+  --shadow-soft:
+    0 2px 15px -3px rgba(28, 33, 39, 0.04),
+    0 4px 6px -4px rgba(28, 33, 39, 0.02);
+  --shadow-soft-lg:
+    0 10px 40px -15px rgba(28, 33, 39, 0.08),
+    0 4px 15px -8px rgba(28, 33, 39, 0.04);
+  --shadow-inner-soft: inset 0 2px 4px 0 rgba(28, 33, 39, 0.03);
+  --shadow-glow: 0 0 20px rgba(74, 124, 116, 0.15);
+  --shadow-glow-accent: 0 0 20px rgba(201, 168, 124, 0.2);
+
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-warm: linear-gradient(
+    135deg,
+    #f8f6f3 0%,
+    #fbf5ed 100%
+  );
+  --background-image-gradient-card: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fffcf9 100%
+  );
+  --background-image-gradient-hero: linear-gradient(
+    180deg,
+    #ffd4c4 0%,
+    #ffecd9 50%,
+    #fff5ed 100%
+  );
+  --background-image-gradient-hero-peach: linear-gradient(
+    180deg,
+    #ffd4c4 0%,
+    #ffe8dc 40%,
+    #fff0e8 70%,
+    #ffffff 100%
+  );
+  --background-image-gradient-hero-green: linear-gradient(
+    180deg,
+    #d4e8d9 0%,
+    #e8f5ec 40%,
+    #f0f9f2 70%,
+    #ffffff 100%
+  );
+  --background-image-gradient-cta: linear-gradient(
+    180deg,
+    #ffe4ec 0%,
+    #ede4ff 50%,
+    #e4f5f0 100%
+  );
+  --background-image-mesh-pattern: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234A7C74' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  --animate-slide-up: slideUp 0.5s ease-out forwards;
+  --animate-slide-down: slideDown 0.3s ease-out forwards;
+  --animate-shimmer: shimmer 2s infinite linear;
+  --animate-pulse-soft: pulseSoft 2s infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-logo-marquee-slow: logoMarquee 48s linear infinite;
+
+  --ease-bounce-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slideDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes pulseSoft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  @keyframes logoMarquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility card {
+  /* Card styles */
+  @apply bg-card rounded-2xl shadow-soft border border-border/50 transition-all duration-300;
+}
+
+@utility card-hover {
+  @apply hover:shadow-soft-lg hover:border-border hover:-translate-y-0.5;
+}
+
+@utility card-interactive {
+  @apply card card-hover cursor-pointer;
+}
+
+@utility btn {
+  /* Button styles */
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-primary {
+  @apply btn bg-primary text-white hover:bg-primaryHover focus:ring-primary shadow-soft hover:shadow-soft-lg;
+}
+
+@utility btn-secondary {
+  @apply btn bg-card text-text border border-border hover:bg-muted hover:border-borderHover focus:ring-primary;
+}
+
+@utility btn-accent {
+  @apply btn bg-accent text-white hover:bg-accentHover focus:ring-accent shadow-soft hover:shadow-glow-accent;
+}
+
+@utility btn-ghost {
+  @apply btn bg-transparent text-textSecondary hover:text-text hover:bg-muted focus:ring-primary;
+}
+
+@utility btn-sm {
+  @apply px-3 py-1.5 text-xs rounded-lg;
+}
+
+@utility btn-lg {
+  @apply px-6 py-3 text-base rounded-xl;
+}
+
+@utility input {
+  /* Input styles */
+  @apply w-full px-4 py-3 bg-card border border-border rounded-xl text-text placeholder:text-textMuted focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200;
+}
+
+@utility input-error {
+  @apply border-error focus:border-error focus:ring-error/10;
+}
+
+@utility badge {
+  /* Badge styles */
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-colors;
+}
+
+@utility badge-primary {
+  @apply bg-primaryLight text-primary;
+}
+
+@utility badge-accent {
+  @apply bg-accentLight text-accent;
+}
+
+@utility badge-success {
+  @apply bg-successLight text-success;
+}
+
+@utility badge-warning {
+  @apply bg-warningLight text-warning;
+}
+
+@utility badge-error {
+  @apply bg-errorLight text-error;
+}
+
+@utility badge-info {
+  @apply bg-infoLight text-info;
+}
+
+@utility badge-dream {
+  /* Tier badges */
+  @apply bg-dreamLight text-dream;
+}
+
+@utility badge-reach {
+  @apply bg-reachLight text-reach;
+}
+
+@utility badge-target {
+  @apply bg-targetLight text-target;
+}
+
+@utility badge-safety {
+  @apply bg-safetyLight text-safety;
+}
+
+@utility section-title {
+  /* Section styles */
+  @apply text-lg font-semibold text-text;
+}
+
+@utility section-subtitle {
+  @apply text-sm text-textSecondary;
+}
+
+@utility empty-state {
+  /* Empty state */
+  @apply flex flex-col items-center justify-center py-12 px-6 text-center;
+}
+
+@utility empty-state-title {
+  @apply text-lg font-medium text-text mt-4;
+}
+
+@utility empty-state-description {
+  @apply text-sm text-textSecondary mt-2 max-w-sm;
+}
+
+@utility completeness-bar {
+  /* Data completeness indicator */
+  @apply h-1.5 rounded-full bg-muted overflow-hidden;
+}
+
+@utility completeness-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+}
+
+@utility skeleton {
+  /* Skeleton loading */
+  @apply bg-linear-to-r from-muted via-mutedAlt to-muted bg-size-[200%_100%] animate-shimmer rounded-sm;
+}
+
+@utility divider {
+  /* Divider */
+  @apply h-px bg-border my-4;
+}
+
+@utility tooltip-trigger {
+  /* Tooltip trigger */
+  @apply relative cursor-help;
+}
+
+@utility text-balance {
+  /* Text utilities */
+  text-wrap: balance;
+}
+
+@utility focus-ring {
+  /* Focus ring utilities */
+  @apply focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:ring-offset-2;
+}
+
+@utility text-gradient {
+  /* Gradient text */
+  @apply bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent;
+}
+
+@utility scrollbar-hide {
+  /* Hide scrollbar utility */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility line-clamp-2 {
+  /* Truncate multiline */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@utility line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@utility backdrop-blur-safe {
+  /* Backdrop blur support */
+  @apply backdrop-blur-xs bg-card/95;
+
+  @supports (backdrop-filter: blur(4px)) {
+    background-color: transparent;
+  }
+}
 
 @layer base {
   html {
@@ -40,204 +433,6 @@
   /* Selection */
   ::selection {
     @apply bg-primary/20 text-text;
-  }
-}
-
-@layer components {
-  /* Card styles */
-  .card {
-    @apply bg-card rounded-2xl shadow-soft border border-border/50 transition-all duration-300;
-  }
-
-  .card-hover {
-    @apply hover:shadow-soft-lg hover:border-border hover:-translate-y-0.5;
-  }
-
-  .card-interactive {
-    @apply card card-hover cursor-pointer;
-  }
-
-  /* Button styles */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-primary {
-    @apply btn bg-primary text-white hover:bg-primaryHover focus:ring-primary shadow-soft hover:shadow-soft-lg;
-  }
-
-  .btn-secondary {
-    @apply btn bg-card text-text border border-border hover:bg-muted hover:border-borderHover focus:ring-primary;
-  }
-
-  .btn-accent {
-    @apply btn bg-accent text-white hover:bg-accentHover focus:ring-accent shadow-soft hover:shadow-glow-accent;
-  }
-
-  .btn-ghost {
-    @apply btn bg-transparent text-textSecondary hover:text-text hover:bg-muted focus:ring-primary;
-  }
-
-  .btn-sm {
-    @apply px-3 py-1.5 text-xs rounded-lg;
-  }
-
-  .btn-lg {
-    @apply px-6 py-3 text-base rounded-xl;
-  }
-
-  /* Input styles */
-  .input {
-    @apply w-full px-4 py-3 bg-card border border-border rounded-xl text-text placeholder:text-textMuted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200;
-  }
-
-  .input-error {
-    @apply border-error focus:border-error focus:ring-error/10;
-  }
-
-  /* Badge styles */
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-colors;
-  }
-
-  .badge-primary {
-    @apply bg-primaryLight text-primary;
-  }
-
-  .badge-accent {
-    @apply bg-accentLight text-accent;
-  }
-
-  .badge-success {
-    @apply bg-successLight text-success;
-  }
-
-  .badge-warning {
-    @apply bg-warningLight text-warning;
-  }
-
-  .badge-error {
-    @apply bg-errorLight text-error;
-  }
-
-  .badge-info {
-    @apply bg-infoLight text-info;
-  }
-
-  /* Tier badges */
-  .badge-dream {
-    @apply bg-dreamLight text-dream;
-  }
-
-  .badge-reach {
-    @apply bg-reachLight text-reach;
-  }
-
-  .badge-target {
-    @apply bg-targetLight text-target;
-  }
-
-  .badge-safety {
-    @apply bg-safetyLight text-safety;
-  }
-
-  /* Section styles */
-  .section-title {
-    @apply text-lg font-semibold text-text;
-  }
-
-  .section-subtitle {
-    @apply text-sm text-textSecondary;
-  }
-
-  /* Empty state */
-  .empty-state {
-    @apply flex flex-col items-center justify-center py-12 px-6 text-center;
-  }
-
-  .empty-state-title {
-    @apply text-lg font-medium text-text mt-4;
-  }
-
-  .empty-state-description {
-    @apply text-sm text-textSecondary mt-2 max-w-sm;
-  }
-
-  /* Data completeness indicator */
-  .completeness-bar {
-    @apply h-1.5 rounded-full bg-muted overflow-hidden;
-  }
-
-  .completeness-fill {
-    @apply h-full rounded-full transition-all duration-500 ease-out;
-  }
-
-  /* Skeleton loading */
-  .skeleton {
-    @apply bg-gradient-to-r from-muted via-mutedAlt to-muted bg-[length:200%_100%] animate-shimmer rounded;
-  }
-
-  /* Divider */
-  .divider {
-    @apply h-px bg-border my-4;
-  }
-
-  /* Tooltip trigger */
-  .tooltip-trigger {
-    @apply relative cursor-help;
-  }
-}
-
-@layer utilities {
-  /* Text utilities */
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* Focus ring utilities */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2;
-  }
-
-  /* Gradient text */
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
-  }
-
-  /* Hide scrollbar utility */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Truncate multiline */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* Backdrop blur support */
-  .backdrop-blur-safe {
-    @apply backdrop-blur-sm bg-card/95;
-  }
-
-  @supports (backdrop-filter: blur(4px)) {
-    .backdrop-blur-safe {
-      background-color: transparent;
-    }
   }
 }
 
@@ -341,7 +536,7 @@
   appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid theme('colors.border');
+  border: 2px solid var(--color-border);
   border-radius: 6px;
   background-color: transparent;
   cursor: pointer;
@@ -350,8 +545,8 @@
 }
 
 .custom-checkbox:checked {
-  background-color: theme('colors.primary');
-  border-color: theme('colors.primary');
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .custom-checkbox:checked::after {
@@ -367,7 +562,7 @@
 }
 
 .custom-checkbox:hover:not(:checked) {
-  border-color: theme('colors.borderHover');
+  border-color: var(--color-borderHover);
 }
 
 /* Radio button styles */
@@ -375,7 +570,7 @@
   appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid theme('colors.border');
+  border: 2px solid var(--color-border);
   border-radius: 50%;
   background-color: transparent;
   cursor: pointer;
@@ -384,7 +579,7 @@
 }
 
 .custom-radio:checked {
-  border-color: theme('colors.primary');
+  border-color: var(--color-primary);
 }
 
 .custom-radio:checked::after {
@@ -394,7 +589,7 @@
   top: 50%;
   width: 8px;
   height: 8px;
-  background-color: theme('colors.primary');
+  background-color: var(--color-primary);
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
@@ -452,3 +647,65 @@
 .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
 .stagger-children > *:nth-child(7) { animation-delay: 300ms; }
 .stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/*
+  Tailwind v3 compatibility: `space-y-*`.
+
+  v4 changed `space-y-*` from `margin-top` on every child after the first (with class
+  specificity) to `margin-bottom` on every child but the last (inside `:where`, zero
+  specificity). That changes spacing wherever a child sets its own margins, e.g. the
+  marketing prose headings and the sidebar nav. These rules restore v3 behaviour for the
+  values this app uses. To drop them, move those containers to `flex flex-col gap-*`.
+  When adding a new `space-y-*` value, add it here too.
+*/
+@layer utilities {
+  :where(.space-y-1 > :not(:last-child)),
+  :where(.space-y-1\.5 > :not(:last-child)),
+  :where(.space-y-2 > :not(:last-child)),
+  :where(.space-y-2\.5 > :not(:last-child)),
+  :where(.space-y-3 > :not(:last-child)),
+  :where(.space-y-4 > :not(:last-child)),
+  :where(.space-y-5 > :not(:last-child)),
+  :where(.space-y-6 > :not(:last-child)),
+  :where(.space-y-8 > :not(:last-child)) {
+    margin-block-end: 0;
+  }
+
+  .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 1);
+  }
+  .space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 1.5);
+  }
+  .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 2.5);
+  }
+  .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 3);
+  }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 4);
+  }
+  .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 5);
+  }
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 6);
+  }
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 8);
+  }
+}
+
+/*
+  Tailwind v3 compatibility: placeholder colour (v4 uses the text colour at 50% opacity).
+*/
+@layer base {
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+}
