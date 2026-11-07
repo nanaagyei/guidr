@@ -54,9 +54,9 @@ Add these to your `.env` file in the `guidr-backend` directory:
 
 ```bash
 # Cloudflare R2 Configuration
-R2_ACCOUNT_ID=your_account_id_here
-R2_ACCESS_KEY_ID=your_access_key_id_here
-R2_SECRET_ACCESS_KEY=your_secret_access_key_here
+R2_ACCOUNT_ID=<your-r2-account-id>
+R2_ACCESS_KEY_ID=<your-r2-access-key-id>
+R2_SECRET_ACCESS_KEY=<your-r2-secret-access-key>
 R2_BUCKET_NAME=your_bucket_name_here
 ```
 
@@ -77,9 +77,9 @@ SMTP_PASSWORD=your-gmail-app-password
 EMAIL_FROM=Guidr <no-reply@guidr.app>
 
 # Cloudflare R2 Configuration
-R2_ACCOUNT_ID=abc123def456789
-R2_ACCESS_KEY_ID=a1b2c3d4e5f6g7h8i9j0
-R2_SECRET_ACCESS_KEY=w0x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0
+R2_ACCOUNT_ID=<your-r2-account-id>
+R2_ACCESS_KEY_ID=<your-r2-access-key-id>
+R2_SECRET_ACCESS_KEY=<your-r2-secret-access-key>
 R2_BUCKET_NAME=guidr-documents
 ```
 
@@ -119,7 +119,7 @@ Check the logs - there should be no errors about missing R2 credentials.
 2. Request an upload URL:
    ```bash
    curl -X POST http://localhost:8000/documents/upload-url \
-     -H "Cookie: session=YOUR_JWT_TOKEN" \
+     -H "Cookie: session=<your-session-token>" \
      -H "Content-Type: application/json" \
      -d '{
        "filename": "test.txt",
