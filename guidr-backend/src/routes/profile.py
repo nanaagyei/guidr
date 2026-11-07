@@ -1,4 +1,6 @@
 """Profile routes."""
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db import get_db
@@ -8,6 +10,8 @@ from src.schemas.profile import (
     UserProfileUpdate,
     UserProfileResponse,
     ProfileCompletionResponse,
+    AIResearchConsentUpdate,
+    AIResearchConsentResponse,
 )
 from src.dependencies.auth import get_current_user
 from src.utils.profile_completion import (
@@ -119,3 +123,44 @@ async def update_profile(
     db.refresh(profile)
 
     return _build_response(profile, db)
+
+
+def _consent_response(profile: UserProfile | None) -> AIResearchConsentResponse:
+    consented_at = profile.ai_research_consent_at if profile else None
+    return AIResearchConsentResponse(consented=consented_at is not None, consented_at=consented_at)
+
+
+@router.get("/ai-research-consent", response_model=AIResearchConsentResponse)
+async def get_ai_research_consent(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return whether the user consented to sending research inputs to model providers."""
+    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+    return _consent_response(profile)
+
+
+@router.put("/ai-research-consent", response_model=AIResearchConsentResponse)
+async def update_ai_research_consent(
+    body: AIResearchConsentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Record or withdraw consent to send research inputs to model providers.
+
+    With consent, research areas, preferred countries and a coarse funding priority may be
+    included in research prompts. Withdrawing clears the timestamp; later research runs on
+    degree level and field of study only.
+    """
+    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+    if not profile:
+        profile = UserProfile(user_id=current_user.id)
+        db.add(profile)
+    if body.consent:
+        if profile.ai_research_consent_at is None:
+            profile.ai_research_consent_at = datetime.utcnow()
+    else:
+        profile.ai_research_consent_at = None
+    db.commit()
+    db.refresh(profile)
+    return _consent_response(profile)

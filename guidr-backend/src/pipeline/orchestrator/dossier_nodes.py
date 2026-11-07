@@ -97,38 +97,16 @@ def load_dossier_context(state: DossierState) -> dict:
                         "enrollment_total": inst.enrollment_total,
                     }
 
-        # Load user profile for recommendation runs
+        # Load the minimised profile for recommendation runs. Only fields on the
+        # personal-field allow-list are copied (never GPA, citizenship or free text).
         if job_type == "recommendation_run" and user_id:
             from src.models.user_profile import UserProfile
-            from src.models.academic_record import AcademicRecord
+            from src.pipeline.prompts.personal_fields import minimised_profile
             profile = db.query(UserProfile).filter(
                 UserProfile.user_id == uuid.UUID(user_id)
             ).first()
             if profile:
-                # GPA lives on AcademicRecord, not UserProfile
-                best_record = db.query(AcademicRecord).filter(
-                    AcademicRecord.user_id == uuid.UUID(user_id)
-                ).order_by(AcademicRecord.end_year.desc().nullslast()).first()
-
-                gpa_str = "N/A"
-                if best_record and best_record.normalized_gpa is not None:
-                    gpa_str = str(best_record.normalized_gpa)
-                elif best_record and best_record.gpa_value is not None:
-                    gpa_str = str(best_record.gpa_value)
-
-                user_profile = {
-                    "degree_level": profile.intended_degree,
-                    "field_of_study": profile.primary_field_of_study,
-                    "research_areas": profile.research_areas or [],
-                    "secondary_fields": profile.secondary_fields or [],
-                    "career_goals": profile.career_goals or "",
-                    "gpa": gpa_str,
-                    "preferred_countries": profile.preferred_countries or [],
-                    "preferred_cities": profile.preferred_cities or [],
-                    "funding_priority": profile.funding_priority or "medium",
-                    "additional_prefs": profile.program_style_preference or "",
-                    "country_of_citizenship": profile.country_of_citizenship or "",
-                }
+                user_profile = minimised_profile(profile)
 
     except Exception as exc:
         logger.warning("load_dossier_context DB error: %s", exc)
@@ -170,33 +148,24 @@ def research_extract(state: DossierState) -> dict:
     }
     template_name = template_map.get(job_type, "school_dossier")
 
-    # Build template variables
+    # Build template variables. Personal fields come only from the allow-list in
+    # src/pipeline/prompts/personal_fields.py; consent-gated fields need recorded consent.
+    from src.pipeline.prompts.personal_fields import personal_template_vars
+    personal_vars = personal_template_vars(
+        template_name, user_profile, consented=bool(user_profile.get("ai_research_consent"))
+    )
     if job_type == "recommendation_run":
-        research_areas = user_profile.get("research_areas") or []
-        secondary_fields = user_profile.get("secondary_fields") or []
-        template_vars = {
-            "degree_level": user_profile.get("degree_level", "Master's"),
-            "field_of_study": user_profile.get("field_of_study", ""),
-            "research_areas": ", ".join(research_areas) if research_areas else "Not specified",
-            "secondary_fields": ", ".join(secondary_fields) if secondary_fields else "None",
-            "career_goals": user_profile.get("career_goals", "") or "Not specified",
-            "gpa": user_profile.get("gpa", "N/A"),
-            "preferred_countries": ", ".join(user_profile.get("preferred_countries", [])) or "Any",
-            "preferred_cities": ", ".join(user_profile.get("preferred_cities", [])) or "Any",
-            "funding_priority": user_profile.get("funding_priority", "medium"),
-            "additional_prefs": user_profile.get("additional_prefs", "None"),
-            "country_of_citizenship": user_profile.get("country_of_citizenship", "") or "Not specified",
-        }
+        template_vars = dict(personal_vars)
     elif job_type == "funding_dossier":
         template_vars = {
             "school_name": entity_name,
             "program_name": state.get("program_name", ""),
-            "degree_level": state.get("degree_level", "Master's"),
             "existing_funding": json.dumps(existing_data, default=str),
-            "country_of_citizenship": user_profile.get("country_of_citizenship", "") or "Not specified",
-            "field_of_study": user_profile.get("field_of_study", ""),
-            "research_areas": ", ".join(user_profile.get("research_areas") or []) or "Not specified",
+            **personal_vars,
         }
+        # The program's degree level, when known, takes precedence over the applicant's.
+        if state.get("degree_level"):
+            template_vars["degree_level"] = str(state["degree_level"])
     else:
         template_vars = {
             "school_name": entity_name,

@@ -47,6 +47,9 @@ def _dedupe_key(request: ResearchRequest) -> str:
         "v1",
         hashlib.sha256(str(sorted(request.constraints.domains_allowlist or [])).encode()).hexdigest()[:16],
         str(request.cache.max_age_hours),
+        # Rendered prompts can carry consented, per-applicant inputs; hash them so one
+        # applicant's result is never served from cache for another applicant's prompt.
+        hashlib.sha256((request.prompt_override or "").encode()).hexdigest()[:16],
     ]
     return hashlib.sha256("|".join(parts).encode()).hexdigest()
 

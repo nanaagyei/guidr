@@ -11,8 +11,6 @@ Institution: {school_name}
 Program: {program_name}
 Degree Level: {degree_level}
 Field of Study: {field_of_study}
-Research Areas: {research_areas}
-Student Citizenship: {country_of_citizenship}
 Existing Funding Data: {existing_funding}
 
 Return valid JSON with this exact structure:
@@ -83,9 +81,10 @@ Requirements for internal funding_opportunities:
 - Cite official university financial aid pages preferentially
 
 Requirements for external_opportunities:
-- Include 3-8 external fellowships, scholarships, or grants relevant to the student's field AND citizenship
+- Include 3-8 external fellowships, scholarships, or grants relevant to the field of study
 - Examples by field: NSF GRFP, NIH F31, NDSEG, Hertz, DOE SCGSR, Fulbright, HHMI, Ford Foundation
-- Only include if the student's citizenship/field matches eligibility
+- Only include if the field and degree level match eligibility; state any citizenship or residency
+  requirement in eligibility_note exactly as the funder's source gives it (it is checked by a person)
 - For each opportunity: provide the official funder URL, not a third-party aggregator
 - Do NOT fabricate amounts or deadlines; use null if not found from official sources
 - External opportunities must have a citation to an official source

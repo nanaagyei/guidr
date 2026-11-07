@@ -1,5 +1,6 @@
 """Pydantic schemas for user profile."""
 from pydantic import BaseModel, ConfigDict, field_validator
+from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 
@@ -63,3 +64,14 @@ class UserProfileResponse(UserProfileBase):
     completion: Optional[ProfileCompletionResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AIResearchConsentUpdate(BaseModel):
+    """Grant (true) or withdraw (false) consent to send research inputs to model providers."""
+    consent: bool
+
+
+class AIResearchConsentResponse(BaseModel):
+    """Current AI research consent state."""
+    consented: bool
+    consented_at: Optional[datetime] = None

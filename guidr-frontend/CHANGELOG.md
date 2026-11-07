@@ -4,6 +4,16 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- [2026-11-07 UTC] fix(privacy): AI research consent setting; privacy page states what research sends (#92)
+  - Settings, Privacy & Security: new "AI research" switch (`GET`/`PUT /profile/ai-research-consent`)
+    controlling whether research areas, preferred countries and funding priority are sent to the
+    research provider; off by default
+  - `/privacy`: "AI research providers" section lists what is always sent, sent only with consent,
+    and never sent; last-updated date bumped
+  - Files: `src/components/settings/AiResearchConsent.tsx`, `src/utils/aiResearchConsent.ts`,
+    `src/components/settings/PrivacySettings.tsx`, `src/app/privacy/page.tsx`
+
 ### Changed
 - [2026-11-07 UTC] docs: Correct stale frontend documentation (#54)
   - `ROADMAP.md` now points to `docs/POSITIONING.md` and the issue backlog; completed milestones

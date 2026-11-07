@@ -4,6 +4,34 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- [2026-11-07 UTC] fix(privacy): Stop sending applicants' personal data to research model providers (#92)
+  - New per-template allow-list (`src/pipeline/prompts/personal_fields.py`): every prompt template
+    declares the only personal fields it may receive, with a reason each; `research_extract` and
+    the professor nodes build personal template variables only from it
+  - Never sent by any template: GPA, citizenship, free text (`additional_prefs`, `career_goals`),
+    secondary fields, cities, name, email, user id. GPA is no longer loaded at all;
+    `recommendation_sessions.input_profile_snapshot` now stores only the minimised profile
+  - `recommendation_run`: degree level and field always; research areas, preferred countries and
+    funding priority (coarse high/medium/low) only with consent. `funding_dossier`: degree level and
+    field only; the template no longer asks the model to match citizenship (eligibility is
+    human-checked). `professor_synthesis` and the OpenAlex search: research-area keywords only,
+    with consent, including interests passed in job input
+  - Consent gate: `user_profiles.ai_research_consent_at` (migration `022_ai_research_consent`) and
+    `GET`/`PUT /profile/ai-research-consent`; `PUT /profile` cannot set it
+  - Research cache dedupe key includes a hash of the rendered prompt, so one applicant's
+    profile-driven result is not served from cache for another applicant's prompt
+  - Tests: `tests/pipeline/test_prompt_personal_data.py` (sentinel render of every template, node
+    prompts with and without consent, Perplexity/OpenAI-compatible request bodies inspected for
+    identifiers), `tests/routes/test_ai_research_consent_routes.py`; updated
+    `tests/pipeline/test_professor_nodes.py`
+  - Files: `src/pipeline/prompts/personal_fields.py`, `src/pipeline/orchestrator/dossier_nodes.py`,
+    `src/pipeline/orchestrator/professor_nodes.py`,
+    `src/pipeline/prompts/templates/{recommendation_run,funding_dossier,professor_synthesis}_v1.txt`,
+    `src/pipeline/research_gateway/service.py`, `src/models/user_profile.py`,
+    `alembic/versions/022_ai_research_consent.py`, `src/routes/profile.py`, `src/schemas/profile.py`,
+    tests above
+
 ### Fixed
 - [2026-11-07 UTC] fix(pipeline): Make the standard enrichment graph run end to end; one source of confidence thresholds (#57, option B: fix)
   - `score_confidence` no longer calls the removed `should_repair()` (it raised `AttributeError`);
