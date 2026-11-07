@@ -118,3 +118,34 @@ def save_password_to_history(db: Session, user_id: str, password_hash: str) -> N
         for old_record in all_history[5:]:
             db.delete(old_record)
         db.commit()
+
+
+class PasswordPolicyError(ValueError):
+    """A new password failed the strength, length or reuse rules."""
+
+
+def validate_new_password(db: Session, user_id: str, new_password: str, current_password_hash: str = None) -> None:
+    """Apply the rules every new password must pass (reset and change share them).
+
+    Args:
+        db: Database session
+        user_id: User ID
+        new_password: Proposed plain text password
+        current_password_hash: The user's current hash, which also counts as "previously used"
+
+    Raises:
+        PasswordPolicyError: With a user-facing message if any rule fails.
+    """
+    from src.utils.password_strength import check_password_strength
+
+    strength_check = check_password_strength(new_password)
+    if not strength_check["is_valid"]:
+        raise PasswordPolicyError(f"Weak password. {', '.join(strength_check['feedback'])}")
+
+    if len(new_password.encode('utf-8')) > 72:
+        raise PasswordPolicyError("Password cannot be longer than 72 bytes")
+
+    if check_password_in_history(db, user_id, new_password, current_password_hash):
+        raise PasswordPolicyError(
+            "You cannot reuse a previous password. Please choose a different password."
+        )

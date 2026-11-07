@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: 'Is my data secure?',
-    a: 'Your information is stored securely and passwords are hashed. Registration and password resets are confirmed with an emailed code. Your personal information is never sold. To delete your data, email hello@guidr.app.',
+    a: 'Your information is stored securely and passwords are hashed. Registration and password resets are confirmed with an emailed code. Your personal information is never sold. You can export or delete your data at any time from Settings.',
   },
 ];
 

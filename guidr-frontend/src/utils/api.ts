@@ -1211,3 +1211,49 @@ export async function getUpcomingDeadlines(): Promise<any[]> {
   const data = await response.json();
   return normalizeUpcomingDeadlinesPayload(data);
 }
+
+/**
+ * Download everything stored about the signed-in user as a JSON file.
+ */
+export async function exportAccountData(): Promise<Blob> {
+  const response = await fetchWithCredentials('/account/export');
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to export your data');
+  }
+
+  return response.blob();
+}
+
+/**
+ * Change the signed-in user's password.
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+  const response = await fetchWithCredentials('/account/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to change password');
+  }
+
+  return response.json();
+}
+
+/**
+ * Permanently delete the signed-in user's account (requires the password).
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  const response = await fetchWithCredentials('/account/delete', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.detail || 'Failed to delete account');
+  }
+}
