@@ -243,7 +243,7 @@ export default function RecommendationsPage() {
           <div>
             <p className="font-semibold text-text mb-1">Profile Incomplete</p>
             <p className="text-sm text-textSecondary">
-              Complete your profile (60%+) and upload at least one transcript to get recommendations.
+              Add your research areas, preferred countries, and citizenship or current country (profile level 2) to get recommendations.
               Current completion: {completionScore}%
             </p>
             <button

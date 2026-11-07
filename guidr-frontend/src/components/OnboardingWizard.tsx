@@ -285,13 +285,13 @@ function WelcomeStep() {
       </h2>
       <p className="text-textSecondary mb-6 max-w-md mx-auto">
         We&apos;re excited to help you on your graduate school journey. Let&apos;s set up your profile
-        to get personalized recommendations and track your applications.
+        to get personalized recommendations.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 text-left">
         {[
           { title: 'Find Programs', desc: 'Discover schools that match your goals' },
-          { title: 'Track Applications', desc: 'Stay organized with deadlines and tasks' },
-          { title: 'Get Support', desc: 'AI-powered essay reviews and guidance' },
+          { title: 'Explore Faculty', desc: 'See professors working in your research areas' },
+          { title: 'Draft Essays', desc: 'Write and version your application essays' },
         ].map((item) => (
           <div key={item.title} className="p-4 bg-card border border-border rounded-xl">
             <CheckCircle2 className="h-5 w-5 text-accent mb-2" />
@@ -535,7 +535,7 @@ function CompletionStep({ formData }: { formData: OnboardingData }) {
           {[
             'Browse and save schools that interest you',
             'Get personalized program recommendations',
-            'Upload documents and start tracking applications',
+            'Add your academic records to complete your profile',
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
               <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />

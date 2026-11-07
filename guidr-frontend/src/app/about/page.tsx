@@ -23,14 +23,14 @@ export default function AboutPage() {
         interests, or where you want to go.
       </p>
       <p>
-        Guidr brings it together. We combine trusted institutional data with
+        Guidr brings it together. We combine public institutional data with
         research-alignment matching so you can see, at a glance, which programs
         and professors are worth your time.
       </p>
 
       <h2>What you can do today</h2>
       <ul>
-        <li>Search accredited universities and graduate programs.</li>
+        <li>Search universities and graduate programs.</li>
         <li>Discover faculty whose research aligns with yours, with fit scores.</li>
         <li>Get AI-powered program recommendations tailored to your profile.</li>
         <li>Draft outreach emails to professors you want to work with.</li>

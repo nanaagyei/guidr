@@ -48,11 +48,11 @@ export function LandingCTA() {
           </span>
 
           <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-display font-semibold text-text leading-tight mb-6">
-            The smartest way to find and apply to graduate school
+            Find and research graduate programs that fit
           </h2>
 
           <p className="text-lg text-textSecondary mb-8 max-w-2xl mx-auto">
-            Start discovering programs that match your goals, track your applications, and get AI-powered recommendations to maximize your chances.
+            Start discovering programs and faculty that match your goals.
           </p>
 
           <Button
@@ -82,7 +82,7 @@ export function LandingCTA() {
                 {isSubmitted ? (
                   <div className="flex items-center gap-3 px-4 py-3 bg-successLight rounded-xl">
                     <span className="text-sm text-success font-medium">
-                      Thanks for subscribing! We&apos;ll keep you updated.
+                      Your email app should have opened. Send that message to subscribe.
                     </span>
                   </div>
                 ) : (

@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: 'Is my data secure?',
-    a: 'Yes. Your information is stored securely, passwords are hashed, and we support two-factor authentication. Your personal information is never sold or shared with third parties, and you can delete your data at any time from the Settings page.',
+    a: 'Your information is stored securely and passwords are hashed. Registration and password resets are confirmed with an emailed code. Your personal information is never sold. To delete your data, email hello@guidr.app.',
   },
 ];
 
