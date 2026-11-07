@@ -5,11 +5,10 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ParallaxLayer } from '@/components/landing/ParallaxLayer';
-import { Search, GraduationCap, FileText, Brain, Play, ChevronRight } from 'lucide-react';
+import { Search, GraduationCap, Brain, Play } from 'lucide-react';
 
 const FEATURE_TABS = [
   { id: 'search', label: 'School Search', icon: Search },
-  { id: 'tracker', label: 'Application Tracker', icon: FileText },
   { id: 'ai', label: 'AI Recommendations', icon: Brain },
   { id: 'programs', label: 'Program Matching', icon: GraduationCap },
 ];
@@ -21,16 +20,10 @@ const DEMO_CONTENT: Record<string, { title: string; subtitle: string; sampleText
     sampleText: 'I\'m looking for a Computer Science PhD program with strong AI research, funding opportunities, and a collaborative environment in the Boston area...',
     tag: 'AI-POWERED',
   },
-  tracker: {
-    title: 'Application Tracker',
-    subtitle: 'Manage your applications',
-    sampleText: 'Track deadlines, required documents, recommendation letters, and application status all in one place. Never miss a deadline again.',
-    tag: 'ORGANIZED',
-  },
   ai: {
     title: 'AI Recommendations',
     subtitle: 'Personalized program suggestions',
-    sampleText: 'Based on your academic background, research interests, and career goals, we recommend programs that match your profile with 94% accuracy.',
+    sampleText: 'Based on your academic background and research interests, we suggest programs for you to research further.',
     tag: 'PERSONALIZED',
   },
   programs: {
@@ -55,29 +48,13 @@ export function LandingHero() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:pt-16 sm:pb-24">
-        {/* Announcement badge */}
-        <div className="flex justify-center mb-8 animate-element">
-          <Link
-            href="/blog/launch"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-border/50 hover:bg-white transition-colors group"
-          >
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primaryLight px-2 py-0.5 rounded-full">
-              New
-            </span>
-            <span className="text-sm text-text">Introducing Guidr 2.0 with AI-powered recommendations</span>
-            <ChevronRight className="h-4 w-4 text-textMuted group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
-
         {/* Main headline */}
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-display font-semibold text-text tracking-tight leading-[1.1] animate-element animate-delay-100">
-            The smartest way to find
-            <br />
-            & apply to graduate school
+            Find graduate programs and faculty that match your research
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-textSecondary max-w-2xl mx-auto animate-element animate-delay-200">
-            AI-powered platform for discovering programs, tracking applications, and getting personalized recommendations. Your path to graduate school starts here.
+            Search programs, explore faculty, and get suggestions based on your profile.
           </p>
         </div>
 

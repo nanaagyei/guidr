@@ -4,30 +4,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { resetPassword } from '@/utils/api';
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
-import { SignInPage, Testimonial } from '@/components/ui/sign-in';
+import { SignInPage } from '@/components/ui/sign-in';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const sampleTestimonials: Testimonial[] = [
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces",
-    name: "Sarah Chen",
-    handle: "@sarahdigital",
-    text: "Guidr helped me find the perfect graduate program. The recommendations were spot-on!"
-  },
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces",
-    name: "Marcus Johnson",
-    handle: "@marcustech",
-    text: "The essay review feature is incredible. It helped me refine my application essays perfectly."
-  },
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces",
-    name: "David Martinez",
-    handle: "@davidcreates",
-    text: "Found my dream program through Guidr's personalized recommendations. Highly recommend!"
-  },
-];
 
 function ResetPasswordConfirmContent() {
   const [error, setError] = useState('');
@@ -94,7 +73,6 @@ function ResetPasswordConfirmContent() {
       title={<span className="font-light text-text tracking-tighter">Create New Password</span>}
       description="Enter your new password below"
       heroImageSrc="https://images.unsplash.com/photo-1627556704302-624286467c65?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-      testimonials={sampleTestimonials}
       onSignIn={handleResetPassword}
       error={error}
       loading={loading}

@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, Search, FileText, Brain, GraduationCap, Users, Building2, BookOpen, Target, TrendingUp } from 'lucide-react';
+import { ChevronRight, Search, Brain, GraduationCap, Users, BookOpen } from 'lucide-react';
 
 // For Students Section
 const STUDENT_FEATURES = [
@@ -15,12 +13,6 @@ const STUDENT_FEATURES = [
     description: 'Discover graduate programs that match your interests, qualifications, and career goals. Filter by field, location, funding, and more.',
     icon: Search,
     active: true,
-  },
-  {
-    id: 'tracker',
-    title: 'Application Tracker',
-    description: 'Keep track of deadlines, required documents, and recommendation letters. Get reminders and stay organized throughout your application journey.',
-    icon: FileText,
   },
   {
     id: 'recommendations',
@@ -35,15 +27,9 @@ const RESEARCHER_FEATURES = [
   {
     id: 'faculty',
     title: 'Faculty Matching',
-    description: 'Find professors whose research aligns with your interests. Explore their publications, lab focus, and mentorship style.',
+    description: 'Find professors whose research aligns with your interests and explore their publications.',
     icon: Users,
     active: true,
-  },
-  {
-    id: 'funding',
-    title: 'Funding Discovery',
-    description: 'Discover funding opportunities including fellowships, grants, and assistantships. Never miss a funding deadline.',
-    icon: TrendingUp,
   },
   {
     id: 'programs',
@@ -56,12 +42,12 @@ const RESEARCHER_FEATURES = [
 // Feature cards for the three-column section
 const FEATURE_CARDS = [
   {
-    title: 'Program Search API',
+    title: 'Program Search',
     description: 'Our intelligent search understands what programs mean in context, helping you discover schools that truly match your goals and qualifications.',
     details: [
-      '2,000+ graduate schools',
-      '30,000+ programs',
-      'Real-time data updates',
+      'Filter by field, degree and country',
+      'US institutions from IPEDS and College Scorecard',
+      'Each record shows when it was last updated',
     ],
     bgClass: 'bg-landingLavender',
     textClass: 'text-dream',
@@ -70,23 +56,11 @@ const FEATURE_CARDS = [
     title: 'Recommendation Engine',
     description: 'AI-powered recommendations that understand your academic background, research interests, and career aspirations to suggest ideal programs.',
     details: [
-      'Personalized matching',
-      '94% accuracy rate',
-      'Continuous learning',
+      'Based on your profile',
+      'Suggestions to research further, not predictions',
     ],
     bgClass: 'bg-landingPeach',
     textClass: 'text-secondary',
-  },
-  {
-    title: 'Application Management',
-    description: 'Comprehensive tools to track your applications, manage deadlines, and organize documents across multiple programs.',
-    details: [
-      'Deadline reminders',
-      'Document tracking',
-      'Progress analytics',
-    ],
-    bgClass: 'bg-landingCream',
-    textClass: 'text-warning',
   },
 ];
 
@@ -262,14 +236,6 @@ export function LandingFeatures() {
             </div>
           </motion.div>
 
-          {/* CTA */}
-          <div className="mt-12 flex items-center gap-4">
-            <Button variant="outline" className="rounded-full" asChild>
-              <Link href="/docs">
-                <span className="text-xs uppercase tracking-wide font-medium">View Documentation</span>
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -288,7 +254,7 @@ export function LandingFeatures() {
 
           {/* Feature cards grid */}
           <motion.div
-            className="grid md:grid-cols-3 gap-6"
+            className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-50px' }}

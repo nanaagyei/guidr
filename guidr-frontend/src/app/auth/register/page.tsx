@@ -4,30 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { postRegister, send2FACode, checkEmail } from '@/utils/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { SignInPage, Testimonial } from '@/components/ui/sign-in';
+import { SignInPage } from '@/components/ui/sign-in';
 import TwoFactorVerification from '@/components/TwoFactorVerification';
 import { useToast } from '@/contexts/ToastContext';
-
-const sampleTestimonials: Testimonial[] = [
-  {
-    avatarSrc: "https://ui-avatars.com/api/?name=Sylvester&background=E8B4A0&color=1C2127&size=150&font-size=0.4&bold=true",
-    name: "Sylvester",
-    handle: "@geek_sly",
-    text: "Guidr's recommendations pointed me to programs I'd never have found on my own. Genuinely saved me weeks of searching."
-  },
-  {
-    avatarSrc: "https://ui-avatars.com/api/?name=Derrick&background=4A7C74&color=ffffff&size=150&font-size=0.4&bold=true",
-    name: "Derrick",
-    handle: "@derrick",
-    text: "The faculty matching and fit scores made it obvious which labs actually aligned with my research. Huge time-saver."
-  },
-  {
-    avatarSrc: "https://ui-avatars.com/api/?name=Nana+Kwame&background=1C2127&color=ffffff&size=150&font-size=0.4&bold=true",
-    name: "Nana Kwame",
-    handle: "@nkay",
-    text: "Everything I needed in one place — schools, programs, and professors matched to my goals. This is how the search should feel."
-  },
-];
 
 export default function RegisterPage() {
   const [error, setError] = useState('');
@@ -125,7 +104,6 @@ export default function RegisterPage() {
         title={<span className="font-light text-text tracking-tighter">Verify Your Email</span>}
         description="Enter the 6-digit code sent to your email"
         heroImageSrc="https://images.unsplash.com/photo-1671709141384-446544c292ca?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-        testimonials={sampleTestimonials}
         onSignIn={(e) => e.preventDefault()}
         isRegister={true}
         error={error}
@@ -153,7 +131,6 @@ export default function RegisterPage() {
       title={<span className="font-light text-text tracking-tighter">Create Account</span>}
       description="Join Guidr and start your journey to graduate school"
       heroImageSrc="https://images.unsplash.com/photo-1671709141384-446544c292ca?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-      testimonials={sampleTestimonials}
       onSignIn={handleSignIn}
       onGoogleSignIn={handleGoogleSignIn}
       onResetPassword={handleResetPassword}

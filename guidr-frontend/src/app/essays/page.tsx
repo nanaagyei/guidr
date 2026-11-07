@@ -79,7 +79,7 @@ export default function EssaysPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-text mb-2">Essays</h1>
-          <p className="text-textSecondary">Manage your application essays and get AI-powered reviews</p>
+          <p className="text-textSecondary">Manage your application essays and their versions</p>
         </div>
         <Button onClick={() => router.push('/essays/new')} size="lg">
           <Plus className="h-5 w-5" />
@@ -135,7 +135,7 @@ export default function EssaysPage() {
             {filterType === 'all' ? 'No essays yet' : `No ${essayTypes.find(t => t.value === filterType)?.label.toLowerCase()} essays`}
           </p>
           <p className="text-sm text-textSecondary mb-6">
-            Create your first essay to get started with AI-powered feedback
+            Create your first essay to get started
           </p>
           <Button onClick={() => router.push('/essays/new')} size="lg">
             <Plus className="h-5 w-5" />

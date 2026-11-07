@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, BookOpen, User, GraduationCap, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, User, GraduationCap, Sparkles } from 'lucide-react';
 
 const steps = [
   {
@@ -16,21 +16,13 @@ const steps = [
     icon: <GraduationCap className="h-6 w-6 text-primary" />,
     title: '2. Add Academic Records',
     description:
-      'Enter your academic history manually or upload a transcript. We\'ll extract GPA, institution, and degree details automatically.',
+      'Enter your academic history: institution, degree, GPA and dates.',
     href: '/academic-records',
     cta: 'Add Records',
   },
   {
-    icon: <FileText className="h-6 w-6 text-primary" />,
-    title: '3. Upload Documents',
-    description:
-      'Upload your resume, transcripts, and essays. Our AI will parse and extract key information to enrich your profile.',
-    href: '/documents',
-    cta: 'Upload Documents',
-  },
-  {
     icon: <Sparkles className="h-6 w-6 text-primary" />,
-    title: '4. Get Recommendations',
+    title: '3. Get Recommendations',
     description:
       'Once your profile reaches Level 2, you can generate personalized school and program recommendations based on your goals and qualifications.',
     href: '/recommendations',

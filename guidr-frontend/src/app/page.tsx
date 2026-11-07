@@ -3,7 +3,6 @@
 import {
   LandingHeader,
   LandingHero,
-  LandingLogoCloud,
   LandingFeatures,
   LandingCTA,
   LandingFooter,
@@ -15,7 +14,6 @@ export default function HomePage() {
       <LandingHeader />
       <main className="flex-1">
         <LandingHero />
-        <LandingLogoCloud />
         <LandingFeatures />
         <LandingCTA />
       </main>

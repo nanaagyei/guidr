@@ -4,6 +4,25 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- [2026-11-07 UTC] fix(frontend): Remove product and marketing claims the code cannot support (#42)
+  - Landing hero: dropped the application-tracker tab, "94% accuracy", the "Guidr 2.0"
+    announcement linking to a missing `/blog/launch`, and "& apply" / "tracking applications"
+  - Landing features: removed the tracker, funding and "Application Management" entries; renamed
+    "Program Search API" to "Program Search"; replaced the row counts and accuracy figure; removed
+    "View Documentation" (`/docs` does not exist); feature cards are now a two-column grid
+  - Removed the "Trusted by applicants to" university logo strip and its unused logo images
+  - CTA, footer, onboarding, essays, help, about and recommendations copy now describe only what
+    works; the newsletter success message says the email app opened instead of "Thanks for subscribing"
+  - Removed the unsourced testimonials from the login, register and both reset-password pages
+  - Root README: no row counts, no OCR/ML/essay-feedback claims, Next.js 15
+  - Files: `src/components/landing/{LandingHero,LandingFeatures,LandingCTA,LandingFooter,index}.tsx`,
+    `src/components/landing/LandingLogoCloud.tsx` (deleted), `public/images/*` (8 university logos
+    deleted), `src/app/page.tsx`, `src/components/OnboardingWizard.tsx`, `src/app/essays/page.tsx`,
+    `src/app/auth/{login,register,reset-password,reset-password/confirm}/page.tsx`,
+    `src/app/help/{faq,getting-started}/page.tsx`, `src/app/recommendations/page.tsx`,
+    `src/app/about/page.tsx`, `../README.md`
+
 ### Security
 - [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
   - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy

@@ -58,7 +58,7 @@ export function LandingFooter() {
               />
             </Link>
             <p className="mt-4 max-w-xs text-sm text-textSecondary leading-relaxed">
-              The smarter way to find graduate programs, faculty, and funding —
+              The smarter way to find graduate programs and faculty —
               matched to your research and goals.
             </p>
             <a
