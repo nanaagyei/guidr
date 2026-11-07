@@ -4,6 +4,12 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- [2026-11-07 UTC] fix(api): Show the server's message for object-shaped error details (#43)
+  - `requestRecommendations` and `saveRecommendation` now surface "Research is temporarily
+    unavailable. Nothing was generated." on 503 instead of `[object Object]`
+  - Files: `src/utils/api.ts`
+
 ### Security
 - [2026-07-08 UTC] chore(deps): Upgrade Next.js 14.2 → 15.5.20 and React 18 → 19.2
   - Resolves 7 HIGH Next.js CVEs (info disclosure, SSRF, multiple DoS) flagged by Trivy

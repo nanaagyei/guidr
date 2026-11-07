@@ -16,6 +16,7 @@ from src.models.institution import Institution
 from src.dependencies.auth import get_current_user
 from src.dependencies.rate_limit import endpoint_rate_limit
 from src.dependencies.feature_gate import require_level
+from src.dependencies.research import require_research_provider
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ def _build_result_dict(result: RecommendationResult, db: Session) -> dict:
 # POST /recommendations/run  (advanced, job-based)
 # ──────────────────────────────────────────────
 
-@router.post("/run")
+@router.post("/run", dependencies=[Depends(require_research_provider)])
 async def run_recommendations(
     trigger_source: Optional[str] = None,
     force_refresh: bool = False,
@@ -185,7 +186,7 @@ async def run_recommendations(
 # POST /recommendations/request  (frontend default)
 # ──────────────────────────────────────────────
 
-@router.post("/request")
+@router.post("/request", dependencies=[Depends(require_research_provider)])
 async def request_recommendations(
     trigger_source: Optional[str] = None,
     current_user: User = Depends(require_level(2)),
@@ -429,7 +430,7 @@ async def get_recommendation_history(
 # POST /recommendations/results/{result_id}/save
 # ──────────────────────────────────────────────
 
-@router.post("/results/{result_id}/save")
+@router.post("/results/{result_id}/save", dependencies=[Depends(require_research_provider)])
 async def save_recommendation(
     result_id: str,
     current_user: User = Depends(get_current_user),

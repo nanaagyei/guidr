@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.db import get_db
 from src.dependencies.auth import get_current_user, require_admin_user, require_admin_or_internal_key
+from src.dependencies.research import require_research_provider
 from src.models.pipeline_job import PipelineJob
 from src.models.user import User
 from src.pipeline.repositories.job_repository import JobRepository
@@ -30,7 +31,7 @@ router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 # --- Public endpoints ---
 
 
-@router.post("/enrich", response_model=EnrichResponse)
+@router.post("/enrich", response_model=EnrichResponse, dependencies=[Depends(require_research_provider)])
 async def trigger_enrichment(
     request: EnrichRequest,
     current_user: User = Depends(get_current_user),
@@ -72,7 +73,7 @@ async def trigger_enrichment(
     return response
 
 
-@router.post("/enrich/shortlist", response_model=list[EnrichResponse])
+@router.post("/enrich/shortlist", response_model=list[EnrichResponse], dependencies=[Depends(require_research_provider)])
 async def trigger_shortlist_enrichment(
     request: ShortlistEnrichRequest,
     current_user: User = Depends(get_current_user),
@@ -174,7 +175,7 @@ async def get_job_status(
 # --- Admin endpoints ---
 
 
-@router.post("/admin/refresh")
+@router.post("/admin/refresh", dependencies=[Depends(require_research_provider)])
 async def admin_force_refresh(
     request: EnrichRequest,
     _auth: str = Depends(require_admin_or_internal_key),
@@ -196,7 +197,7 @@ async def admin_force_refresh(
     return resp
 
 
-@router.post("/admin/jobs/{job_id}/rerun")
+@router.post("/admin/jobs/{job_id}/rerun", dependencies=[Depends(require_research_provider)])
 async def admin_rerun_job(
     job_id: str,
     _auth: str = Depends(require_admin_or_internal_key),

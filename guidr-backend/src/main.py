@@ -63,6 +63,7 @@ app.include_router(auth.router)
 
 from src.routes import profile, academic_records, schools, programs, documents, essays, two_factor, password_reset, recommendations, professors, data_ingestion, funding, research, pipeline, dossiers
 from src.services.search_service import search_service
+from src.pipeline.research_gateway.service import research_provider_available
 app.include_router(profile.router)
 app.include_router(academic_records.router)
 app.include_router(schools.router)
@@ -91,6 +92,13 @@ async def startup_event():
         missing.append("INTERNAL_API_KEY")
     if missing:
         logger.warning("Missing API keys (some features will be degraded): %s", ", ".join(missing))
+
+    if settings.is_production and not research_provider_available():
+        logger.error(
+            "No research provider configured in production: research endpoints will return "
+            "503. Set PERPLEXITY_API_KEY, or both OPEN_DEEP_RESEARCH_API_KEY and "
+            "OPEN_DEEP_RESEARCH_BASE_URL."
+        )
 
     if settings.is_production and not settings.jwt_secret:
         logger.error("JWT_SECRET is not set — JWT tokens will be insecure in production")

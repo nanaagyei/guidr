@@ -219,7 +219,7 @@ async def request_review(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Request essay review (enqueue worker job)."""
+    """Request essay review. Not available yet: always 501 for an owned essay."""
     essay = db.query(Essay).filter(
         Essay.id == essay_id,
         Essay.user_id == current_user.id
@@ -231,22 +231,7 @@ async def request_review(
             detail="Essay not found"
         )
 
-    # Get latest version
-    latest_version = db.query(EssayVersion).filter(
-        EssayVersion.essay_id == essay_id
-    ).order_by(EssayVersion.version_number.desc()).first()
-
-    if not latest_version:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Essay has no content to review"
-        )
-
-    # TODO: Enqueue worker job `essay.review`
-    # For now, return success
-
-    return {
-        "status": "queued",
-        "essay_id": str(essay_id),
-        "message": "Review request queued"
-    }
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Essay review is not available yet",
+    )

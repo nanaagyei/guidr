@@ -4,6 +4,24 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- [2026-11-07 UTC] fix(research): Fail closed when no real research provider is configured (#43)
+  - `_select_provider()` raises `ResearchProviderUnavailable` in production instead of returning
+    the stub (hard-coded programs, deadlines, funding); dev/test still use the stub
+  - New `require_research_provider` dependency returns `503 RESEARCH_UNAVAILABLE` before any row is
+    written, on recommendations run/request/save, dossier school/professors/funding, internal
+    research run, pipeline enrich/shortlist, and pipeline admin refresh/rerun
+  - Dossier, professor-match and enrichment Celery tasks mark the job failed without retrying
+  - Startup logs an error naming the variables to set; `.env.production.example` and
+    `DEPLOY_RAILWAY.md` say the research key and `PIPELINE_ENV=production` are required
+  - `POST /essays/{id}/review` returns 501; the essay review worker raises `NotImplementedError`
+    (its placeholder wrote fixed scores and canned feedback)
+  - Files: `src/pipeline/research_gateway/{errors,service,__init__}.py`, `src/dependencies/research.py`,
+    `src/routes/{recommendations,dossiers,research,pipeline,essays}.py`,
+    `src/pipeline/tasks/{dossier_tasks,orchestrator_tasks}.py`, `src/main.py`,
+    `src/workers/essay_reviewer.py`, `.env.production.example`, `DEPLOY_RAILWAY.md`,
+    `tests/pipeline/test_research_gateway.py`, `tests/routes/{test_research_guard,test_essay_review_route}.py`
+
 ### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)

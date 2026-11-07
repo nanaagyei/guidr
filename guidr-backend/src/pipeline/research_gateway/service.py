@@ -15,6 +15,7 @@ from src.pipeline.research_gateway.schemas import (
     Metrics,
     DOSSIER_JOB_TYPES,
 )
+from src.pipeline.research_gateway.errors import ResearchProviderUnavailable
 from src.pipeline.research_gateway.providers.perplexity_stub import PerplexityStubProvider
 
 logger = logging.getLogger(__name__)
@@ -60,12 +61,42 @@ def _get_redis():
         return None
 
 
+def _real_provider_configured() -> bool:
+    """Return True if tier 1 or tier 2 credentials are configured.
+
+    Mirrors the checks in ``_select_provider()`` (each provider's ``is_available()``
+    is a credential check) without constructing a provider.
+    """
+    from src.config import settings
+
+    if getattr(settings, "perplexity_api_key", None):
+        return True
+    return bool(
+        getattr(settings, "open_deep_research_api_key", None)
+        and getattr(settings, "open_deep_research_base_url", None)
+    )
+
+
+def research_provider_available() -> bool:
+    """Return True if research can run without producing synthetic data in production.
+
+    Outside production the stub provider is always available.
+    """
+    from src.config import settings
+
+    return _real_provider_configured() or not settings.is_production
+
+
 def _select_provider():
     """Select the best available provider with tiered fallback.
 
     Tier 1: Real Perplexity Sonar (if PERPLEXITY_API_KEY set)
     Tier 2: OpenAI-compatible deep research (if OPEN_DEEP_RESEARCH_API_KEY + _BASE_URL set)
-    Tier 3: Stub provider (always available, returns synthetic data)
+    Tier 3: Stub provider (synthetic data) — development and test only.
+
+    Raises:
+        ResearchProviderUnavailable: In production when neither tier 1 nor tier 2
+            is configured.
     """
     from src.config import settings
 
@@ -94,7 +125,9 @@ def _select_provider():
         except ImportError:
             pass
 
-    # Tier 3: Stub
+    # Tier 3: Stub (never in production: it returns hard-coded data)
+    if settings.is_production:
+        raise ResearchProviderUnavailable()
     logger.debug("Using stub Perplexity provider")
     return PerplexityStubProvider()
 

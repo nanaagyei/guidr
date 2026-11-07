@@ -43,7 +43,8 @@ Set its **Variables** (from `.env.production.example`):
 | `ALLOWED_ORIGINS` | `https://<your-vercel-domain>,http://localhost:3000` |
 | `COLLEGE_SCORECARD_API_KEY` | your key |
 | `OPENALEX_API_KEY` | your key |
-| `PERPLEXITY_API_KEY` | your key (real recommendations) |
+| `PIPELINE_ENV` | `production` (dispatch dossier jobs to the worker instead of running them inline) |
+| `PERPLEXITY_API_KEY` | **required** — your key. Without it (or the `OPEN_DEEP_RESEARCH_API_KEY` + `OPEN_DEEP_RESEARCH_BASE_URL` pair), every research endpoint returns `503 RESEARCH_UNAVAILABLE` and nothing is generated |
 | `GROQ_API_KEY` **or** `OPENAI_API_KEY` | your key (LLM extraction) |
 | `SMTP_*`, `R2_*` | optional (see env template) |
 
