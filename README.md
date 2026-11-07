@@ -14,7 +14,6 @@
   <a href="#"><img src="https://img.shields.io/badge/Next.js-14+-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js" /></a>
   <a href="#"><img src="https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" /></a>
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License" /></a>
 </p>
 
 ---
@@ -39,7 +38,7 @@
 | Layer | Technologies |
 |-------|--------------|
 | **Backend** | FastAPI, Python 3.11+, SQLAlchemy, Alembic |
-| **Frontend** | Next.js 14, TypeScript, Tailwind CSS, Radix UI |
+| **Frontend** | Next.js 15, TypeScript, Tailwind CSS, Radix UI |
 | **Data** | PostgreSQL, Redis, Meilisearch |
 | **Pipeline** | Celery, Scrapy, Playwright, LangChain, Firecrawl |
 | **Infra** | Docker, MinIO/R2, GitHub Actions |

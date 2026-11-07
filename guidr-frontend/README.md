@@ -4,7 +4,7 @@ Frontend application for Guidr - A graduate school application platform.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14+ (App Router)
+- **Framework:** Next.js 15 (App Router), React 19
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Deployment:** Vercel (recommended)
@@ -62,8 +62,6 @@ See `STYLEGUIDE.md` for detailed design guidelines.
 
 ## CI/CD
 
-GitHub Actions workflow runs on push/PR to main/dev branches:
-- Linting (ESLint)
-- Build verification
-
-![Frontend CI](https://github.com/your-org/guidr-frontend/actions/workflows/frontend-ci.yml/badge.svg)
+The root workflow `.github/workflows/ci.yml` runs on pull requests and pushes to `main` and
+`release/**`: `pre-commit run --all-files`, then `npm run check` (ESLint with zero warnings,
+`tsc --noEmit`, production build).

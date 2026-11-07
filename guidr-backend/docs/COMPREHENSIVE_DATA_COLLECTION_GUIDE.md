@@ -174,7 +174,7 @@ MultiSourceFetcher
 | Historical backfill | `comprehensive_data_collection` (legacy) | Requires `ENABLE_SCRAPE_FALLBACK=true`, Firecrawl key |
 | Bulk legacy enrichment | API + Celery workers | Only if agentic pipeline is unavailable |
 
-For AI-powered research with citation tracking and confidence scoring, use the [agentic dossier system](ENRICHMENT_PIPELINE_VERIFICATION.md#10-test-agentic-dossier-system).
+For AI-powered research with citation tracking and confidence scoring, use the agentic dossier system described in [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md).
 
 ---
 
@@ -200,5 +200,4 @@ For AI-powered research with citation tracking and confidence scoring, use the [
 
 - [Quick Start](QUICK_START.md) — Get running in 10 minutes
 - [Pipeline Guide](PIPELINE_GUIDE.md) — Full pipeline architecture
-- [Enrichment Verification](ENRICHMENT_PIPELINE_VERIFICATION.md) — End-to-end smoke tests
 - [Integration Summary](INTEGRATION_SUMMARY.md) — How components work together

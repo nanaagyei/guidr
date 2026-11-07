@@ -244,6 +244,5 @@ Cache TTLs: recommendations 7 days, school dossier 30 days, professor matches 30
 
 - [Quick Start](QUICK_START.md) — Step-by-step walkthrough with curl commands
 - [Pipeline Guide](PIPELINE_GUIDE.md) — Full architecture, all endpoints, DossierGraph internals
-- [Enrichment Verification](ENRICHMENT_PIPELINE_VERIFICATION.md) — End-to-end smoke tests
 - [R2 Setup](R2_SETUP.md) — Cloudflare R2 for production document storage
 - [RFC: Agentic Research Pivot](RFC_AGENTIC_RESEARCH_PIVOT.md) — Adopted architecture decision

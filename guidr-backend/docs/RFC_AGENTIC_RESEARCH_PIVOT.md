@@ -1,3 +1,18 @@
+> **Note added 2026-11-07: superseded in part by the repositioning** (see `docs/POSITIONING.md`
+> and issue #37). The following decisions in this RFC no longer hold:
+>
+> - **Individual-applicant self-serve as the target.** Guidr now targets an advisor-led workflow
+>   for applicants to funded research degrees; the self-serve product is frozen during validation
+>   (D6 in #37).
+> - **"Perfect accuracy is a non-goal."** Critical facts must now be correct, explicitly unverified,
+>   or abstained; a confidently wrong critical fact is an incident
+>   (`guidr-backend/docs/VERIFICATION_POLICY.md`).
+> - **Per-user dossiers and pin-to-ingest as the route to canonical data.** To be decided in #45.
+> - **"Verified" as a confidence threshold** (`is_verified = confidence >= 0.78`). "Verified" is
+>   reserved for human verification against a primary source.
+>
+> The rest of this document is kept as a record of the March 2026 design.
+
 RFC: Agentic Research Pivot for Guidr Backend
 
 Status: Adopted + Implemented (2026-03-26)

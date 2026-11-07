@@ -61,7 +61,7 @@
 | `promote_write` node                  | ✅      | Upserts to production tables, creates `entity_promotions` audit row    |
 | `repair_extraction` node              | ✅      | Calls Research Gateway REPAIR_EXTRACTION job type                      |
 | `retry_backoff` node                  | ✅      | Creates new pipeline_job with exponential delay                        |
-| `END` edge from `stage_write`         | ✅      | Conditional: skips promote if confidence < 0.85                        |
+| `END` edge from `stage_write`         | ✅      | Conditional: promotes only if confidence ≥ `AUTO_PROMOTE_THRESHOLD` (0.78) and the node set `promote` |
 | Graph compiled and runnable           | ✅      | `src/pipeline/orchestrator/graph.py`                                   |
 | `run_enrichment_pipeline` Celery task | ✅      | `src/pipeline/tasks/orchestrator_tasks.py`                             |
 
@@ -121,10 +121,10 @@
 | `score_extraction()` — field completeness ratio           | ✅      | Per-entity expected field lists                                         |
 | `score_validation()` — pass/fail + warnings               | ✅      |                                                                         |
 | `score_staleness()` — freshness decay                     | ✅      | 24h=1.0, 7d=0.8, 30d=0.5, older=0.2                                     |
-| `should_promote()` / `should_stage()` / `should_warn()` | ✅      | **Updated thresholds: 0.78 / 0.55** — `should_repair()` removed; repair is on-demand only |
+| `should_promote()` / `should_stage()` / `should_warn()` | ⚠️      | Thresholds 0.78 / 0.55. `should_repair()` was removed from the scorer, **but `score_confidence` in `src/pipeline/orchestrator/nodes.py` still calls it**, so the standard enrichment graph fails at that node (#57) |
 | 5-tier source trust scoring | ✅ | 1.0=official, 0.8=aggregators, 0.7=.edu/.gov, 0.5=reputable, 0.3=other |
 | `validation_reports` table                                | ✅      | `src/models/validation_report.py`, migration 019 — linked to extraction_runs and pipeline_jobs |
-| `confidence_scores` table                                 | ✅      | `src/models/confidence_score.py`, migration 019 — tracks sub-scores (source, extraction, validation, staleness) |
+| `confidence_scores` table                                 | ⚠️      | `src/models/confidence_score.py`, migration 019. Has sub-score columns, but writers store only `overall_confidence` (dossiers also set `validation_score` = citation coverage); source/extraction/staleness sub-scores are not tracked |
 
 
 ---
@@ -314,7 +314,7 @@
 > - External funding opportunities included in v1 alongside school-specific funding
 > - Broader trusted domain policy: 1.0 / 0.8 / 0.7 / 0.5 / 0.3 tiers
 > - Per-user enrichment_cache entries (user_id FK in migration 017)
-> - Confidence thresholds: promote ≥0.78, stage 0.55–0.77, warn <0.55; no auto-repair
+> - Confidence thresholds: promote ≥0.78, stage 0.55–0.77, warn <0.55; no auto-repair (scorer constants; see the dossier-graph note below — routing there still hard-codes 0.85 / 0.70)
 
 ### Phase 1: Database Migration (016)
 
@@ -392,7 +392,7 @@
 | `stage_dossier` node                                  | ✅      | Writes to `enrichment_cache` with citations, persists `validation_reports` + `confidence_scores` |
 | `fallback_scrape` node                                | ✅      | Conditional: confidence < 0.55 AND `enable_scrape_fallback` (default false) |
 | `promote_dossier` node                                | ✅      | Reuses `promote_write` pattern                              |
-| Conditional graph routing (≥0.78 / 0.55–0.77 / <0.55) | ✅      | **Updated thresholds** — `src/pipeline/orchestrator/dossier_graph.py` |
+| Conditional graph routing                             | ⚠️      | `confidence_decision()` in `src/pipeline/orchestrator/dossier_graph.py` hard-codes **≥0.85 promote / ≥0.70 stage only**, not the scorer's 0.78 / 0.55; `score_dossier_confidence` computes a `promote` flag at 0.78 that routing does not use |
 
 
 ### Phase 6b: ProfessorMatchGraph
