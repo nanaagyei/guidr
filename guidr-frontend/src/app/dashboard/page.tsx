@@ -4,11 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import CalendarTile from '@/components/dashboard/CalendarTile';
 import SavedSchoolsTile from '@/components/dashboard/SavedSchoolsTile';
 import RecommendedSchoolsTile from '@/components/dashboard/RecommendedSchoolsTile';
 import ProfileCompletionTile from '@/components/dashboard/ProfileCompletionTile';
-import AppliedSchoolsTile from '@/components/dashboard/AppliedSchoolsTile';
 import TipsTile from '@/components/dashboard/TipsTile';
 import ProfessorsTile from '@/components/dashboard/ProfessorsTile';
 import ResearchJobsTile from '@/components/dashboard/ResearchJobsTile';
@@ -50,12 +48,12 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-semibold text-text mb-2">
           Welcome back, {user.full_name || user.email}!
         </h1>
-        <p className="text-textSecondary">Here is an overview of your graduate school application journey.</p>
+        <p className="text-textSecondary">Here is an overview of your programs and profile.</p>
       </motion.div>
 
       {/* Dashboard Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Row 1: Profile Completion - Full Width on Large */}
+        {/* Row 1: Profile Completion */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -63,16 +61,6 @@ export default function DashboardPage() {
           className="lg:col-span-1"
         >
           <ProfileCompletionTile />
-        </motion.div>
-
-        {/* Calendar Tile */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="lg:col-span-1"
-        >
-          <CalendarTile />
         </motion.div>
 
         {/* Tips Tile */}
@@ -85,16 +73,6 @@ export default function DashboardPage() {
           <TipsTile />
         </motion.div>
 
-        {/* Recommended Schools - Spans 2 columns on large */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="lg:col-span-2"
-        >
-          <RecommendedSchoolsTile />
-        </motion.div>
-
         {/* Saved Schools */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -105,17 +83,17 @@ export default function DashboardPage() {
           <SavedSchoolsTile />
         </motion.div>
 
-        {/* Applied Schools - Spans 2 columns */}
+        {/* Recommended Schools - Spans 2 columns on large */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.25 }}
           className="lg:col-span-2"
         >
-          <AppliedSchoolsTile />
+          <RecommendedSchoolsTile />
         </motion.div>
 
-        {/* Professors Tile - Sits beside Applied Schools on large */}
+        {/* Professors Tile - Sits beside Recommended Schools on large */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,12 +103,12 @@ export default function DashboardPage() {
           <ProfessorsTile />
         </motion.div>
 
-        {/* Research Jobs Tile */}
+        {/* Research Jobs Tile - Full width on large so the grid has no empty cell */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="lg:col-span-1"
+          className="lg:col-span-3"
         >
           <ResearchJobsTile />
         </motion.div>

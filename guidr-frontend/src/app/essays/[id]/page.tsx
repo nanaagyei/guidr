@@ -356,10 +356,9 @@ export default function EssayEditorPage() {
               </h3>
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {reviews.slice(1).map((review, index) => (
-                  <button
+                  <div
                     key={review.id}
-                    onClick={() => router.push(`/essays/${essayId}/review/${review.id}`)}
-                    className="w-full text-left p-3 bg-background/80 rounded-lg hover:bg-background transition border border-transparent hover:border-primary/20"
+                    className="w-full text-left p-3 bg-background/80 rounded-lg border border-transparent"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-text">Review #{reviews.length - index}</span>
@@ -372,7 +371,7 @@ export default function EssayEditorPage() {
                     <p className="text-xs text-gray-500">
                       {new Date(review.created_at).toLocaleDateString()}
                     </p>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>

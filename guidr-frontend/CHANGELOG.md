@@ -5,6 +5,22 @@ All notable changes to Guidr Frontend will be documented in this file.
 ## [Unreleased]
 
 ### Removed
+- [2026-11-07 UTC] fix(frontend): Remove dashboard tiles and controls that present invented or inert behaviour (#55)
+  - Deleted `AppliedSchoolsTile` (statuses invented from recommendation tiers) and `CalendarTile`
+    (free-text model deadlines parsed with `new Date()`), plus the now-unused `getUpcomingDeadlines`
+  - Tips are a local constant in `TipsTile` (dropped the "Track Deadlines" tip and the fake loading
+    delay); deleted `utils/mockData.ts`
+  - Settings: removed the "Email Notifications" and "Deadline Reminders" radio groups, which were
+    local state only
+  - Login/register no longer render a Google button that only logged to the console
+  - Dead links: saved-school link now goes to `/institutions`; past essay reviews are plain rows
+  - Dashboard grid rebalanced for six tiles (no empty cells at 768px or 1280px); subtitle updated
+  - Files: `src/app/dashboard/page.tsx`, `src/components/dashboard/{AppliedSchoolsTile,CalendarTile}.tsx`
+    (deleted), `src/components/dashboard/{TipsTile,SavedSchoolsTile}.tsx`, `src/utils/mockData.ts`
+    (deleted), `src/utils/api.ts`, `src/components/settings/ApplicationSettings.tsx`,
+    `src/app/auth/{login,register}/page.tsx`, `src/app/essays/[id]/page.tsx`
+
+### Removed
 - [2026-11-07 UTC] fix(frontend): Remove product and marketing claims the code cannot support (#42)
   - Landing hero: dropped the application-tracker tab, "94% accuracy", the "Guidr 2.0"
     announcement linking to a missing `/blog/launch`, and "& apply" / "tracking applications"
