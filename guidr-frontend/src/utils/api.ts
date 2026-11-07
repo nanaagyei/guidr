@@ -9,6 +9,20 @@ export interface ApiError {
 }
 
 /**
+ * Extract a readable message from an error body whose `detail` may be a string or an
+ * object such as `{code, message}` (e.g. 503 RESEARCH_UNAVAILABLE).
+ */
+function errorDetailMessage(body: unknown, fallback: string): string {
+  const detail = (body as { detail?: unknown } | null)?.detail;
+  if (typeof detail === 'string' && detail) return detail;
+  if (detail && typeof detail === 'object' && 'message' in detail) {
+    const message = (detail as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
+/**
  * Make a fetch request with credentials included.
  */
 async function fetchWithCredentials(
@@ -565,8 +579,7 @@ export async function requestRecommendations(triggerSource?: string): Promise<an
   });
 
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    throw new Error(error.detail || 'Failed to request recommendations');
+    throw new Error(errorDetailMessage(await response.json(), 'Failed to request recommendations'));
   }
 
   return response.json();
@@ -615,8 +628,7 @@ export async function saveRecommendation(resultId: string): Promise<any> {
   });
 
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    throw new Error(error.detail || 'Failed to save recommendation');
+    throw new Error(errorDetailMessage(await response.json(), 'Failed to save recommendation'));
   }
 
   return response.json();

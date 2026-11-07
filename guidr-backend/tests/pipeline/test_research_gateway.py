@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import unittest
+import pytest
 from unittest.mock import MagicMock, patch
 
 
@@ -208,15 +209,63 @@ class TestResearchGatewayService(unittest.TestCase):
         import src.config as config_mod
 
         mock_settings = MagicMock()
+        mock_settings.env = "development"
+        mock_settings.is_production = False
         mock_settings.perplexity_api_key = None
         mock_settings.open_deep_research_api_key = None
         mock_settings.open_deep_research_base_url = None
 
         with patch.object(mod, "PerplexityStubProvider") as mock_stub_cls, \
              patch.object(config_mod, "settings", mock_settings):
-            provider = mod._select_provider()
+            mod._select_provider()
 
         mock_stub_cls.assert_called_once()
+
+    # ------------------------------------------------------------------ #
+    # 8b. Production without any real provider fails closed
+    # ------------------------------------------------------------------ #
+    def test_production_without_provider_raises(self):
+        mod = _get_mod()
+        import src.config as config_mod
+        from src.pipeline.research_gateway import ResearchProviderUnavailable
+
+        mock_settings = MagicMock()
+        mock_settings.env = "production"
+        mock_settings.is_production = True
+        mock_settings.perplexity_api_key = None
+        mock_settings.open_deep_research_api_key = None
+        mock_settings.open_deep_research_base_url = None
+
+        with patch.object(mod, "PerplexityStubProvider") as mock_stub_cls, \
+             patch.object(config_mod, "settings", mock_settings):
+            with pytest.raises(ResearchProviderUnavailable):
+                mod._select_provider()
+            assert mod.research_provider_available() is False
+
+        mock_stub_cls.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # 8c. Production with a tier-2 provider still selects it
+    # ------------------------------------------------------------------ #
+    def test_production_selects_tier2_provider(self):
+        mod = _get_mod()
+        import src.config as config_mod
+        from src.pipeline.research_gateway.providers.open_deep_research import (
+            OpenDeepResearchProvider,
+        )
+
+        mock_settings = MagicMock()
+        mock_settings.env = "production"
+        mock_settings.is_production = True
+        mock_settings.perplexity_api_key = None
+        mock_settings.open_deep_research_api_key = "odr-test-key"
+        mock_settings.open_deep_research_base_url = "https://odr.example.test/v1"
+
+        with patch.object(config_mod, "settings", mock_settings):
+            provider = mod._select_provider()
+            assert mod.research_provider_available() is True
+
+        assert isinstance(provider, OpenDeepResearchProvider)
 
     # ------------------------------------------------------------------ #
     # 9. DB cache fallback is used when Redis misses

@@ -8,6 +8,7 @@ from uuid import UUID
 from src.db import get_db
 from src.dependencies.auth import get_current_user
 from src.dependencies.rate_limit import endpoint_rate_limit
+from src.dependencies.research import require_research_provider
 from src.models.user import User
 from src.schemas.dossier_schemas import (
     DossierRequest,
@@ -38,7 +39,7 @@ def _build_response(result) -> dict:
     return resp
 
 
-@router.post("/schools/{school_id}/research")
+@router.post("/schools/{school_id}/research", dependencies=[Depends(require_research_provider)])
 async def request_school_dossier(
     school_id: UUID,
     body: DossierRequest = DossierRequest(),
@@ -59,7 +60,7 @@ async def request_school_dossier(
     return _build_response(result)
 
 
-@router.post("/schools/{school_id}/professors/match")
+@router.post("/schools/{school_id}/professors/match", dependencies=[Depends(require_research_provider)])
 async def request_professor_match(
     school_id: UUID,
     body: ProfessorMatchRequest = ProfessorMatchRequest(),
@@ -82,7 +83,7 @@ async def request_professor_match(
     return _build_response(result)
 
 
-@router.post("/schools/{school_id}/funding/research")
+@router.post("/schools/{school_id}/funding/research", dependencies=[Depends(require_research_provider)])
 async def request_funding_dossier(
     school_id: UUID,
     body: FundingDossierRequest = FundingDossierRequest(),

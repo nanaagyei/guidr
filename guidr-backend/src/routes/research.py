@@ -4,12 +4,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from src.dependencies.auth import require_admin_user
+from src.dependencies.research import require_research_provider
 from src.pipeline.research_gateway import ResearchGatewayService, ResearchRequest
 
 router = APIRouter(prefix="/internal/research", tags=["research"])
 
 
-@router.post("/run")
+@router.post("/run", dependencies=[Depends(require_research_provider)])
 async def run_research(
     request: ResearchRequest,
     _: str = Depends(require_admin_user),

@@ -5,6 +5,7 @@ import logging
 
 import httpx
 
+from src.pipeline.research_gateway.errors import ResearchProviderUnavailable
 from src.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,17 @@ def run_enrichment_pipeline(self, job_id: str) -> dict:
             # 5. Release dedup lock
             release_lock(fingerprint, str(job.id))
 
+    except ResearchProviderUnavailable as exc:
+        # No real provider in production: fail without retrying and write nothing.
+        db.rollback()
+        logger.error("Enrichment pipeline cannot run for job %s: %s", job_id, exc)
+        try:
+            repo = JobRepository(db)
+            repo.complete_job(job_id, status="failed", error_message=str(exc))
+            db.commit()
+        except Exception:
+            db.rollback()
+        return {"status": "failed", "error": str(exc)}
     except Exception as exc:
         db.rollback()
         logger.error("Enrichment pipeline failed for job %s: %s", job_id, exc, exc_info=True)
