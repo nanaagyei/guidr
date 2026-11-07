@@ -61,7 +61,7 @@
 | `promote_write` node                  | ✅      | Upserts to production tables, creates `entity_promotions` audit row    |
 | `repair_extraction` node              | ✅      | Calls Research Gateway REPAIR_EXTRACTION job type                      |
 | `retry_backoff` node                  | ✅      | Creates new pipeline_job with exponential delay                        |
-| `END` edge from `stage_write`         | ✅      | Conditional: promotes only if confidence ≥ `AUTO_PROMOTE_THRESHOLD` (0.78) and the node set `promote` |
+| `END` edge from `stage_write`         | ✅      | Every result with extracted data is staged; promotes only if confidence ≥ `AUTO_PROMOTE_THRESHOLD` (0.78) and validation passed. A failed fetch or empty extraction goes to `retry_backoff` (#57) |
 | Graph compiled and runnable           | ✅      | `src/pipeline/orchestrator/graph.py`                                   |
 | `run_enrichment_pipeline` Celery task | ✅      | `src/pipeline/tasks/orchestrator_tasks.py`                             |
 
@@ -121,10 +121,10 @@
 | `score_extraction()` — field completeness ratio           | ✅      | Per-entity expected field lists                                         |
 | `score_validation()` — pass/fail + warnings               | ✅      |                                                                         |
 | `score_staleness()` — freshness decay                     | ✅      | 24h=1.0, 7d=0.8, 30d=0.5, older=0.2                                     |
-| `should_promote()` / `should_stage()` / `should_warn()` | ⚠️      | Thresholds 0.78 / 0.55. `should_repair()` was removed from the scorer, **but `score_confidence` in `src/pipeline/orchestrator/nodes.py` still calls it**, so the standard enrichment graph fails at that node (#57) |
+| `should_promote()` / `should_stage()` / `should_warn()` | ✅      | Thresholds 0.78 / 0.55, defined once in `confidence_scorer.py` and imported by both graphs. No automatic repair: `score_confidence` repairs only when `repair_requested` is set (#57) |
 | 5-tier source trust scoring | ✅ | 1.0=official, 0.8=aggregators, 0.7=.edu/.gov, 0.5=reputable, 0.3=other |
 | `validation_reports` table                                | ✅      | `src/models/validation_report.py`, migration 019 — linked to extraction_runs and pipeline_jobs |
-| `confidence_scores` table                                 | ⚠️      | `src/models/confidence_score.py`, migration 019. Has sub-score columns, but writers store only `overall_confidence` (dossiers also set `validation_score` = citation coverage); source/extraction/staleness sub-scores are not tracked |
+| `confidence_scores` table                                 | ✅      | `src/models/confidence_score.py`, migration 019. Standard enrichment writes all four sub-scores from `ConfidenceScorer.compute_breakdown()`; dossiers write citation quality / completeness / citation coverage / staleness (#57) |
 
 
 ---
@@ -314,7 +314,7 @@
 > - External funding opportunities included in v1 alongside school-specific funding
 > - Broader trusted domain policy: 1.0 / 0.8 / 0.7 / 0.5 / 0.3 tiers
 > - Per-user enrichment_cache entries (user_id FK in migration 017)
-> - Confidence thresholds: promote ≥0.78, stage 0.55–0.77, warn <0.55; no auto-repair (scorer constants; see the dossier-graph note below — routing there still hard-codes 0.85 / 0.70)
+> - Confidence thresholds: promote ≥0.78, stage 0.55–0.77, warn <0.55; no auto-repair (scorer constants, used by both graphs since #57)
 
 ### Phase 1: Database Migration (016)
 
@@ -392,7 +392,7 @@
 | `stage_dossier` node                                  | ✅      | Writes to `enrichment_cache` with citations, persists `validation_reports` + `confidence_scores` |
 | `fallback_scrape` node                                | ✅      | Conditional: confidence < 0.55 AND `enable_scrape_fallback` (default false) |
 | `promote_dossier` node                                | ✅      | Reuses `promote_write` pattern                              |
-| Conditional graph routing                             | ⚠️      | `confidence_decision()` in `src/pipeline/orchestrator/dossier_graph.py` hard-codes **≥0.85 promote / ≥0.70 stage only**, not the scorer's 0.78 / 0.55; `score_dossier_confidence` computes a `promote` flag at 0.78 that routing does not use |
+| Conditional graph routing (≥0.78 / 0.55–0.77 / <0.55) | ✅      | `src/pipeline/orchestrator/dossier_graph.py` imports the scorer thresholds; `promote_after_stage()` decides promotion the same way before and after the scrape fallback (#57) |
 
 
 ### Phase 6b: ProfessorMatchGraph

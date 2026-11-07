@@ -13,6 +13,7 @@ except ImportError:
     MemorySaver = None
 
 from src.pipeline.orchestrator.dossier_state import DossierState
+from src.pipeline.processors.confidence_scorer import AUTO_PROMOTE_THRESHOLD, STAGE_THRESHOLD
 from src.pipeline.orchestrator.dossier_nodes import (
     load_dossier_context,
     research_extract,
@@ -27,19 +28,31 @@ logger = logging.getLogger(__name__)
 
 
 def confidence_decision(state: DossierState) -> Literal["stage_promote", "stage_only", "fallback", "stage_low"]:
-    """Route based on confidence score."""
+    """Route based on confidence score, using the scorer's thresholds (no literals here)."""
     confidence = state.get("confidence", 0.0)
     needs_fallback = state.get("needs_fallback", False)
 
     from src.config import settings
 
-    if confidence >= 0.85:
+    if confidence >= AUTO_PROMOTE_THRESHOLD:
         return "stage_promote"
-    if confidence >= 0.70:
+    if confidence >= STAGE_THRESHOLD:
         return "stage_only"
     if needs_fallback and settings.enable_scrape_fallback:
         return "fallback"
     return "stage_low"
+
+
+def promote_after_stage(state: DossierState) -> Literal["promote", "end"]:
+    """After staging, promote when the scored result is promotable.
+
+    ``promote`` is set by ``score_dossier_confidence`` from ``AUTO_PROMOTE_THRESHOLD``.
+    Recommendation runs are always "promoted" (written to the user's session) so the user
+    sees results. The same rule applies before and after the scrape fallback.
+    """
+    if state.get("promote", False) or state.get("job_type") == "recommendation_run":
+        return "promote"
+    return "end"
 
 
 def create_dossier_graph(checkpointer=None):
@@ -79,9 +92,7 @@ def create_dossier_graph(checkpointer=None):
     # (recommendations always need to be promoted so users see results)
     graph.add_conditional_edges(
         "stage_dossier",
-        lambda s: "promote" if (
-            s.get("promote", False) or s.get("job_type") == "recommendation_run"
-        ) else "end",
+        promote_after_stage,
         {"promote": "promote_dossier", "end": END},
     )
 
@@ -90,9 +101,7 @@ def create_dossier_graph(checkpointer=None):
     graph.add_edge("rescore", "stage_after_fallback")
     graph.add_conditional_edges(
         "stage_after_fallback",
-        lambda s: "promote" if (
-            s.get("confidence", 0) >= 0.85 or s.get("job_type") == "recommendation_run"
-        ) else "end",
+        promote_after_stage,
         {"promote": "promote_dossier", "end": END},
     )
 

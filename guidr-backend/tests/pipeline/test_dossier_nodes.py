@@ -195,8 +195,13 @@ class TestStageDossier:
         result = stage_dossier(state)
 
         assert "stage_dossier" in result["progress"]
-        # 3 calls: EnrichmentCache + ValidationReport + ConfidenceScore
-        assert mock_db.add.call_count == 3
+        # RawArtifact + ExtractionRun (provenance) + EnrichmentCache + ValidationReport
+        # + ConfidenceScore
+        added = [type(c.args[0]).__name__ for c in mock_db.add.call_args_list]
+        assert added == [
+            "RawArtifact", "ExtractionRun", "EnrichmentCache", "ValidationReport", "ConfidenceScore",
+        ]
+        assert result["extraction_run_id"] is not None
         mock_db.commit.assert_called_once()
 
     @patch("src.pipeline.orchestrator.dossier_nodes._get_db")

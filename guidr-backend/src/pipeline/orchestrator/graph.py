@@ -39,13 +39,25 @@ def need_discovery(state: OrchestratorState) -> Literal["discover", "fetch"]:
     return "fetch"
 
 
-def promote_decision(state: OrchestratorState) -> Literal["promote", "repair", "retry"]:
-    """Route: promote, repair, or retry."""
-    if state.get("promote", False):
-        return "promote"
+def fetch_decision(state: OrchestratorState) -> Literal["store", "retry"]:
+    """Route: continue with fetched content, or schedule a retry when the fetch failed."""
+    if state.get("status") == "failed" or not state.get("raw_content"):
+        return "retry"
+    return "store"
+
+
+def promote_decision(state: OrchestratorState) -> Literal["stage", "repair", "retry"]:
+    """Route after scoring.
+
+    Every result with extracted data is staged (recorded), whatever its confidence;
+    ``stage_decision`` then promotes only results at or above the threshold. Repair runs
+    only when it was requested on demand; an empty extraction is retried.
+    """
     if state.get("repair", False):
         return "repair"
-    return "retry"
+    if not state.get("extracted"):
+        return "retry"
+    return "stage"
 
 
 def stage_decision(state: OrchestratorState) -> Literal["promote_write", "end"]:
@@ -82,14 +94,18 @@ def create_orchestrator_graph(checkpointer=None):
     graph.add_edge("discover_urls", "canonicalize_urls")
     graph.add_edge("repair", "canonicalize_urls")
     graph.add_edge("canonicalize_urls", "fetch_page")
-    graph.add_edge("fetch_page", "store_raw")
+    graph.add_conditional_edges(
+        "fetch_page",
+        fetch_decision,
+        {"store": "store_raw", "retry": "retry_backoff"},
+    )
     graph.add_edge("store_raw", "extract_structured")
     graph.add_edge("extract_structured", "validate")
     graph.add_edge("validate", "score_confidence")
     graph.add_conditional_edges(
         "score_confidence",
         promote_decision,
-        {"promote": "stage_write", "repair": "repair", "retry": "retry_backoff"},
+        {"stage": "stage_write", "repair": "repair", "retry": "retry_backoff"},
     )
     # After staging, conditionally promote or end
     graph.add_conditional_edges(

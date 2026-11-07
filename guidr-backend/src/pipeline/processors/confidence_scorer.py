@@ -34,7 +34,8 @@ W_EXTRACTION = 0.35
 W_VALIDATION = 0.25
 W_STALENESS = 0.05
 
-# Thresholds
+# Thresholds: the single source of truth for every graph (standard enrichment and dossiers).
+# Do not hard-code these numbers elsewhere; import them.
 AUTO_PROMOTE_THRESHOLD = 0.78   # was 0.85 — more lenient to reduce repair costs
 STAGE_THRESHOLD = 0.55          # was 0.70 — data still shown to user with confidence badge
 
@@ -113,6 +114,25 @@ class ConfidenceScorer:
         Returns:
             Composite confidence float between 0.0 and 1.0.
         """
+        return self.compute_breakdown(
+            entity_kind, extracted, validation_result, source_url, entity_website, fetched_at
+        )["overall"]
+
+    def compute_breakdown(
+        self,
+        entity_kind: str,
+        extracted: Dict[str, Any],
+        validation_result: Optional[ValidationResult] = None,
+        source_url: Optional[str] = None,
+        entity_website: Optional[str] = None,
+        fetched_at: Optional[datetime] = None,
+    ) -> Dict[str, float]:
+        """Compute the composite score and the four sub-scores it is made of.
+
+        Returns:
+            Dict with keys ``source``, ``extraction``, ``validation``, ``staleness``
+            and ``overall`` (the composite, as returned by :meth:`compute`).
+        """
         s_source = self.score_source(source_url, entity_website)
         s_extraction = self.score_extraction(extracted, entity_kind)
         s_validation = self.score_validation(validation_result)
@@ -130,7 +150,13 @@ class ConfidenceScorer:
             "Confidence for %s: source=%.2f ext=%.2f val=%.2f stale=%.2f -> %.3f",
             entity_kind, s_source, s_extraction, s_validation, s_staleness, composite,
         )
-        return composite
+        return {
+            "source": s_source,
+            "extraction": s_extraction,
+            "validation": s_validation,
+            "staleness": s_staleness,
+            "overall": composite,
+        }
 
     def should_promote(self, confidence: float) -> bool:
         """Whether the confidence is high enough for auto-promotion."""

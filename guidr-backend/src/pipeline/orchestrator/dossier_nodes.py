@@ -30,6 +30,29 @@ CRITICAL_FIELDS = [
 _CRITICAL_COVERAGE_THRESHOLD = 0.30
 
 
+def canonical_fields(dossier_json: dict, job_type: str) -> dict:
+    """Map a dossier's JSON onto the canonical field names scoring and promotion use.
+
+    The school dossier prompt nests institution facts under ``overview`` (and calls
+    enrollment ``total_enrollment``), while ``EXPECTED_FIELDS["school"]`` and
+    ``promote_write`` use top-level ``description``, ``enrollment_total`` and so on.
+    Other dossier types are returned unchanged.
+    """
+    if job_type != "school_dossier" or not isinstance(dossier_json, dict):
+        return dossier_json or {}
+    overview = dossier_json.get("overview")
+    if not isinstance(overview, dict):
+        return dossier_json
+    return {
+        "description": overview.get("description"),
+        "acceptance_rate": overview.get("acceptance_rate"),
+        "enrollment_total": overview.get("total_enrollment", overview.get("enrollment_total")),
+        "grad_enrollment": overview.get("grad_enrollment"),
+        "campus_setting": overview.get("campus_setting"),
+        "academic_calendar": overview.get("academic_calendar"),
+    }
+
+
 def _get_db():
     from src.db import SessionLocal
     return SessionLocal()
@@ -369,10 +392,13 @@ def score_dossier_confidence(state: DossierState) -> dict:
         max_score = len(citations) * 2  # if all were .edu
         citation_score = min(1.0, trusted_count / max(max_score, 1))
 
-    # Field completeness
-    expected = EXPECTED_FIELDS.get(entity_kind, [])
+    # Field completeness. Only school dossiers map onto EXPECTED_FIELDS; other dossier
+    # types (funding, recommendations) have their own shapes, so count non-empty keys.
+    job_type = state.get("job_type", "school_dossier")
+    expected = EXPECTED_FIELDS.get(entity_kind, []) if job_type == "school_dossier" else []
     if expected:
-        populated = sum(1 for f in expected if dossier_json.get(f) is not None)
+        fields = canonical_fields(dossier_json, job_type)
+        populated = sum(1 for f in expected if fields.get(f) not in (None, "", []))
         extraction_score = populated / max(len(expected), 1)
     else:
         non_null = sum(1 for v in dossier_json.values() if v is not None and v != "")
@@ -398,6 +424,11 @@ def score_dossier_confidence(state: DossierState) -> dict:
 
     return {
         "confidence": confidence,
+        "confidence_breakdown": {
+            "citation_quality": citation_score,
+            "citation_coverage": citation_coverage,
+            "extraction": extraction_score,
+        },
         "promote": promote,
         "needs_fallback": needs_fallback,
         **_progress(state, "score_dossier_confidence"),
@@ -441,8 +472,17 @@ def stage_dossier(state: DossierState) -> dict:
         entity_kind = "user"
 
     db = _get_db()
+    raw_artifact_id = None
+    extraction_run_id = None
     try:
         from src.models.enrichment_cache import EnrichmentCache
+
+        # Provenance: the research response is the raw artifact, the dossier JSON its
+        # extraction run. promote_dossier links its entity_promotions row to this run.
+        raw_artifact_id, extraction_run_id = _record_dossier_provenance(
+            db, state, entity_kind, entity_id, job_type, dossier_json, citations, evidence_map,
+            confidence,
+        )
 
         expires_at = datetime.utcnow() + timedelta(days=days)
         user_uuid = uuid.UUID(user_id) if user_id else None
@@ -466,6 +506,8 @@ def stage_dossier(state: DossierState) -> dict:
                 existing.expires_at = expires_at
                 existing.citations_json = citations
                 existing.evidence_map_json = evidence_map
+                if extraction_run_id:
+                    existing.source_extraction_run_ids = [extraction_run_id]
             else:
                 cache_entry = EnrichmentCache(
                     entity_kind=entity_kind,
@@ -477,7 +519,7 @@ def stage_dossier(state: DossierState) -> dict:
                     expires_at=expires_at,
                     citations_json=citations,
                     evidence_map_json=evidence_map,
-                    source_extraction_run_ids=[],
+                    source_extraction_run_ids=[extraction_run_id] if extraction_run_id else [],
                 )
                 db.add(cache_entry)
 
@@ -488,7 +530,7 @@ def stage_dossier(state: DossierState) -> dict:
         validation_passed = not citation_issues or citation_coverage >= _CRITICAL_COVERAGE_THRESHOLD
 
         report = ValidationReport(
-            extraction_run_id=None,  # dossier pipeline has no ExtractionRun
+            extraction_run_id=extraction_run_id,
             pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
             entity_kind=entity_kind,
             entity_id=uuid.UUID(entity_id) if entity_id else None,
@@ -504,16 +546,19 @@ def stage_dossier(state: DossierState) -> dict:
 
         # Write confidence score
         from src.models.confidence_score import ConfidenceScore
+        breakdown = state.get("confidence_breakdown") or {}
         score_record = ConfidenceScore(
-            extraction_run_id=None,
+            extraction_run_id=extraction_run_id,
             pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
             entity_kind=entity_kind,
             entity_id=uuid.UUID(entity_id) if entity_id else None,
             overall_confidence=confidence,
-            source_score=None,
-            extraction_score=None,
+            # Dossier sub-scores: source = citation quality, extraction = field completeness,
+            # validation = citation coverage, staleness = 1.0 (researched just now).
+            source_score=breakdown.get("citation_quality"),
+            extraction_score=breakdown.get("extraction"),
             validation_score=citation_coverage,
-            staleness_score=None,
+            staleness_score=1.0,
             weights_json={"citation_quality": 0.4, "citation_coverage": 0.3, "extraction": 0.3},
             details_json={"job_type": job_type, "citation_issues": citation_issues},
         )
@@ -523,10 +568,69 @@ def stage_dossier(state: DossierState) -> dict:
     except Exception as exc:
         db.rollback()
         logger.error("stage_dossier failed: %s", exc)
+        raw_artifact_id = extraction_run_id = None
     finally:
         db.close()
 
-    return {**_progress(state, "stage_dossier")}
+    return {
+        "raw_artifact_id": str(raw_artifact_id) if raw_artifact_id else None,
+        "extraction_run_id": str(extraction_run_id) if extraction_run_id else None,
+        **_progress(state, "stage_dossier"),
+    }
+
+
+def _record_dossier_provenance(
+    db, state, entity_kind, entity_id, job_type, dossier_json, citations, evidence_map, confidence,
+):
+    """Store the research response as a raw artifact and the dossier as an extraction run.
+
+    Returns:
+        ``(raw_artifact_id, extraction_run_id)`` as UUIDs.
+    """
+    import hashlib
+
+    from src.models.extraction_run import ExtractionRun
+    from src.models.raw_artifact import RawArtifact
+
+    payload = json.dumps(
+        {"dossier": dossier_json, "citations": citations, "report": state.get("dossier_report")},
+        sort_keys=True, default=str,
+    )
+    content_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    artifact = db.query(RawArtifact).filter(RawArtifact.content_sha256 == content_hash).first()
+    if artifact is None:
+        artifact = RawArtifact(
+            id=uuid.uuid4(),
+            fetched_from_url=f"research-gateway://{job_type}",
+            artifact_type="json",
+            content_sha256=content_hash,
+            byte_size=len(payload.encode("utf-8")),
+            # The response itself is kept in extraction_runs.extracted_json/citations_json.
+            storage_uri=f"research-gateway://{job_type}/{content_hash[:16]}",
+            content_type="application/json",
+        )
+        db.add(artifact)
+        db.flush()
+
+    run = ExtractionRun(
+        id=uuid.uuid4(),
+        job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
+        raw_artifact_id=artifact.id,
+        entity_kind=entity_kind,
+        entity_id=uuid.UUID(entity_id) if entity_id else None,
+        extractor_name=f"research_gateway:{job_type}",
+        prompt_version=state.get("prompt_version") or "v1",
+        prompt_variant=state.get("prompt_variant"),
+        extracted_json=dossier_json or {},
+        citations_json=citations or [],
+        evidence_map_json=evidence_map or {},
+        confidence=confidence,
+        status="validated" if state.get("promote") else "draft",
+        validation_json={"citation_issues": state.get("citation_issues", [])},
+    )
+    db.add(run)
+    db.flush()
+    return artifact.id, run.id
 
 
 # ------------------------------------------------------------------
@@ -534,7 +638,7 @@ def stage_dossier(state: DossierState) -> dict:
 # ------------------------------------------------------------------
 
 def fallback_scrape(state: DossierState) -> dict:
-    """Fallback to existing fetch -> extract -> merge flow when confidence < 0.70."""
+    """Fallback to existing fetch -> extract -> merge flow when confidence < STAGE_THRESHOLD."""
     from src.config import settings
 
     if not settings.enable_scrape_fallback:
@@ -618,15 +722,20 @@ def promote_dossier(state: DossierState) -> dict:
     if job_type == "recommendation_run":
         return _promote_recommendations(state)
 
-    # For school/funding dossiers, delegate to existing promote_write logic
+    # Only school dossiers map onto canonical institution fields. Other dossier types
+    # (e.g. funding, which runs against a school entity) have no canonical columns to
+    # write, so they stay in enrichment_cache only.
+    if job_type != "school_dossier":
+        return {"status": "success", **_progress(state, "promote_dossier")}
+
     from src.pipeline.orchestrator.nodes import promote_write
 
     promote_state = {
-        "extracted": dossier_json,
+        "extracted": canonical_fields(dossier_json, job_type),
         "entity_kind": entity_kind,
         "entity_id": entity_id,
         "confidence": confidence,
-        "extraction_run_id": None,
+        "extraction_run_id": state.get("extraction_run_id"),
         "progress": state.get("progress", []),
     }
     return promote_write(promote_state)

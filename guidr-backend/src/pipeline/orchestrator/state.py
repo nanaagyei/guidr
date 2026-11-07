@@ -32,9 +32,13 @@ class OrchestratorState(TypedDict, total=False):
     validation_warnings: list[str]
     validation_passed: bool
     confidence: float
+    # Sub-scores from ConfidenceScorer.compute_breakdown (source, extraction, validation, staleness)
+    confidence_breakdown: dict
 
     promote: bool
     repair: bool
+    # Repair is on-demand only: set by an admin/paid trigger, never automatically
+    repair_requested: bool
     retry_count: int
     max_attempts: int
     status: str

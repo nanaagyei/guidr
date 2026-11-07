@@ -121,7 +121,7 @@ def discover_urls(state: OrchestratorState) -> dict:
     # Persist discovered URLs as source_documents
     db = _get_db()
     try:
-        from src.models.source_document import SourceDocument
+        from src.models.source_document import SourceDocument, research_provider_label
         entity_id = state.get("entity_id")
         for url_result in resp.results[:5]:
             doc = SourceDocument(
@@ -129,7 +129,7 @@ def discover_urls(state: OrchestratorState) -> dict:
                 entity_id=uuid.UUID(entity_id) if entity_id else None,
                 canonical_url=url_result.url,
                 purpose=category,
-                discovered_by=url_result.source or "research_gateway",
+                discovered_by=research_provider_label(url_result.source),
             )
             db.add(doc)
         db.commit()
@@ -267,6 +267,42 @@ def fetch_page(state: OrchestratorState) -> dict:
 # Node: store_raw
 # ------------------------------------------------------------------
 
+def _ensure_source_document(db, state: dict, url: str):
+    """Return the id of the source_documents row for ``url``, creating it if needed."""
+    if not url:
+        return None
+    from src.models.source_document import SourceDocument
+
+    entity_kind = state.get("entity_kind", "school")
+    entity_id = state.get("entity_id")
+    entity_uuid = uuid.UUID(entity_id) if entity_id else None
+
+    query = db.query(SourceDocument).filter(
+        SourceDocument.entity_kind == entity_kind,
+        SourceDocument.canonical_url == url,
+    )
+    query = query.filter(
+        SourceDocument.entity_id == entity_uuid if entity_uuid else SourceDocument.entity_id.is_(None)
+    )
+    doc = query.first()
+    now = datetime.utcnow()
+    if doc is None:
+        doc = SourceDocument(
+            entity_kind=entity_kind,
+            entity_id=entity_uuid,
+            canonical_url=url,
+            purpose=state.get("category"),
+            # The URL came from the catalog (website_url) or a known source, not a model.
+            # `discovered_by` is the `research_provider` enum, so it must be one of its values.
+            discovered_by="manual",
+        )
+        db.add(doc)
+    doc.last_crawled_at = now
+    doc.last_seen_at = now
+    db.flush()
+    return doc.id
+
+
 def store_raw(state: OrchestratorState) -> dict:
     """Store raw content to MinIO and create raw_artifacts row."""
     content = state.get("raw_content")
@@ -289,35 +325,82 @@ def store_raw(state: OrchestratorState) -> dict:
     )
     storage_uri = f"minio://{storage_key}" if storage_key else f"memory://{content_hash[:16]}"
 
-    # Create raw_artifacts row
+    # Create (or reuse) the raw_artifacts row, linked to its source_documents row
     artifact_id = None
+    source_document_id = None
     db = _get_db()
     try:
         from src.models.raw_artifact import RawArtifact
-        artifact = RawArtifact(
-            fetched_from_url=target_url,
-            artifact_type="html",
-            content_sha256=content_hash,
-            byte_size=len(content.encode("utf-8")),
-            storage_uri=storage_uri,
+        source_document_id = _ensure_source_document(db, state, target_url)
+        artifact = (
+            db.query(RawArtifact).filter(RawArtifact.content_sha256 == content_hash).first()
         )
-        db.add(artifact)
+        if artifact is None:
+            artifact = RawArtifact(
+                source_document_id=source_document_id,
+                fetched_from_url=target_url,
+                artifact_type="html",
+                content_sha256=content_hash,
+                byte_size=len(content.encode("utf-8")),
+                storage_uri=storage_uri,
+            )
+            db.add(artifact)
+        elif artifact.source_document_id is None and source_document_id is not None:
+            artifact.source_document_id = source_document_id
         db.commit()
         artifact_id = str(artifact.id)
     except Exception as exc:
         db.rollback()
+        # Leave artifact_id unset: a made-up id would break the extraction_runs foreign key.
         logger.warning("Failed to create raw_artifact: %s", exc)
-        # Generate a transient ID if DB write fails
-        artifact_id = str(uuid.uuid4())
     finally:
         db.close()
 
-    return {"raw_artifact_id": artifact_id, **_progress(state, "store_raw")}
+    return {
+        "raw_artifact_id": artifact_id,
+        "source_document_id": str(source_document_id) if source_document_id else None,
+        **_progress(state, "store_raw"),
+    }
 
 
 # ------------------------------------------------------------------
 # Node: extract_structured
 # ------------------------------------------------------------------
+
+def _as_dict(item: Any) -> dict:
+    if item is None:
+        return {}
+    if hasattr(item, "model_dump"):
+        return item.model_dump(mode="json", exclude_none=True)
+    return dict(item) if isinstance(item, dict) else {}
+
+
+def _normalize_extracted(result: Any, entity_kind: str, entity_name: str | None) -> dict:
+    """Turn an extractor's output into the single dict this entity's nodes expect.
+
+    The program, faculty and funding extractors return a *list* of records found on the
+    page. Enrichment is for one entity, so only the record whose name matches that entity
+    is kept. If no record matches, nothing is returned rather than another entity's data.
+    """
+    if not isinstance(result, list):
+        return _as_dict(result)
+
+    items = [d for d in (_as_dict(i) for i in result) if d]
+    if not items:
+        return {}
+    name_key = "full_name" if entity_kind == "professor" else "name"
+    target = (entity_name or "").strip().lower()
+    if not target or target == "unknown":
+        return items[0] if len(items) == 1 else {}
+    for item in items:
+        if str(item.get(name_key) or "").strip().lower() == target:
+            return item
+    for item in items:
+        name = str(item.get(name_key) or "").strip().lower()
+        if name and (name in target or target in name):
+            return item
+    return {}
+
 
 def extract_structured(state: OrchestratorState) -> dict:
     """Call the appropriate extractor based on entity_kind/category."""
@@ -325,31 +408,32 @@ def extract_structured(state: OrchestratorState) -> dict:
     entity_kind = state.get("entity_kind", "school")
     category = state.get("category", "SCHOOL_OVERVIEW")
     target_url = state.get("target_url", "")
+    entity_name = state.get("entity_name")
 
     extracted: dict[str, Any] = {}
+    update: dict[str, Any] = {}
 
     try:
         if entity_kind == "funding" or "FUNDING" in category:
             from src.pipeline.extractors import FundingExtractor
-            extractor = FundingExtractor()
-            extracted = extractor.extract_from_markdown(content, source_url=target_url)
+            result = FundingExtractor().extract_from_markdown(content, source_url=target_url)
         elif entity_kind == "professor" or "FACULTY" in category:
             from src.pipeline.extractors import FacultyExtractor
-            extractor = FacultyExtractor()
-            extracted = extractor.extract_from_markdown(content, source_url=target_url)
+            result = FacultyExtractor().extract_from_markdown(content, source_url=target_url)
         elif entity_kind == "program" or "PROGRAM" in category:
             from src.pipeline.extractors import ProgramExtractor
-            extractor = ProgramExtractor()
-            extracted = extractor.extract_from_markdown(content, source_url=target_url)
+            result = ProgramExtractor().extract_from_markdown(content, source_url=target_url)
         else:
             from src.pipeline.extractors import OverviewExtractor
-            extractor = OverviewExtractor()
-            extracted = extractor.extract_from_markdown(content, source_url=target_url)
+            result = OverviewExtractor().extract_from_markdown(content)
+        extracted = _normalize_extracted(result, entity_kind, entity_name)
     except Exception as exc:
+        # No fallback values: page text must never be staged or promoted as a fact.
         logger.error("Extraction failed for %s/%s: %s", entity_kind, category, exc)
-        extracted = {"description": content[:500] if content else "", "source": "fallback"}
+        extracted = {}
+        update["error"] = f"Extraction failed: {exc}"
 
-    return {"extracted": extracted, **_progress(state, "extract_structured")}
+    return {"extracted": extracted, **update, **_progress(state, "extract_structured")}
 
 
 # ------------------------------------------------------------------
@@ -398,7 +482,7 @@ def score_confidence(state: OrchestratorState) -> dict:
     )
 
     scorer = ConfidenceScorer()
-    conf = scorer.compute(
+    breakdown = scorer.compute_breakdown(
         entity_kind=entity_kind,
         extracted=extracted or {},
         validation_result=validation_result,
@@ -406,12 +490,20 @@ def score_confidence(state: OrchestratorState) -> dict:
         entity_website=website_hint,
         fetched_at=fetched_at,
     )
+    conf = breakdown["overall"]
 
     promote = scorer.should_promote(conf) and not errors
-    repair = scorer.should_repair(conf) and state.get("retry_count", 0) < 2
+    # Repair is on-demand only (see confidence_scorer): it runs when an admin/paid trigger
+    # set `repair_requested`, the result is not promotable, and attempts remain.
+    repair = (
+        bool(state.get("repair_requested"))
+        and not promote
+        and state.get("retry_count", 0) < 2
+    )
 
     return {
         "confidence": conf,
+        "confidence_breakdown": breakdown,
         "promote": promote,
         "repair": repair,
         **_progress(state, "score_confidence"),
@@ -440,14 +532,19 @@ def _write_validation_report(db, extraction_run_id, state, entity_kind, entity_i
 
 
 def _write_confidence_score(db, extraction_run_id, state, entity_kind, entity_id, confidence):
-    """Persist a ConfidenceScore row linked to the extraction run."""
+    """Persist a ConfidenceScore row (with its four sub-scores) linked to the extraction run."""
     from src.models.confidence_score import ConfidenceScore
+    breakdown = state.get("confidence_breakdown") or {}
     score = ConfidenceScore(
         extraction_run_id=extraction_run_id,
         pipeline_job_id=uuid.UUID(state["pipeline_job_id"]) if state.get("pipeline_job_id") else None,
         entity_kind=entity_kind,
         entity_id=uuid.UUID(entity_id) if entity_id else None,
         overall_confidence=confidence,
+        source_score=breakdown.get("source"),
+        extraction_score=breakdown.get("extraction"),
+        validation_score=breakdown.get("validation"),
+        staleness_score=breakdown.get("staleness"),
         weights_json={"source": 0.35, "extraction": 0.35, "validation": 0.25, "staleness": 0.05},
     )
     db.add(score)

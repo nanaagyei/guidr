@@ -372,7 +372,7 @@ class ResearchGatewayService:
             return
         try:
             from src.db import SessionLocal
-            from src.models.source_document import SourceDocument
+            from src.models.source_document import SourceDocument, research_provider_label
 
             db = SessionLocal()
             try:
@@ -382,7 +382,7 @@ class ResearchGatewayService:
                         entity_id=uuid.UUID(entity_id),
                         canonical_url=result.url,
                         purpose=request.category,
-                        discovered_by=result.source or "research_gateway",
+                        discovered_by=research_provider_label(result.source),
                     )
                     db.merge(doc)
                 db.commit()

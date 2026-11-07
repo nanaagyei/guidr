@@ -351,8 +351,9 @@ class TestExtractStructured:
             }
             result = mod.extract_structured(state)
 
-        assert "extracted" in result
-        assert result["extracted"]["source"] == "fallback"
+        # A failed extraction yields no data (never page text as a "fact") and an error.
+        assert result["extracted"] == {}
+        assert "Extraction failed" in result["error"]
 
 
 # ------------------------------------------------------------------
@@ -368,9 +369,10 @@ class TestScoreConfidence:
         from src.pipeline import processors as proc_mod
 
         mock_scorer = MagicMock()
-        mock_scorer.compute.return_value = 0.92
+        mock_scorer.compute_breakdown.return_value = {
+            "source": 1.0, "extraction": 0.9, "validation": 1.0, "staleness": 1.0, "overall": 0.92,
+        }
         mock_scorer.should_promote.return_value = True
-        mock_scorer.should_repair.return_value = False
 
         with patch.object(proc_mod, "ConfidenceScorer", return_value=mock_scorer):
             state = {
@@ -386,32 +388,47 @@ class TestScoreConfidence:
             result = mod.score_confidence(state)
 
             assert result["confidence"] == 0.92
+            assert result["confidence_breakdown"]["source"] == 1.0
             assert result["promote"] is True
             assert result["repair"] is False
             assert "score_confidence" in result["progress"]
 
-    def test_score_confidence_sets_repair_flag(self):
+    def _low_confidence_state(self, **extra):
+        state = {
+            "entity_kind": "school",
+            "extracted": {"description": "Sparse data"},
+            "validation_errors": [],
+            "target_url": "https://example.com/page",
+            "website_hint": "https://example.edu",
+            "fetched_at": "2026-03-01T12:00:00",
+            "retry_count": 0,
+            "progress": [],
+        }
+        state.update(extra)
+        return state
+
+    def test_low_confidence_does_not_repair_automatically(self):
+        """Repair is on-demand only; a low score alone never triggers it (real scorer)."""
         mod = _get_nodes_mod()
-        from src.pipeline import processors as proc_mod
 
-        mock_scorer = MagicMock()
-        mock_scorer.compute.return_value = 0.35
-        mock_scorer.should_promote.return_value = False
-        mock_scorer.should_repair.return_value = True
+        result = mod.score_confidence(self._low_confidence_state())
 
-        with patch.object(proc_mod, "ConfidenceScorer", return_value=mock_scorer):
-            state = {
-                "entity_kind": "school",
-                "extracted": {"description": "Sparse data"},
-                "validation_errors": [],
-                "target_url": "https://example.edu",
-                "website_hint": "https://example.edu",
-                "fetched_at": "2026-03-01T12:00:00",
-                "retry_count": 0,
-                "progress": [],
-            }
-            result = mod.score_confidence(state)
+        assert result["confidence"] < 0.55
+        assert result["promote"] is False
+        assert result["repair"] is False
 
-            assert result["confidence"] == 0.35
-            assert result["promote"] is False
-            assert result["repair"] is True
+    def test_repair_runs_when_requested(self):
+        mod = _get_nodes_mod()
+
+        result = mod.score_confidence(self._low_confidence_state(repair_requested=True))
+
+        assert result["repair"] is True
+
+    def test_requested_repair_respects_attempt_limit(self):
+        mod = _get_nodes_mod()
+
+        result = mod.score_confidence(
+            self._low_confidence_state(repair_requested=True, retry_count=2)
+        )
+
+        assert result["repair"] is False
