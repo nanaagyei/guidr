@@ -14,8 +14,12 @@ from src.schemas.password_reset import (
     ResetPasswordResponse,
 )
 from src.utils.two_factor import create_2fa_code, verify_2fa_code
-from src.utils.password import hash_password, verify_password, check_password_in_history, save_password_to_history
-from src.utils.password_strength import check_password_strength
+from src.utils.password import (
+    PasswordPolicyError,
+    hash_password,
+    save_password_to_history,
+    validate_new_password,
+)
 from src.services.email import send_2fa_code_email
 import logging
 
@@ -190,27 +194,13 @@ async def reset_password(
             detail="User not found"
         )
 
-    # Check password strength
-    strength_check = check_password_strength(request.new_password)
-    if not strength_check["is_valid"]:
+    # Strength, length and reuse rules (shared with POST /account/change-password)
+    try:
+        validate_new_password(db, str(user.id), request.new_password, user.password_hash)
+    except PasswordPolicyError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Weak password. {', '.join(strength_check['feedback'])}"
-        )
-
-    # Check password length (bcrypt limit)
-    password_bytes = len(request.new_password.encode('utf-8'))
-    if password_bytes > 72:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password cannot be longer than 72 bytes"
-        )
-
-    # Check if password was previously used (including current password)
-    if check_password_in_history(db, str(user.id), request.new_password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot reuse a previous password. Please choose a different password."
+            detail=str(e)
         )
 
     # Hash new password

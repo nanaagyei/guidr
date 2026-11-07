@@ -5,6 +5,22 @@ All notable changes to Guidr Backend will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- [2026-11-07 UTC] feat(privacy): Account data export, password change and account deletion (#56)
+  - `GET /account/export`: JSON attachment (`guidr-export-YYYYMMDD.json`) with profile, academic
+    records, essays (versions, reviews), document metadata, recommendation sessions (results),
+    saved recommendations, outreach emails and the user's research cache entries; never includes
+    the password hash, password history or two-factor codes
+  - `POST /account/change-password`: re-authenticates; same strength, length and reuse rules as
+    password reset (now shared through `validate_new_password`)
+  - `POST /account/delete`: re-authenticates; deletes stored files (failures logged), deletes every
+    user-owned row in one transaction (including email-keyed registration codes), anonymises the
+    user row and clears the session cookie
+  - `USER_OWNED_MODELS` plus a test that fails if a model with `user_id` is missing from it
+  - Files: `src/routes/account.py`, `src/services/account_service.py`, `src/schemas/account.py`,
+    `src/utils/password.py`, `src/routes/password_reset.py`, `src/main.py`,
+    `tests/routes/test_account_routes.py`
+
+### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)
   - `.env.production.example` (env var names/grouping, no secrets)

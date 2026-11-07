@@ -4,6 +4,14 @@ All notable changes to Guidr Frontend will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- [2026-11-07 UTC] feat(privacy): Working privacy settings (#56)
+  - Change password (with match check and toasts instead of `alert`), JSON data export download, and
+    account deletion behind a dialog requiring the password and the word DELETE
+  - Replaced the false "2FA is enabled" statement and removed "Manage 2FA Settings"
+  - FAQ now says data can be exported or deleted from Settings
+  - Files: `src/components/settings/PrivacySettings.tsx`, `src/utils/api.ts`, `src/app/help/faq/page.tsx`
+
 ### Removed
 - [2026-11-07 UTC] fix(frontend): Remove product and marketing claims the code cannot support (#42)
   - Landing hero: dropped the application-tracker tab, "94% accuracy", the "Guidr 2.0"

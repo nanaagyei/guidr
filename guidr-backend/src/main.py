@@ -61,8 +61,9 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 
-from src.routes import profile, academic_records, schools, programs, documents, essays, two_factor, password_reset, recommendations, professors, data_ingestion, funding, research, pipeline, dossiers
+from src.routes import account, profile, academic_records, schools, programs, documents, essays, two_factor, password_reset, recommendations, professors, data_ingestion, funding, research, pipeline, dossiers
 from src.services.search_service import search_service
+app.include_router(account.router)
 app.include_router(profile.router)
 app.include_router(academic_records.router)
 app.include_router(schools.router)
