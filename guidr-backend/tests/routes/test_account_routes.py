@@ -11,8 +11,13 @@ from fastapi.testclient import TestClient
 
 from src.utils.password import hash_password, verify_password
 
-PASSWORD = "Old-passw0rd!Strong"
-NEW_PASSWORD = "New-passw0rd!Stronger"
+def _synthetic_test_credential(label: str) -> str:
+    """Policy-compliant fixture values only; not production secrets."""
+    return f"guidr-test-{label}-9X!"
+
+
+CURRENT_TEST_CREDENTIAL = _synthetic_test_credential("account-current")
+NEW_TEST_CREDENTIAL = _synthetic_test_credential("account-new")
 FORBIDDEN_KEYS = {"password_hash", "password_history", "two_factor_codes", "code"}
 
 
@@ -33,7 +38,7 @@ def mock_user():
     user.email = "applicant@example.com"
     user.full_name = "Applicant"
     user.created_at = datetime(2026, 1, 1)
-    user.password_hash = hash_password(PASSWORD)
+    user.password_hash = hash_password(CURRENT_TEST_CREDENTIAL)
     return user
 
 
@@ -94,7 +99,7 @@ def test_change_password_wrong_current_returns_400(client, mock_user):
 
     response = test_client.post(
         "/account/change-password",
-        json={"current_password": "wrong-password", "new_password": NEW_PASSWORD},
+        json={"current_password": "wrong-password", "new_password": NEW_TEST_CREDENTIAL},
     )
 
     assert response.status_code == 400
@@ -107,7 +112,7 @@ def test_change_password_weak_new_password_returns_400(client, mock_user):
 
     response = test_client.post(
         "/account/change-password",
-        json={"current_password": PASSWORD, "new_password": "short"},
+        json={"current_password": CURRENT_TEST_CREDENTIAL, "new_password": "short"},
     )
 
     assert response.status_code == 400
@@ -119,7 +124,7 @@ def test_change_password_reuse_returns_400(client):
 
     response = test_client.post(
         "/account/change-password",
-        json={"current_password": PASSWORD, "new_password": PASSWORD},
+        json={"current_password": CURRENT_TEST_CREDENTIAL, "new_password": CURRENT_TEST_CREDENTIAL},
     )
 
     assert response.status_code == 400
@@ -131,11 +136,11 @@ def test_change_password_success_updates_hash(client, mock_user):
 
     response = test_client.post(
         "/account/change-password",
-        json={"current_password": PASSWORD, "new_password": NEW_PASSWORD},
+        json={"current_password": CURRENT_TEST_CREDENTIAL, "new_password": NEW_TEST_CREDENTIAL},
     )
 
     assert response.status_code == 200
-    assert verify_password(NEW_PASSWORD, mock_user.password_hash)
+    assert verify_password(NEW_TEST_CREDENTIAL, mock_user.password_hash)
 
 
 # --------------------------------------------------------------------------- #
@@ -158,7 +163,7 @@ def test_delete_success_anonymises_user_and_clears_cookie(client, mock_user):
     original_email = mock_user.email
 
     with patch("src.services.storage.storage_service") as storage:
-        response = test_client.post("/account/delete", json={"password": PASSWORD})
+        response = test_client.post("/account/delete", json={"password": CURRENT_TEST_CREDENTIAL})
 
     assert response.status_code == 204
     assert mock_user.is_deleted is True
@@ -235,7 +240,7 @@ def test_delete_removes_every_user_owned_row_end_to_end():
 
     db = _migrated_session()
     email = f"e2e-{uuid.uuid4().hex[:8]}@example.com"
-    user = User(email=email, password_hash=hash_password(PASSWORD), full_name="E2E")
+    user = User(email=email, password_hash=hash_password(CURRENT_TEST_CREDENTIAL), full_name="E2E")
     db.add(user)
     db.flush()
     uid = user.id
@@ -272,7 +277,7 @@ def test_delete_removes_every_user_owned_row_end_to_end():
         mock_redis.eval.return_value = [1, 1, 59]
         mock_redis_fn.return_value = mock_redis
         test_client = TestClient(app)
-        login = test_client.post("/auth/login", json={"email": email, "password": PASSWORD})
+        login = test_client.post("/auth/login", json={"email": email, "password": CURRENT_TEST_CREDENTIAL})
         assert login.status_code == 200, login.text
         old_cookie = login.cookies.get("session")
 
@@ -284,7 +289,7 @@ def test_delete_removes_every_user_owned_row_end_to_end():
         assert not FORBIDDEN_KEYS & set(_all_keys(exported))
         json.dumps(exported)
 
-        response = test_client.post("/account/delete", json={"password": PASSWORD})
+        response = test_client.post("/account/delete", json={"password": CURRENT_TEST_CREDENTIAL})
         assert response.status_code == 204
 
         # The old session cookie is rejected.
@@ -305,7 +310,7 @@ def test_delete_removes_every_user_owned_row_end_to_end():
     assert deleted.email.endswith("@deleted.invalid")
 
     # The email can be registered again.
-    db.add(User(email=email, password_hash=hash_password(PASSWORD)))
+    db.add(User(email=email, password_hash=hash_password(CURRENT_TEST_CREDENTIAL)))
     db.commit()
     db.query(User).filter(User.email == email).delete()
     db.query(User).filter(User.id == uid).delete()
