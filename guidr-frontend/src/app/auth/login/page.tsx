@@ -44,11 +44,6 @@ export default function LoginPage() {
     }
   }
 
-  function handleGoogleSignIn() {
-    // TODO: Implement Google OAuth
-    console.log("Google sign-in clicked");
-  }
-
   function handleResetPassword() {
     router.push("/auth/reset-password");
   }
@@ -67,7 +62,6 @@ export default function LoginPage() {
       description="Sign in to continue your graduate school journey"
       heroImageSrc="https://images.unsplash.com/photo-1627556704302-624286467c65?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
       onSignIn={handleSignIn}
-      onGoogleSignIn={handleGoogleSignIn}
       onResetPassword={handleResetPassword}
       onCreateAccount={handleCreateAccount}
       error={error}

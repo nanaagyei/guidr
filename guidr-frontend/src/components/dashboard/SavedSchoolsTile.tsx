@@ -134,10 +134,10 @@ export default function SavedSchoolsTile() {
                 {school.institution_id && (
                   <div className="mt-2 pt-2 border-t border-border">
                     <Link
-                      href={`/institutions/${school.institution_id}`}
+                      href="/institutions"
                       className="text-xs text-primary hover:text-primaryHover font-medium inline-flex items-center gap-1"
                     >
-                      View Details
+                      Browse institutions
                       <ExternalLink className="h-3 w-3" />
                     </Link>
                   </div>

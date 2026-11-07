@@ -85,11 +85,6 @@ export default function RegisterPage() {
     }
   }
 
-  function handleGoogleSignIn() {
-    // TODO: Implement Google OAuth
-    console.log('Google sign-in clicked');
-  }
-
   function handleResetPassword() {
     // Not applicable for registration
   }
@@ -132,7 +127,6 @@ export default function RegisterPage() {
       description="Join Guidr and start your journey to graduate school"
       heroImageSrc="https://images.unsplash.com/photo-1671709141384-446544c292ca?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
       onSignIn={handleSignIn}
-      onGoogleSignIn={handleGoogleSignIn}
       onResetPassword={handleResetPassword}
       onCreateAccount={handleCreateAccount}
       isRegister={true}
