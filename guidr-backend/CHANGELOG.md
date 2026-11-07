@@ -4,6 +4,14 @@ All notable changes to Guidr Backend will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- [2026-11-07 UTC] chore(deps): redis-py 8 with Celery 5.7 (#23)
+  - redis-py `>=8.0.1,<9`; Celery `>=5.7.0` is required because kombu 5.6 caps `redis<6.5`
+    (kombu 5.7 allows `redis>=6.4,<9`)
+  - Verified locally: full pytest suite, and a Celery 5.7 worker on redis 8 came online and
+    registered all tasks
+  - Files: `requirements.txt`
+
 ### Added
 - [2026-07-08 UTC] chore(deploy): Railway deployment prep for API + Celery worker/beat
   - `railway.toml` (Dockerfile build, `python run.py`, healthcheck `/health`)
