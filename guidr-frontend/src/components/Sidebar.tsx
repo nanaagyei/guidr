@@ -192,7 +192,7 @@ const LockedSidebarLink = ({
     >
       <span
         className={cn(
-          'relative flex-shrink-0 flex items-center justify-center',
+          'relative shrink-0 flex items-center justify-center',
           !open && !isMobile && 'w-full',
         )}
       >
@@ -233,7 +233,7 @@ const ComingSoonSidebarLink = ({ link }: { link: NavLink }) => {
           <span className="flex items-center gap-2">
             {link.label}
             {showFull && (
-              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent">
+              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] leading-5 font-semibold uppercase tracking-wide text-accent">
                 Soon
               </span>
             )}
@@ -286,7 +286,7 @@ const HeaderSection = ({ open, setOpen }: { open: boolean; setOpen: (open: boole
         /* Mobile: always show X to close drawer */
         <button
           onClick={() => setOpen(false)}
-          className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors flex-shrink-0"
+          className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors shrink-0"
           aria-label="Close menu"
         >
           <X className="h-5 w-5 text-gray-300" />
@@ -302,7 +302,7 @@ const HeaderSection = ({ open, setOpen }: { open: boolean; setOpen: (open: boole
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.15 }}
               onClick={unpin}
-              className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors flex-shrink-0"
+              className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors shrink-0"
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
             >
@@ -316,7 +316,7 @@ const HeaderSection = ({ open, setOpen }: { open: boolean; setOpen: (open: boole
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.15 }}
               onClick={pin}
-              className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors flex-shrink-0"
+              className="rounded-lg p-1.5 hover:bg-sidebarHover transition-colors shrink-0"
               aria-label="Pin sidebar"
               title="Pin sidebar"
             >
@@ -399,7 +399,7 @@ const LogoutButton = ({ open, logout }: { open: boolean; logout: () => void }) =
       )}
     >
       <span className={cn(
-        'flex-shrink-0 flex items-center justify-center',
+        'shrink-0 flex items-center justify-center',
         !isOpen && 'w-full'
       )}>
         <LogOut className="h-5 w-5 shrink-0" />

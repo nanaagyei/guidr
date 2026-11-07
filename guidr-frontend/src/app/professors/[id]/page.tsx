@@ -112,9 +112,9 @@ export default function ProfessorDetailPage() {
           <div className="flex items-start gap-4">
             <div className="h-16 w-16 rounded-2xl bg-muted" />
             <div className="flex-1 space-y-2">
-              <div className="h-7 w-64 bg-muted rounded" />
-              <div className="h-4 w-48 bg-muted rounded" />
-              <div className="h-4 w-32 bg-muted rounded" />
+              <div className="h-7 w-64 bg-muted rounded-sm" />
+              <div className="h-4 w-48 bg-muted rounded-sm" />
+              <div className="h-4 w-32 bg-muted rounded-sm" />
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -175,7 +175,7 @@ export default function ProfessorDetailPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-start gap-4 mb-8"
       >
-        <div className="p-4 bg-primary/10 rounded-2xl flex-shrink-0">
+        <div className="p-4 bg-primary/10 rounded-2xl shrink-0">
           <GraduationCap className="h-8 w-8 text-primary" />
         </div>
         <div className="flex-1 min-w-0">

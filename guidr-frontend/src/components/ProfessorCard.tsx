@@ -55,7 +55,7 @@ export default function ProfessorCard({ professor, onGenerateEmail, index = 0 }:
       transition={{ delay: index * 0.05 }}
       whileHover={{ scale: 1.02, y: -4 }}
       onClick={handleCardClick}
-      className="bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/30 group cursor-pointer relative"
+      className="bg-card rounded-xl p-6 shadow-xs hover:shadow-md transition-all border border-border hover:border-primary/30 group cursor-pointer relative"
     >
       {/* Match score badge */}
       {professor.match_score != null && professor.match_score > 0 && (
@@ -70,7 +70,7 @@ export default function ProfessorCard({ professor, onGenerateEmail, index = 0 }:
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-start gap-3 mb-3">
-            <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors flex-shrink-0">
+            <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors shrink-0">
               <GraduationCap className="h-5 w-5 text-purple-700" />
             </div>
             <div className="flex-1 min-w-0 pr-16">
@@ -84,7 +84,7 @@ export default function ProfessorCard({ professor, onGenerateEmail, index = 0 }:
           {/* Institution & Location */}
           {(professor.institution_name || professor.city || professor.country) && (
             <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-              <MapPin className="h-4 w-4 text-textSecondary flex-shrink-0" />
+              <MapPin className="h-4 w-4 text-textSecondary shrink-0" />
               <span className="font-medium">{professor.institution_name}</span>
               {(professor.city || professor.country) && (
                 <span className="text-gray-500">

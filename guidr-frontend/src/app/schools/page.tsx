@@ -180,7 +180,7 @@ export default function SchoolsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 bg-primaryLight border border-primary/20 rounded-xl px-4 py-3 mb-6"
         >
-          <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="w-4 h-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582" />
           </svg>
           <span className="text-sm text-primary font-medium flex-1">
@@ -203,7 +203,7 @@ export default function SchoolsPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="w-72 flex-shrink-0"
+              className="w-72 shrink-0"
             >
               <div className="card p-5 sticky top-6">
                 <div className="flex items-center justify-between mb-5">

@@ -43,7 +43,7 @@ interface SignInPageProps {
 // --- SUB-COMPONENTS ---
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-sm transition-colors focus-within:border-primary/70 focus-within:bg-primary/10">
+  <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-xs transition-colors focus-within:border-primary/70 focus-within:bg-primary/10">
     {children}
   </div>
 );
@@ -86,7 +86,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw] bg-background">
+    <div className="h-dvh flex flex-col md:flex-row font-geist w-dvw bg-background">
       {/* Logo at top left */}
       <div className="absolute top-6 left-6 z-10">
         <Image
@@ -121,7 +121,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     <div className="animate-element animate-delay-300">
                       <label className="text-sm font-medium text-gray-700/80">Full Name</label>
                       <GlassInputWrapper>
-                        <input name="fullName" type="text" placeholder="Enter your full name" className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500" />
+                        <input name="fullName" type="text" placeholder="Enter your full name" className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-hidden text-gray-900 placeholder-gray-500" />
                       </GlassInputWrapper>
                     </div>
                   )}
@@ -129,7 +129,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   <div className="animate-element animate-delay-300">
                     <label className="text-sm font-medium text-gray-700/80">Email Address</label>
                     <GlassInputWrapper>
-                      <input name="email" type="email" placeholder="Enter your email address" className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500" />
+                      <input name="email" type="email" placeholder="Enter your email address" className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-hidden text-gray-900 placeholder-gray-500" />
                     </GlassInputWrapper>
                   </div>
 
@@ -138,7 +138,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                       <label className="text-sm font-medium text-gray-700/80">Password</label>
                       <GlassInputWrapper>
                         <div className="relative">
-                          <input name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500" />
+                          <input name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-hidden text-gray-900 placeholder-gray-500" />
                           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center">
                             {showPassword ? <EyeOff className="w-5 h-5 text-gray-700/60 hover:text-text transition-colors" /> : <Eye className="w-5 h-5 text-gray-700/60 hover:text-text transition-colors" />}
                           </button>

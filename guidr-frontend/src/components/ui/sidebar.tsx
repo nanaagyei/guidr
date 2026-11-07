@@ -266,7 +266,7 @@ export const SidebarLink = ({ link, className }: SidebarLinkProps) => {
       )}
     >
       <span className={cn(
-        'flex-shrink-0 flex items-center justify-center',
+        'shrink-0 flex items-center justify-center',
         isActive && '[&>svg]:text-primary [&>div]:bg-primary/15',
         !isActive && '[&>svg]:text-textSecondary',
         !open && !isMobile && 'w-full'

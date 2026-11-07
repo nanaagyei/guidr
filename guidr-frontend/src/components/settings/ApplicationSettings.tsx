@@ -80,7 +80,7 @@ export default function ApplicationSettings() {
               Describe your career aspirations
             </label>
             <textarea
-              className="w-full px-4 py-2.5 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2.5 rounded-lg border border-border focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent"
               rows={4}
               placeholder="Tell us about your career goals and aspirations..."
               value={careerGoals}

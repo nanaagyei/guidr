@@ -102,7 +102,7 @@ function ResetPasswordConfirmContent() {
         <form onSubmit={handleResetPassword} className="space-y-5">
           <div>
             <label className="text-sm font-medium text-gray-700/80">New Password</label>
-            <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-sm transition-colors focus-within:border-primary/70 focus-within:bg-primary/10 mt-1">
+            <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-xs transition-colors focus-within:border-primary/70 focus-within:bg-primary/10 mt-1">
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -110,7 +110,7 @@ function ResetPasswordConfirmContent() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter new password"
                   required
-                  className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                  className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-hidden text-gray-900 placeholder-gray-500"
                 />
                 <button
                   type="button"
@@ -140,14 +140,14 @@ function ResetPasswordConfirmContent() {
 
           <div>
             <label className="text-sm font-medium text-gray-700/80">Confirm Password</label>
-            <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-sm transition-colors focus-within:border-primary/70 focus-within:bg-primary/10 mt-1">
+            <div className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-xs transition-colors focus-within:border-primary/70 focus-within:bg-primary/10 mt-1">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
                 required
-                className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500"
+                className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-hidden text-gray-900 placeholder-gray-500"
               />
             </div>
             {confirmPassword && password !== confirmPassword && (

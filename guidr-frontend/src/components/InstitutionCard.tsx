@@ -64,7 +64,7 @@ export default function InstitutionCard({
       {/* Header */}
       <div className="flex items-start gap-4 mb-4">
         {/* Institution Avatar */}
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center flex-shrink-0 border border-border/50">
+        <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary/15 to-accent/10 flex items-center justify-center shrink-0 border border-border/50">
           <span className="text-xl font-display font-semibold text-primary">
             {name?.charAt(0) || 'U'}
           </span>

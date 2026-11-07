@@ -68,7 +68,7 @@ export default function EmailDraftModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -94,7 +94,7 @@ export default function EmailDraftModal({
 
             {/* Warning */}
             <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-800">
                 Please read and personalize this email before sending. Do not send as-is without review.
               </p>

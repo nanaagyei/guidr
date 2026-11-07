@@ -159,7 +159,7 @@ export function TagInput({
             onBlur={handleBlur}
             placeholder={value.length === 0 ? placeholder : 'Add more\u2026'}
             className={cn(
-              'flex-1 min-w-[120px] bg-transparent outline-none text-sm text-text',
+              'flex-1 min-w-[120px] bg-transparent outline-hidden text-sm text-text',
               'placeholder:text-gray-400',
             )}
             disabled={disabled}

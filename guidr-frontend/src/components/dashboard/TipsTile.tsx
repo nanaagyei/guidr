@@ -74,7 +74,7 @@ export default function TipsTile() {
                     className="p-4 rounded-xl bg-accentLight border border-accent/20"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-accent/20 rounded-xl flex-shrink-0">
+                      <div className="p-2 bg-accent/20 rounded-xl shrink-0">
                         <Lightbulb className="w-4 h-4 text-accent" />
                       </div>
                       <div className="flex-1 min-w-0">

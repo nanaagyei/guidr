@@ -134,7 +134,7 @@ export default function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-start justify-center p-4 pt-8 lg:pt-12">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-accent/5 flex items-start justify-center p-4 pt-8 lg:pt-12">
       <div className="w-full max-w-5xl">
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
@@ -491,7 +491,7 @@ function GoalsStep({ formData, updateFormData, errors }: StepProps) {
           Career Goals
         </label>
         <textarea
-          className="w-full px-4 py-2.5 rounded-lg border border-border bg-card text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+          className="w-full px-4 py-2.5 rounded-lg border border-border bg-card text-text focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
           rows={4}
           placeholder="Tell us about your career goals and aspirations..."
           value={formData.career_goals || ''}
@@ -538,7 +538,7 @@ function CompletionStep({ formData }: { formData: OnboardingData }) {
             'Upload documents and start tracking applications',
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
               <span>{item}</span>
             </li>
           ))}

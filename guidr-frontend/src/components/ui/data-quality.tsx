@@ -79,7 +79,7 @@ export function DataQualityDot({
     <div className={`relative group ${className}`}>
       <div className={`quality-dot ${getColorClass(score)}`} />
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-sidebar text-text text-2xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-sidebar text-text text-2xs rounded-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
           {getLabel(score)} ({score}%)
         </div>
       )}

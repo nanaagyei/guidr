@@ -56,7 +56,7 @@ function SettingsContent() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-64 flex-shrink-0">
+        <div className="lg:w-64 shrink-0">
           <SettingsSidebar />
         </div>
         <div className="flex-1">

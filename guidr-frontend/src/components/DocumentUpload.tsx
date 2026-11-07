@@ -74,7 +74,7 @@ export default function DocumentUpload({ onUpload, onClose, uploading = false, e
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -212,7 +212,7 @@ export default function DocumentUpload({ onUpload, onClose, uploading = false, e
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-2 p-3 bg-red-100 border border-red-300 rounded-lg text-red-700"
                 >
-                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <AlertCircle className="h-5 w-5 shrink-0" />
                   <p className="text-sm">{error}</p>
                 </motion.div>
               )}

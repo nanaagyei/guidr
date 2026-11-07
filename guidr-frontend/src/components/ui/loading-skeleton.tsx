@@ -11,7 +11,7 @@ interface SkeletonProps {
 
 export function Skeleton({ className = '', variant = 'rectangular' }: SkeletonProps) {
   const variantClasses = {
-    text: 'h-4 rounded',
+    text: 'h-4 rounded-sm',
     circular: 'rounded-full aspect-square',
     rectangular: 'h-full rounded-xl',
   };
@@ -57,21 +57,21 @@ export function ProgramCardSkeleton() {
       </div>
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Skeleton className="w-4 h-4 rounded" />
+          <Skeleton className="w-4 h-4 rounded-sm" />
           <Skeleton variant="text" className="w-32 h-4" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="w-4 h-4 rounded" />
+          <Skeleton className="w-4 h-4 rounded-sm" />
           <Skeleton variant="text" className="w-40 h-4" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="w-4 h-4 rounded" />
+          <Skeleton className="w-4 h-4 rounded-sm" />
           <Skeleton variant="text" className="w-24 h-4" />
         </div>
       </div>
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <Skeleton className="w-20 h-6 rounded-full" />
-        <Skeleton className="w-16 h-5 rounded" />
+        <Skeleton className="w-16 h-5 rounded-sm" />
       </div>
     </div>
   );

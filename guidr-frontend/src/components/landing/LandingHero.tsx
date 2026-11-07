@@ -59,7 +59,7 @@ export function LandingHero() {
         <div className="flex justify-center mb-8 animate-element">
           <Link
             href="/blog/launch"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-border/50 hover:bg-white transition-colors group"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-xs rounded-full border border-border/50 hover:bg-white transition-colors group"
           >
             <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primaryLight px-2 py-0.5 rounded-full">
               New

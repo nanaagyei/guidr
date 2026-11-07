@@ -43,7 +43,7 @@ export function LandingCTA() {
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.5 }}
         >
-          <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold uppercase tracking-widest-plus text-text bg-white/60 backdrop-blur-sm rounded-full">
+          <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold uppercase tracking-widest-plus text-text bg-white/60 backdrop-blur-xs rounded-full">
             Get Started
           </span>
 
@@ -93,7 +93,7 @@ export function LandingCTA() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter email for updates*"
                       required
-                      className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl text-sm text-text placeholder:text-textMuted focus:outline-none focus:border-text focus:ring-1 focus:ring-text transition-colors"
+                      className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl text-sm text-text placeholder:text-textMuted focus:outline-hidden focus:border-text focus:ring-1 focus:ring-text transition-colors"
                     />
                     <Button
                       type="submit"

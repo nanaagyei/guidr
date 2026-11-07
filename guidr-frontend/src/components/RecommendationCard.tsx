@@ -91,7 +91,7 @@ export default function RecommendationCard({ recommendation, index = 0, onExplai
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ scale: 1.02, y: -4 }}
-      className={`bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all border-2 ${tierConfig.bg}`}
+      className={`bg-card rounded-xl p-6 shadow-xs hover:shadow-md transition-all border-2 ${tierConfig.bg}`}
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
@@ -144,7 +144,7 @@ export default function RecommendationCard({ recommendation, index = 0, onExplai
           {/* Funding Summary */}
           {recommendation.funding_summary && (
             <div className="flex items-start gap-2 mb-2">
-              <DollarSign className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <DollarSign className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
               <p className="text-xs text-gray-700">{recommendation.funding_summary}</p>
             </div>
           )}
@@ -152,7 +152,7 @@ export default function RecommendationCard({ recommendation, index = 0, onExplai
           {/* Deadline */}
           {recommendation.deadline && (
             <div className="flex items-start gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <Calendar className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
               <p className="text-xs text-gray-700">Deadline: {recommendation.deadline}</p>
             </div>
           )}
@@ -162,7 +162,7 @@ export default function RecommendationCard({ recommendation, index = 0, onExplai
             <div className="space-y-2 mt-3">
               {recommendation.reason_features.slice(0, 3).map((reason, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-gray-700">{reason}</p>
                 </div>
               ))}

@@ -89,14 +89,14 @@ function SkeletonCard() {
     <div className="bg-card rounded-2xl border border-border p-6 animate-pulse">
       <div className="flex flex-col items-center mb-6">
         <div className="w-[120px] h-[120px] rounded-full bg-muted" />
-        <div className="h-4 w-24 bg-muted rounded mt-3" />
+        <div className="h-4 w-24 bg-muted rounded-sm mt-3" />
       </div>
       <div className="space-y-4">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i}>
             <div className="flex justify-between mb-1.5">
-              <div className="h-3.5 w-28 bg-muted rounded" />
-              <div className="h-3.5 w-8 bg-muted rounded" />
+              <div className="h-3.5 w-28 bg-muted rounded-sm" />
+              <div className="h-3.5 w-8 bg-muted rounded-sm" />
             </div>
             <div className="h-2 w-full bg-muted rounded-full" />
           </div>
@@ -161,7 +161,7 @@ export default function FitScoreCard({ data, loading = false }: FitScoreCardProp
       {/* Sparse data warning */}
       {allZero && (
         <div className="flex items-start gap-2 mb-5 p-3 rounded-xl bg-warningLight border border-warning/20">
-          <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
           <p className="text-xs text-text leading-relaxed">
             Limited data available. Save this school and complete your profile for a more accurate fit score.
           </p>

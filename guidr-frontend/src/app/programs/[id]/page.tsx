@@ -101,7 +101,7 @@ export default function ProgramDetailPage() {
         <div className="relative">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Institution Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-primaryLight flex items-center justify-center flex-shrink-0 border border-border/50 shadow-soft">
+            <div className="w-20 h-20 rounded-2xl bg-primaryLight flex items-center justify-center shrink-0 border border-border/50 shadow-soft">
               <span className="text-3xl font-display font-semibold text-primary">
                 {program.institution?.name?.charAt(0) || 'U'}
               </span>
